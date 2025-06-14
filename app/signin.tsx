@@ -3,9 +3,9 @@ import { saveToken } from '@/helpers/authStorage';
 import axios from 'axios';
 import Constants from 'expo-constants';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Alert,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -14,19 +14,43 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
-
-
+import Toast from 'react-native-toast-message';
 import { useAuth } from '../components/AuthContext';
 
-const { BASE_URL } = Constants.expoConfig?.extra || {}
+const { BASE_URL } = Constants.expoConfig?.extra || {};
 
 const SignInScreen = () => {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const { login, user } = useAuth();
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+
+  // Spinner animation
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+
+  const startRotation = () => {
+    rotateAnim.setValue(0);
+    Animated.loop(
+      Animated.timing(rotateAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      })
+    ).start();
+  };
+
+  useEffect(() => {
+    if (loading) startRotation();
+  }, [loading]);
+
+  const rotateY = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   useFocusEffect(
     useCallback(() => {
       setEmail('');
@@ -35,39 +59,45 @@ const SignInScreen = () => {
   );
 
   const handleSignIn = async () => {
+    setLoading(true);
     try {
-      const url = `${BASE_URL}/auth/login`
+      const url = `${BASE_URL}/auth/login`;
 
       const response = await axios.post(url, {
         email,
         password,
         loginApp: 'eCart',
-      })
+      });
 
-      const { success, message, data } = response.data
+      const { success, message, data } = response.data;
 
       if (!success || !data?.token || !data?.user) {
-        Alert.alert('Login Failed', message || 'Unknown error occurred')
-        console.warn('API response:', response.data)
-        return
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed',
+          text2: message || 'Unknown error occurred',
+          position: 'top',
+        });
+        return;
       }
 
-      await saveToken(data.token)
-      await login(data.token, data.user)
-      console.log("user logged in...data of user", user);
-
-      router.replace('/(tabs)')
+      await saveToken(data.token);
+      await login(data.token, data.user);
+      router.replace('/(tabs)'); // No success message shown
     } catch (error: any) {
-      if (axios.isAxiosError(error)) {
-        const msg = error.response?.data?.message || error.message
-        console.error('Login failed:', msg)
-        Alert.alert('Login Error', msg)
-      } else {
-        console.error('Unexpected error during login:', error)
-        Alert.alert('Unexpected Error', 'Please try again later.')
-      }
+      const msg = axios.isAxiosError(error)
+        ? error.response?.data?.message || error.message
+        : 'Unexpected Error';
+      Toast.show({
+        type: 'error',
+        text1: 'Login Error',
+        text2: msg,
+        position: 'top',
+      });
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <>
@@ -77,7 +107,10 @@ const SignInScreen = () => {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.container}
         >
-          <ScrollView contentContainerStyle={styles.scrollWrapper} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            contentContainerStyle={styles.scrollWrapper}
+            showsVerticalScrollIndicator={false}
+          >
             <Text style={styles.title}>Welcome Back!</Text>
             <Text style={styles.subtitle}>
               Sign in to continue exploring and earning with Fun & Earn Shop
@@ -102,24 +135,50 @@ const SignInScreen = () => {
               />
             </View>
 
-            <TouchableOpacity style={styles.button} onPress={handleSignIn}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleSignIn}
+              disabled={loading}
+            >
               <Text style={styles.btnTxt}>Sign In</Text>
             </TouchableOpacity>
 
             <Text style={styles.signupPrompt}>
               Don’t have an account?{' '}
-              <Text onPress={() => router.push('/signu')} style={styles.signupLink}>
+              <Text
+                onPress={() => router.push('/signup')}
+                style={styles.signupLink}
+              >
                 Sign Up
               </Text>
             </Text>
           </ScrollView>
         </KeyboardAvoidingView>
-      </SafeAreaView>
-    </>
-  )
-}
 
-export default SignInScreen
+        {loading && (
+          <View style={styles.overlay}>
+            <Animated.Image
+              source={require('@/assets/images/logo.png')}
+              style={[
+                styles.spinner3d,
+                {
+                  transform: [
+                    { perspective: 1000 },
+                    { rotateY: rotateY },
+                  ],
+                },
+              ]}
+              resizeMode="contain"
+            />
+          </View>
+        )}
+      </SafeAreaView>
+      <Toast />
+    </>
+  );
+};
+
+export default SignInScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -184,4 +243,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textDecorationLine: 'underline',
   },
-})
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  spinner3d: {
+    width: 80,
+    height: 80,
+    backfaceVisibility: 'hidden',
+  },
+});

@@ -1,6 +1,6 @@
 import { FontAwesome } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 
+import { useAuth } from '@/components/AuthContext';
 import { useCart } from '@/components/CartContext'; // ✅ Important: import CartContext
 import ProductModal from '@/components/ProductModal'; // ✅ Your working modal
 
@@ -119,6 +120,16 @@ export default function CategoryScreen() {
       </View>
     </TouchableOpacity>
   );
+
+      const router = useRouter();
+      const { isAuthenticated, user, logout } = useAuth();
+  
+      useEffect(() => {
+        console.log("is auth from index", isAuthenticated)
+          if (isAuthenticated === false) {
+            router.replace('/signin');
+          }
+      }, [isAuthenticated]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f9f9f9' }}>

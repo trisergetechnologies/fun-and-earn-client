@@ -52,10 +52,10 @@ const ProductModal: React.FC<ProductModalProps> = ({ visible, onClose, product }
             <View style={styles.modalContent}>
                 <Image source={{ uri: product.image }} style={styles.productImage} />
                 <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.productPrice}>₹{product.price.toFixed(2)}</Text>
+                <Text style={styles.productPrice}>₹{product.price}</Text>
                 <View style={styles.ratingRow}>
                     <FontAwesome name="star" size={14} color="#f1c40f" />
-                    <Text style={styles.productRating}>{product.rating.toFixed(1)}</Text>
+                    <Text style={styles.productRating}>{product.rating}</Text>
                 </View>
                 <View style={styles.buttonRow}>
 

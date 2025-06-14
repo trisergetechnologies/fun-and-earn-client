@@ -1,5 +1,7 @@
+import { useAuth } from '@/components/AuthContext';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import React from 'react';
+import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import {
   Alert,
   Linking,
@@ -23,6 +25,16 @@ export default function CustomerSupport() {
     Alert.alert('Chat Support', 'Chat support is coming soon!');
   };
 
+      const router = useRouter();
+      const { isAuthenticated, user, logout } = useAuth();
+  
+      useEffect(() => {
+        console.log("is auth from index", isAuthenticated)
+          if (isAuthenticated === false) {
+            router.replace('/signin');
+          }
+      }, [isAuthenticated]);
+      
   return (
 
     <ScrollView contentContainerStyle={styles.container}>

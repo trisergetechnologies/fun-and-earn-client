@@ -1,10 +1,14 @@
-import { Colors } from '@/constants/Colors'
-import { Picker } from '@react-native-picker/picker'
-import axios from 'axios'
-import Constants from 'expo-constants'
-import { router, Stack, useFocusEffect } from 'expo-router'
-import React, { useCallback, useState } from 'react'
+// SignUpScreen.tsx
+import { Colors } from '@/constants/Colors';
+import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
+import axios from 'axios';
+import Constants from 'expo-constants';
+import { router, Stack, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Animated,
+  Easing,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -14,14 +18,10 @@ import {
   TextInput,
   TouchableOpacity,
   View
-} from 'react-native'
+} from 'react-native';
+import Toast from 'react-native-toast-message';
 
-
-
-
-
-
-const { BASE_URL } = Constants.expoConfig?.extra || {}
+const { BASE_URL } = Constants.expoConfig?.extra || {};
 
 const indianStates = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Delhi",
@@ -30,37 +30,66 @@ const indianStates = [
   "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
   "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
   "Uttar Pradesh", "Uttarakhand", "West Bengal"
-]
+];
 
 const SignUpScreen = () => {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [state_address, setStateAddress] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [loginApp, setLoginApp] = useState('eCart')
-  const [role, setRole] = useState('user')
-  const [otpCode, setOtpCode] = useState('0000')
-  const [isOtpSent, setIsOtpSent] = useState(false)
-  const [index, setIndex] = useState(0)
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [state_address, setStateAddress] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loginApp, setLoginApp] = useState('eCart');
+  const [role, setRole] = useState('user');
+  const [otpCode, setOtpCode] = useState('0000');
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
+  const rotateAnim = useRef(new Animated.Value(0)).current;
 
+  const startRotation = () => {
+    rotateAnim.setValue(0);
+    Animated.loop(
+      Animated.timing(rotateAnim, {
+        toValue: 1,
+        duration: 1000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  };
 
+  useEffect(() => {
+    if (loading) {
+      startRotation();
+    } else {
+      rotateAnim.stopAnimation(() => rotateAnim.setValue(0));
+    }
+  }, [loading]);
+
+  const rotateY = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleGetOtp = async () => {
     try {
-      const response = await axios.post('', { email })
+      const response = await axios.post('', { email });
       if (response.data.success) {
-        setIsOtpSent(true)
-        alert('OTP sent to Gmail')
+        setIsOtpSent(true);
+        Toast.show({ type: 'success', text1: 'OTP Sent', text2: 'Check your Gmail inbox.' });
       } else {
-        alert('Failed to send OTP')
+        Toast.show({ type: 'error', text1: 'OTP Failed', text2: 'Could not send OTP.' });
       }
     } catch (error) {
-      console.error(error)
-      alert('Error sending OTP')
+      console.error(error);
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to send OTP.' });
     }
-  }
+  };
+
   useFocusEffect(
     useCallback(() => {
       setName('');
@@ -72,10 +101,26 @@ const SignUpScreen = () => {
       setIsOtpSent(false);
     }, [])
   );
-  console.log("SignUp Screen rendered");
+
   const handleRegister = async () => {
-    const url = `${BASE_URL}/auth/register`
+    if (!name || !email || !state_address || !password || !confirmPassword || !otpCode) {
+      Toast.show({ type: 'error', text1: 'Missing Fields', text2: 'Please fill all fields.' });
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      Toast.show({ type: 'error', text1: 'Invalid Email', text2: 'Please enter a valid Gmail.' });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Toast.show({ type: 'error', text1: 'Password Mismatch', text2: 'Passwords do not match.' });
+      return;
+    }
+
+    const url = `${BASE_URL}/auth/register`;
     try {
+      setLoading(true);
       const response = await axios.post(url, {
         name,
         email,
@@ -84,125 +129,105 @@ const SignUpScreen = () => {
         confirmPassword,
         otpCode,
         role,
-        loginApp
-      })
+        loginApp,
+      });
 
       if (response.data.success) {
-        alert('Registration successful!')
+        Toast.show({
+          type: 'success',
+          text1: 'Registered Successfuly!',
+          text2: 'Welcome 🎉',
+        });
+
+        setTimeout(() => {
+          router.replace('/signin');
+        }, 1000);
+
       } else {
-        alert(response.data.message || 'Registration failed.')
+        Toast.show({ type: 'error', text1: 'Error', text2: response.data.message || 'Registration failed.' });
       }
     } catch (error) {
-      console.error(error)
-      alert('Error during registration')
+      console.error(error);
+      Toast.show({ type: 'error', text1: 'Registration Error', text2: 'Something went wrong.' });
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  const normalSignUp = () => (
+  const SignUp = () => (
     <View style={styles.inputWrapper}>
-      <TextInput
-        placeholder="Full Name"
-        placeholderTextColor="#666"
-        style={styles.input}
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        placeholder="Gmail"
-        placeholderTextColor="#666"
-        style={styles.input}
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-
+      <TextInput placeholder="Full Name" placeholderTextColor="#666" style={styles.input} value={name} onChangeText={setName} />
+      <TextInput placeholder="Email" placeholderTextColor="#666" style={styles.input} keyboardType="email-address" value={email} onChangeText={setEmail} />
       <View style={styles.pickerWrapper}>
-        <Picker
-          selectedValue={state_address}
-          onValueChange={(itemValue) => setStateAddress(itemValue)}
-          style={styles.picker}
-          dropdownIconColor="#666"
-        >
+        <Picker selectedValue={state_address} onValueChange={setStateAddress} style={styles.picker} dropdownIconColor="#666">
           <Picker.Item label="Select State" value="" />
-          {indianStates.map((s) => (
-            <Picker.Item key={s} label={s} value={s} />
-          ))}
+          {indianStates.map((s) => <Picker.Item key={s} label={s} value={s} />)}
         </Picker>
       </View>
 
-      <TextInput
-        placeholder="Password"
-        placeholderTextColor="#666"
-        secureTextEntry
-        style={styles.input}
-        value={password}
-        onChangeText={setPassword}
-      />
+      <View style={styles.inputContainer}>
+        <TextInput placeholder="Password" placeholderTextColor="#666" secureTextEntry={!showPassword} style={styles.inputWithIcon} value={password} onChangeText={setPassword} />
+        <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
+          <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={20} color="#666" />
+        </TouchableOpacity>
+      </View>
 
-      <TextInput
-        placeholder="Confirm Password"
-        placeholderTextColor="#666"
-        secureTextEntry
-        style={styles.input}
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-      />
+      <View style={styles.inputContainer}>
+        <TextInput placeholder="Confirm Password" placeholderTextColor="#666" secureTextEntry={!showConfirmPassword} style={styles.inputWithIcon} value={confirmPassword} onChangeText={setConfirmPassword} />
+        <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+          <Ionicons name={showConfirmPassword ? 'eye-off' : 'eye'} size={20} color="#666" />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.otpRow}>
-        <TextInput
-          placeholder="Enter OTP"
-          placeholderTextColor="#666"
-          style={[styles.input, { flex: 1, marginRight: 10 }]}
-          value={otpCode}
-          onChangeText={setOtpCode}
-          keyboardType="number-pad"
-        />
+        <TextInput placeholder="Enter OTP" placeholderTextColor="#666" style={[styles.input, { flex: 1 }]} value={otpCode} onChangeText={setOtpCode} keyboardType="number-pad" />
         <TouchableOpacity onPress={handleGetOtp} style={styles.otpButton}>
           <Text style={styles.otpBtnTxt}>Get OTP</Text>
         </TouchableOpacity>
       </View>
     </View>
-  )
+  );
 
   return (
     <>
       <Stack.Screen options={{ headerTitle: 'Sign Up' }} />
       <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.container}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollWrapper}
-            showsVerticalScrollIndicator={false}
-          >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
+          <ScrollView contentContainerStyle={styles.scrollWrapper} showsVerticalScrollIndicator={false}>
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>Register now to join and earn!</Text>
-
-            {normalSignUp()}
-
+            {SignUp()}
             <TouchableOpacity style={styles.button} onPress={handleRegister}>
               <Text style={styles.btnTxt}>Register</Text>
             </TouchableOpacity>
-
             <Text style={styles.signinPrompt}>
-              Already have an account?{' '}
-              <Text onPress={() => router.push('/signin')} style={styles.signinLink}>
-                Sign In
-              </Text>
+              Already have an account? <Text onPress={() => router.push('/signin')} style={styles.signinLink}>Sign In</Text>
             </Text>
-
           </ScrollView>
 
-
-
+          {loading && (
+            <View style={styles.overlay}>
+              <Animated.Image
+                source={require('@/assets/images/logo.png')}
+                style={[styles.spinner3d, { transform: [{ perspective: 1000 }, { rotateY }] }]}
+                resizeMode="contain"
+              />
+            </View>
+          )}
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </>
-  )
-}
 
-export default SignUpScreen
+
+      <Toast />
+    </>
+  );
+};
+
+export default SignUpScreen;
+
+// Keep your styles here (same as before)
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -241,6 +266,25 @@ const styles = StyleSheet.create({
     color: Colors.black,
     borderColor: '#ddd',
     borderWidth: 1,
+  },
+  inputContainer: {
+    position: 'relative',
+  },
+  inputWithIcon: {
+    backgroundColor: '#fff',
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    paddingRight: 44,
+    borderRadius: 14,
+    fontSize: 15,
+    color: Colors.black,
+    borderColor: '#ddd',
+    borderWidth: 1,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 16,
+    top: '32%',
   },
   pickerWrapper: {
     backgroundColor: '#fff',
@@ -294,4 +338,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textDecorationLine: 'underline',
   },
-})
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  spinner3d: {
+    width: 80,
+    height: 80,
+    backfaceVisibility: 'hidden',
+  },
+});

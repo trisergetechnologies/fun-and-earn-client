@@ -1,9 +1,18 @@
+import { useAuth } from '@/components/AuthContext';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import { useEffect } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const SuccessScreen = () => {
   const router = useRouter();
+      const { isAuthenticated, user, logout } = useAuth();
+  
+      useEffect(() => {
+        console.log("is auth from index", isAuthenticated)
+          if (isAuthenticated === false) {
+            router.replace('/signin');
+          }
+      }, [isAuthenticated]);
 
   return (
   

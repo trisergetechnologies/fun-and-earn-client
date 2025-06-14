@@ -1,5 +1,7 @@
+import { useAuth } from '@/components/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -31,6 +33,16 @@ export default function ChangePasswordScreen() {
     // TODO: API call here
     Alert.alert('Password changed successfully!');
   };
+
+      const router = useRouter();
+      const { isAuthenticated, user, logout } = useAuth();
+  
+      useEffect(() => {
+        console.log("is auth from index", isAuthenticated)
+          if (isAuthenticated === false) {
+            router.replace('/signin');
+          }
+      }, [isAuthenticated]);
 
   return (
     <KeyboardAvoidingView

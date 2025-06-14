@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { usePathname, useRouter } from 'expo-router';
-import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCart } from './CartContext';
 
 const tabs = [
@@ -21,6 +21,7 @@ export default function CustomBottomNav() {
 
 
   return (
+     <SafeAreaView edges={['bottom']} style={styles.wrapper}>
     <View style={styles.nav}>
       {tabs.map(tab => (
         <TouchableOpacity
@@ -44,6 +45,7 @@ export default function CustomBottomNav() {
         </TouchableOpacity>
       ))}
     </View>
+    </SafeAreaView>
   );
 }
 
@@ -85,4 +87,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
   },
+   wrapper: {
+    backgroundColor: '#100e0e',
+   }
 });

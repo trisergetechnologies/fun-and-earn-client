@@ -1,5 +1,7 @@
+import { useAuth } from '@/components/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import {
   FlatList,
   SafeAreaView,
@@ -59,6 +61,16 @@ export default function TransactionScreen() {
       </Text>
     </View>
   );
+
+      const router = useRouter();
+      const { isAuthenticated, user, logout } = useAuth();
+  
+      useEffect(() => {
+        console.log("is auth from index", isAuthenticated)
+          if (isAuthenticated === false) {
+            router.replace('/signin');
+          }
+      }, [isAuthenticated]);
 
   return (
     <SafeAreaView style={styles.container}>

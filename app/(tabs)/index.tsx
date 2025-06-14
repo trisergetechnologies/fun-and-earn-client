@@ -1,11 +1,18 @@
 import { useAuth } from '@/components/AuthContext';
-import ProductModal from '@/components/ProductModal'; // ✅ Modal component
+import ProductModal from '@/components/ProductModal';
 import { Colors } from '@/constants/Colors';
-import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import { getToken } from '@/helpers/authStorage';
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import Constants from 'expo-constants';
+
+
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   Dimensions,
+  Easing,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -16,10 +23,10 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 
-
+const { BASE_URL } = Constants.expoConfig?.extra || {};
 const { width } = Dimensions.get('window');
 
 const sampleCategories = [
@@ -27,84 +34,65 @@ const sampleCategories = [
   { id: 2, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
   { id: 3, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
   { id: 4, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
-  
-   { id: 5, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
+  { id: 5, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
   { id: 6, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
   { id: 7, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
   { id: 8, name: 'Jewellery', icon: 'https://picsum.photos/40?5' },
-
 ];
-
-const sampleProducts = [
-  {
-    id: 101,
-    name: 'Mid-Century Modern Wooden Dining Table',
-    price: 24,
-    rating: 4.7,
-    image: 'https://picsum.photos/200?random=1',
-    category: 'Furniture',
-  },
-  {
-    id: 102,
-    name: 'Elegant Golden-Base Stone Top Dining Table',
-    price: 66,
-    rating: 4.7,
-    image: 'https://picsum.photos/200?random=2',
-    category: 'Furniture',
-  },
-  {
-    id: 103,
-    name: 'Modern Minimalist Chair',
-    price: 39,
-    rating: 4.5,
-    image: 'https://picsum.photos/200?random=3',
-    category: 'Furniture',
-  },
-  {
-    id: 104,
-    name: 'Stylish Office Desk Lamp',
-    price: 19,
-    rating: 4.2,
-    image: 'https://picsum.photos/200?random=4',
-    category: 'Electronics',
-  },
-  {
-    id: 105,
-    name: 'Classic White Sneakers',
-    price: 49,
-    rating: 4.4,
-    image: 'https://picsum.photos/200?random=5',
-    category: 'Shoes',
-  },
-  {
-    id: 106,
-    name: 'Casual Round Neck T-Shirt',
-    price: 25,
-    rating: 4.3,
-    image: 'https://picsum.photos/200?random=6',
-    category: 'Clothes',
-  },
-  {
-    id: 107,
-    name: 'Gold Plated Necklace',
-    price: 99,
-    rating: 4.8,
-    image: 'https://picsum.photos/200?random=7',
-    category: 'Jewellery',
-  },
-];
-
 
 const ExploreScreen = () => {
-
-  const [search, setSearch] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState(null); // ✅ Modal state
   const { user } = useAuth();
-  console.log('user from home screen',user);
+  const [search, setSearch] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [sampleProducts, setSampleProducts] = useState([]);
+  const fadeAnim = useRef(new Animated.Value(0)).current; // ✅ FADE-IN animation
+
+  const matchedProducts = sampleProducts.filter((item) =>
+    item.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    const url = `${BASE_URL}/ecart/user/product/products`;
+    const token = await getToken();
+
+    try {
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const formatted = response.data.data.map((item) => ({
+        id: item._id,
+        name: item.title,
+        price: item.finalPrice,
+        image: Array.isArray(item.images) && item.images.length > 0
+          ? item.images[0]
+          : 'https://via.placeholder.com/150',
+      }));
+
+      setSampleProducts(formatted);
+
+      // ✅ Start fade-in animation
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 700, // smoother than 500ms
+        easing: Easing.inOut(Easing.ease), // ease-in-out effect
+        useNativeDriver: true,
+      }).start()
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   const renderCategory = ({ item }) => (
     <TouchableOpacity style={styles.categoryItem} onPress={() => router.push(`/category?name=${item.name}`)}>
-
       <Image source={{ uri: item.icon }} style={styles.categoryIcon} />
       <Text style={styles.categoryText}>{item.name}</Text>
     </TouchableOpacity>
@@ -119,15 +107,12 @@ const ExploreScreen = () => {
         </TouchableOpacity>
         <View style={styles.cardDetails}>
           <Text style={styles.productPrice}> ₹{item.price}</Text>
-          <View style={styles.ratingRow}>
-            <FontAwesome name="star" size={12} color="#f1c40f" />
-            <Text style={styles.productRating}>{item.rating}</Text>
-          </View>
           <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
+
   const renderSuggestionCard = ({ item }) => (
     <TouchableOpacity onPress={() => setSelectedProduct(item)} style={styles.suggestionCardWrapper}>
       <View style={styles.suggestionCard}>
@@ -153,36 +138,28 @@ const ExploreScreen = () => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 10 }}
       />
-
       <View style={styles.suggestionHeader}>
         <Text style={styles.suggestionTitle}>Today's Suggestions</Text>
       </View>
-      
       <FlatList
         horizontal
-        data={sampleProducts.slice(0, 7)}
+        data={sampleProducts}
         renderItem={renderSuggestionCard}
-        keyExtractor={(item) => item.id.toString() + 'sugg'}
+        keyExtractor={(item) => item.id}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 8 }}
       />
-
       <View style={styles.productHeader}>
         <Text style={styles.sectionTitle}>Explore Our Products</Text>
       </View>
     </>
   );
 
-
-  const matchedProducts = sampleProducts.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase())
-  );
-
   return (
-
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f9f9f9' }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{ flex: 1 }}>
+        {/* ✅ Wrap full content in fade-in animation */}
+        <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
           <View style={[styles.container, styles.searchRow]}>
             <Text style={styles.logo}>F&E</Text>
             <TextInput
@@ -199,7 +176,6 @@ const ExploreScreen = () => {
               onPress={() => router.push('/cart')}
             />
           </View>
-          
 
           {search.length > 0 && (
             <ScrollView style={styles.suggestionBox} keyboardShouldPersistTaps="handled">
@@ -207,7 +183,7 @@ const ExploreScreen = () => {
                 <TouchableOpacity
                   key={item.id}
                   onPress={() => {
-                    setSelectedProduct(item); // ✅ Show in modal
+                    setSelectedProduct(item);
                     setSearch('');
                   }}
                 >
@@ -220,7 +196,7 @@ const ExploreScreen = () => {
           <FlatList
             data={sampleProducts}
             renderItem={renderProduct}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item) => item.id}
             numColumns={2}
             columnWrapperStyle={{ justifyContent: 'space-between' }}
             contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 100 }}
@@ -229,9 +205,6 @@ const ExploreScreen = () => {
             ListHeaderComponent={ListHeader}
           />
 
-
-
-          {/* ✅ Product Modal */}
           {selectedProduct && (
             <ProductModal
               visible={!!selectedProduct}
@@ -239,13 +212,14 @@ const ExploreScreen = () => {
               onClose={() => setSelectedProduct(null)}
             />
           )}
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </SafeAreaView>
-
   );
-
 };
+
+export default ExploreScreen;
+
 
 
 export default ExploreScreen;
@@ -253,7 +227,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
     backgroundColor: '#f6f6f6',
-    
+
   },
   searchRow: {
     flexDirection: 'row',

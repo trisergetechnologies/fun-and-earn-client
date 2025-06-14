@@ -1,5 +1,6 @@
+import { useAuth } from '@/components/AuthContext';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -56,6 +57,15 @@ const CheckoutScreen = () => {
       Alert.alert('Payment Failed', 'Your payment could not be completed. Please try again.');
     }
   };
+
+      const { isAuthenticated, user, logout } = useAuth();
+  
+      useEffect(() => {
+        console.log("is auth from index", isAuthenticated)
+          if (isAuthenticated === false) {
+            router.replace('/signin');
+          }
+      }, [isAuthenticated]);
 
   return (
 

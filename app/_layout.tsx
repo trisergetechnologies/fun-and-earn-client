@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import Toast from 'react-native-toast-message';
 import { CartProvider } from '.././components/CartContext';
 // import { AuthProvider } from '../components/AuthContext';
 
@@ -30,6 +31,7 @@ export default function RootLayout() {
     
     <AuthProvider>
     <CartProvider>
+      <>
       <Stack>
        
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -45,6 +47,8 @@ export default function RootLayout() {
         <Stack.Screen name="category" options={{ headerShown: false }} />
         
       </Stack>
+      <Toast/>
+      </>
       </CartProvider>
       </AuthProvider>
       
