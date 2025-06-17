@@ -1,23 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React from 'react';
 import { FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const orders = [
   {
     id: 'OD12345678',
-    product: 'Motorola Edge 50 Fusion (Forest Green, 256 GB)',
+    product: 'Motovolt URBN Electric Bike | 105 Km Range (Pedal Assist)',
     date: 'Mar 11',
-    image: 'https://picsum.photos/100?1',
+    image: 'http://147.93.58.23:6005/uploads/1749963178363-688820671.webp',
     status: 'Delivered',
   },
-  {
-    id: 'OD87654321',
-    product: 'realme C61 (Marble Black, 64 GB)',
-    date: 'Dec 30, 2024',
-    image: 'https://picsum.photos/100?2',
-    status: 'Delivered',
-  },
+  // {
+  //   id: 'OD87654321',
+  //   product: 'realme C61 (Marble Black, 64 GB)',
+  //   date: 'Dec 30, 2024',
+  //   image: 'https://picsum.photos/100?2',
+  //   status: 'Delivered',
+  // },
 ];
 
 export default function OrdersScreen() {

@@ -48,6 +48,7 @@ const ProfileScreen = () => {
         <Option icon={<Ionicons name="chatbubbles-outline" size={20} />} label="Customer Support" onPress={() => router.push('/CustomerSupport')} />
         <Option icon={<Entypo name="edit" size={18} />} label="Edit Profile" onPress={() => router.push('/UpdateProfile')} />
         <Option icon={<Ionicons name="key" size={20} />} label="Change Password" onPress={() => router.push('/setting')} />
+        <Option icon={<Entypo name="edit" size={18} />} label="Manage Address" onPress={() => router.push('/Address')} />        
         <Option icon={<Ionicons name="log-out-outline" size={20} />} label="Logout" onPress={handleLogout}/>
       </View>
     </ScrollView>

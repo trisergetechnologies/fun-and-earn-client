@@ -33,7 +33,7 @@ export default function RootLayout() {
     <CartProvider>
       <>
       <Stack>
-       
+      
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="signin" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="signup" options={{ presentation: 'modal', headerShown: false }} />
@@ -45,9 +45,11 @@ export default function RootLayout() {
         <Stack.Screen name ="transactions" options={{headerShown: false}}/>
         <Stack.Screen name="orders" options={{ headerShown: false }} />
         <Stack.Screen name="category" options={{ headerShown: false }} />
+        <Stack.Screen name="Address" options={{ headerShown: false }} />
         
       </Stack>
       <Toast/>
+      
       </>
       </CartProvider>
       </AuthProvider>

@@ -30,14 +30,14 @@ const { BASE_URL } = Constants.expoConfig?.extra || {};
 const { width } = Dimensions.get('window');
 
 const sampleCategories = [
-  { id: 1, name: 'Clothes', icon: 'https://picsum.photos/40?1' },
+  { id: 1, name: 'Bikes', icon: 'https://picsum.photos/40?2' },
   { id: 2, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
-  { id: 3, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
-  { id: 4, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
-  { id: 5, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
-  { id: 6, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
-  { id: 7, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
-  { id: 8, name: 'Jewellery', icon: 'https://picsum.photos/40?5' },
+  // { id: 3, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
+  // { id: 4, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
+  // { id: 5, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
+  // { id: 6, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
+  // { id: 7, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
+  // { id: 8, name: 'Jewellery', icon: 'https://picsum.photos/40?5' },
 ];
 
 const ExploreScreen = () => {
@@ -69,6 +69,7 @@ const ExploreScreen = () => {
         image: Array.isArray(item.images) && item.images.length > 0
           ? item.images[0]
           : 'https://via.placeholder.com/150',
+        sellerId: item.seller?._id || item.sellerId || 'unknown', 
       }));
 
       setSampleProducts(formatted);
@@ -222,7 +223,6 @@ export default ExploreScreen;
 
 
 
-export default ExploreScreen;
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,

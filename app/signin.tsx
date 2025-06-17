@@ -1,5 +1,6 @@
+import Spinner from '@/components/Spinner';
 import { Colors } from '@/constants/Colors';
-import { saveToken } from '@/helpers/authStorage';
+import { getToken, saveToken } from '@/helpers/authStorage';
 import axios from 'axios';
 import Constants from 'expo-constants';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
@@ -26,7 +27,7 @@ const SignInScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { isAuthenticated, login } = useAuth();
 
   // Spinner animation
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -99,9 +100,25 @@ const SignInScreen = () => {
     }
   };
 
+    useEffect(() => {
+      console.log("is auth from index", isAuthenticated)
+      setLoading(true);
+      let token
+      const getAuth=async()=>{
+        token = await getToken();
+      }
+      getAuth();
+        if (token) {
+          router.replace('/(tabs)');
+        }
+        setLoading(false);
+
+    }, [isAuthenticated]);
+
   return (
     <>
       <Stack.Screen options={{ headerTitle: 'Sign In' }} />
+      {loading ? <Spinner/> : 
       <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -154,25 +171,8 @@ const SignInScreen = () => {
             </Text>
           </ScrollView>
         </KeyboardAvoidingView>
-
-        {loading && (
-          <View style={styles.overlay}>
-            <Animated.Image
-              source={require('@/assets/images/logo.png')}
-              style={[
-                styles.spinner3d,
-                {
-                  transform: [
-                    { perspective: 1000 },
-                    { rotateY: rotateY },
-                  ],
-                },
-              ]}
-              resizeMode="contain"
-            />
-          </View>
-        )}
       </SafeAreaView>
+}
       <Toast />
     </>
   );

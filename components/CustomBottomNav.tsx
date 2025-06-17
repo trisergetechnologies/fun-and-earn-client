@@ -17,7 +17,7 @@ export default function CustomBottomNav() {
   const pathname = usePathname();
   const { cart } = useCart();
 
-  const active = pathname === '/' ? 'index' : pathname.split('/').pop();
+  const active = pathname === '/(tabs)' ? 'index' : pathname.split('/').pop();
 
 
   return (
@@ -26,7 +26,7 @@ export default function CustomBottomNav() {
       {tabs.map(tab => (
         <TouchableOpacity
           key={tab.name}
-          onPress={() => router.push(tab.name === 'index' ? '/' : `/${tab.name}`)}
+          onPress={() => router.push(tab.name === 'index' ? '/(tabs)' : `/${tab.name}`)}
           style={styles.item}
         >
           <Ionicons

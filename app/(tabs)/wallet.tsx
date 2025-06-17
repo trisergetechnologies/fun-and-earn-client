@@ -1,11 +1,13 @@
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const WalletScreen = () => {
-  const walletBalance = 1250.50;
-  const earningBalance = 750.25;
+  const walletBalance = 1350;
+  const earningBalance = 1350;
   const shoppingBalance = 500.25;
+
+  const router = useRouter();
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
@@ -30,19 +32,19 @@ const WalletScreen = () => {
           <Text style={styles.walletValue}>₹{earningBalance.toFixed(2)}</Text>
         </View>
 
-        <View style={styles.walletCard}>
+        {/* <View style={styles.walletCard}>
           <FontAwesome5 name="shopping-cart" size={24} color="#3b82f6" />
           <Text style={styles.walletLabel}>Shopping Wallet</Text>
           <Text style={styles.walletValue}>₹{shoppingBalance.toFixed(2)}</Text>
-        </View>
+        </View> */}
       </View>
 
-      <TouchableOpacity style={styles.actionButton}>
+      {/* <TouchableOpacity style={styles.actionButton}>
         <Text style={styles.buttonText}>Withdraw Funds</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
-      <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#3b82f6' }]}>
-        <Text style={styles.buttonText}>Transaction History</Text>
+      <TouchableOpacity onPress={()=> router.push('/transactions')} style={[styles.actionButton, { backgroundColor: '#3b82f6' }]}>
+        <Text style={styles.buttonText}>Wallet Summary</Text>
       </TouchableOpacity>
     </ScrollView>
   );

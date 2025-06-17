@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   FlatList,
   Image,
@@ -27,7 +26,12 @@ const CartScreen = () => {
   return (
     <View style={styles.container}>
       {cart.length === 0 ? (
-        <Text style={styles.emptyText}>Your cart is empty.</Text>
+        // <Text style={styles.emptyText}>Your cart is empty.</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyEmoji}>🛒😢</Text>
+          <Text style={styles.emptyText}>Cart's feeling empty!</Text>
+          <Text style={styles.emptyHint}>Pro tip: Add stuff to make it happy</Text>
+        </View>
       ) : (
         <>
           <FlatList
@@ -177,5 +181,20 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+    emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+    emptyHint: {
+    color: '#888',
+    fontStyle: 'italic',
+    marginTop: 8,
   },
 });

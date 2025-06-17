@@ -6,6 +6,7 @@ import {
     Alert,
     Dimensions,
     Image,
+
     StyleSheet,
     Text,
     TouchableOpacity,

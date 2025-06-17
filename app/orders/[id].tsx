@@ -1,5 +1,4 @@
 import { useLocalSearchParams } from 'expo-router';
-import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 const OrderDetails = () => {
@@ -10,11 +9,11 @@ const OrderDetails = () => {
       <Text style={styles.header}>Order ID - {id}</Text>
 
       <View style={styles.row}>
-        <Image source={{ uri: 'https://picsum.photos/120?random' }} style={styles.image} />
+        <Image source={{ uri: 'http://147.93.58.23:6005/uploads/1749963178363-688820671.webp' }} style={styles.image} />
         <View style={{ flex: 1 }}>
-          <Text style={styles.productName}>Motorola Edge 50 Fusion (Forest Green, 256 GB)</Text>
-          <Text style={styles.price}>₹13,707</Text>
-          <Text style={styles.seller}>Seller: GRAHGOODS RETAIL</Text>
+          <Text style={styles.productName}>Motovolt URBN Electric Bike | 105 Km Range (Pedal Assist)</Text>
+          <Text style={styles.price}>₹42299.1</Text>
+          <Text style={styles.seller}>Seller: GRAHGOODS BIKE</Text>
         </View>
       </View>
 
@@ -32,15 +31,19 @@ const OrderDetails = () => {
 
       <Text style={styles.subTitle}>Price Details</Text>
       <View style={styles.detailBox}>
-        <Text>List Price: ₹27,999</Text>
-        <Text>Selling Price: ₹24,999</Text>
-        <Text>Discount: -₹2,000</Text>
-        <Text>Special Price: ₹22,999</Text>
-        <Text>Delivery Charge: ₹40 Free</Text>
-        <Text>Secure Pack: ₹59</Text>
-        <Text>Exchange: -₹9,550</Text>
-        <Text>Pickup Charge: ₹199</Text>
-        <Text style={styles.total}>Total: ₹13,707</Text>
+<Text>List Price: ₹45,999.00</Text>
+<Text>Selling Price: ₹42,299.10</Text>
+<Text>Discount: -₹3,699.90</Text>
+<Text>GST (18%): ₹7,613.84</Text>
+<Text>Shipping Charge: ₹299.00</Text>
+<Text>Secure Packaging: ₹59.00</Text>
+<Text>COD Charge: ₹49.00</Text>
+<Text>Extended Warranty: ₹2,499.00</Text>
+<Text>Installation Fee: ₹999.00</Text>
+<Text>Insurance: ₹1,499.00</Text>
+<Text>Gift Wrap: ₹99.00</Text>
+<Text>Special Offer Discount: -₹500.00</Text>
+<Text style={styles.total}>Total: ₹54,216.98</Text>
       </View>
     </ScrollView>
   );

@@ -1,5 +1,7 @@
 // SignUpScreen.tsx
+import Spinner from '@/components/Spinner';
 import { Colors } from '@/constants/Colors';
+import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
@@ -188,9 +190,24 @@ const SignUpScreen = () => {
     </View>
   );
 
+      useEffect(() => {
+        setLoading(true);
+        let token
+        const getAuth=async()=>{
+          token = await getToken();
+        }
+        getAuth();
+          if (token) {
+            router.replace('/(tabs)');
+          }
+          setLoading(false);
+  
+      }, []);
+
   return (
     <>
       <Stack.Screen options={{ headerTitle: 'Sign Up' }} />
+        {loading ? <Spinner/> : 
       <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
           <ScrollView contentContainerStyle={styles.scrollWrapper} showsVerticalScrollIndicator={false}>
@@ -204,20 +221,9 @@ const SignUpScreen = () => {
               Already have an account? <Text onPress={() => router.push('/signin')} style={styles.signinLink}>Sign In</Text>
             </Text>
           </ScrollView>
-
-          {loading && (
-            <View style={styles.overlay}>
-              <Animated.Image
-                source={require('@/assets/images/logo.png')}
-                style={[styles.spinner3d, { transform: [{ perspective: 1000 }, { rotateY }] }]}
-                resizeMode="contain"
-              />
-            </View>
-          )}
         </KeyboardAvoidingView>
       </SafeAreaView>
-
-
+}
       <Toast />
     </>
   );
