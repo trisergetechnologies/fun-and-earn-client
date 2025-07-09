@@ -29,16 +29,16 @@ import {
 const { BASE_URL } = Constants.expoConfig?.extra || {};
 const { width } = Dimensions.get('window');
 
-const sampleCategories = [
-  { id: 1, name: 'Bikes', icon: 'https://picsum.photos/40?2' },
-  { id: 2, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
-  // { id: 3, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
-  // { id: 4, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
-  // { id: 5, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
-  // { id: 6, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
-  // { id: 7, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
-  // { id: 8, name: 'Jewellery', icon: 'https://picsum.photos/40?5' },
-];
+// const sampleCategories = [
+//   { id: 1, name: 'Bikes', icon: 'https://picsum.photos/40?2' },
+//   { id: 2, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
+//   // { id: 3, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
+//   // { id: 4, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
+//   // { id: 5, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
+//   // { id: 6, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
+//   // { id: 7, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
+//   // { id: 8, name: 'Jewellery', icon: 'https://picsum.photos/40?5' },
+// ];
 
 const ExploreScreen = () => {
   const { user } = useAuth();
@@ -47,6 +47,8 @@ const ExploreScreen = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [sampleProducts, setSampleProducts] = useState([]);
   const fadeAnim = useRef(new Animated.Value(0)).current; // ✅ FADE-IN animation
+
+  const [sampleCategories, setSampleCategories] = useState(null);
 
   const matchedProducts = sampleProducts.filter((item) =>
     item.name.toLowerCase().includes(search.toLowerCase())
@@ -88,12 +90,51 @@ const ExploreScreen = () => {
     }
   };
 
+
+  const fetchCategories = async () => {
+  setLoading(true);
+  const url = `${BASE_URL}/ecart/user/categories`; // ✅ Corrected route
+  const token = await getToken();
+
+  try {
+    const response = await axios.get(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const formattedCategories = response.data.data.map((item) => ({
+      id: item._id,
+      name: item.title,
+      slug: item.slug,
+      image: 'https://via.placeholder.com/150', // fallback since schema has no image
+      ownerId: item.ownerId || 'unknown',
+    }));
+
+    setSampleCategories(formattedCategories); // ✅ Setting category state
+    console.log("sample categories", formattedCategories)
+
+    // Optional: start animation if needed
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 700,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
   useEffect(() => {
+    fetchCategories();
     fetchProducts();
   }, []);
 
   const renderCategory = ({ item }) => (
-    <TouchableOpacity style={styles.categoryItem} onPress={() => router.push(`/category?name=${item.name}`)}>
+    <TouchableOpacity style={styles.categoryItem} onPress={() => router.push(`/category?slug=${item.slug}`)}>
       <Image source={{ uri: item.icon }} style={styles.categoryIcon} />
       <Text style={styles.categoryText}>{item.name}</Text>
     </TouchableOpacity>

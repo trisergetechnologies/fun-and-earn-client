@@ -1,5 +1,9 @@
+import { getToken } from '@/helpers/authStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import Constants from 'expo-constants';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+const { BASE_URL } = Constants.expoConfig?.extra || {};
 
 type Product = {
   id: number;
@@ -26,19 +30,29 @@ const CART_STORAGE_KEY = 'user_cart';
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
 
+
   // Load cart from storage on mount
-  useEffect(() => {
-    const loadCart = async () => {
-      try {
-        const stored = await AsyncStorage.getItem(CART_STORAGE_KEY);
-        if (stored) {
-          setCart(JSON.parse(stored));
-        }
-      } catch (err) {
-        console.error('Failed to load cart from storage', err);
+
+    const fetchCart = async () => {
+    const url = `${BASE_URL}/ecart/user/cart/getcart`
+    const token = await getToken();
+ 
+    try {
+      const res = await axios.get(url, {headers:{
+        Authorization: `Bearer ${token}`
+      }});
+
+      if (res.data.success) {
+        console.log(res.data.data.items);
+        setCart(res.data.data.items);
       }
-    };
-    loadCart();
+    } catch (err) {
+      console.error('Failed to fetch cart:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCart();
   }, []);
 
   // Save cart to storage whenever it changes
@@ -48,17 +62,51 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     );
   }, [cart]);
 
-  const addToCart = (product: Product) => {
-     console.log('🛒 Adding to cart:', product);
-    setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.id === product.id ? { ...item, qty: item.qty + 1 } : item
-        );
-      }
-      return [...prev, { ...product, qty: 1 }];
+  const addToCart = async (product: Product) => {
+
+    const url = `${BASE_URL}/ecart/user/cart/getcart`
+    const addUrl = `${BASE_URL}/ecart/user/cart/addcart`
+    const token = await getToken();
+    //  console.log('🛒 Adding to cart:', product);
+    // setCart((prev) => {
+    //   const existing = prev.find((item) => item.id === product.id);
+    //   if (existing) {
+    //     return prev.map((item) =>
+    //       item.id === product.id ? { ...item, qty: item.qty + 1 } : item
+    //     );
+    //   }
+    //   return [...prev, { ...product, qty: 1 }];
+    // });
+      try {
+    // Fetch existing cart
+    const cartRes = await axios.get(url, {headers: {Authorization: `Bearer ${token}`}});
+    const currentCart = cartRes.data.cart || [];
+
+    
+    // Check if this product already exists in the cart
+    const existingItem = currentCart.find(
+      (item: any) => item.productId === product.id || item.product._id === product.id
+    );
+
+    const newQuantity = existingItem ? existingItem.quantity + 1 : 1;
+
+    // Send API call to /cart/add
+    const res = await axios.post(addUrl, {
+      productId: product.id,
+      quantity: newQuantity,
+    },{
+      headers: {Authorization: `Bearer ${token}`}
     });
+
+    if (res.data.success) {
+      console.log('✅ Product added/updated in cart');
+      fetchCart(); // Refresh cart state
+    } else {
+      console.warn('⚠️ Failed to add to cart:', res.data.message);
+    }
+  } catch (err) {
+    console.error('❌ Error adding to cart:', err);
+  }
   };
 
   const removeFromCart = (id: number) => {

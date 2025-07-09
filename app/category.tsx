@@ -1,8 +1,9 @@
-import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   Dimensions,
+  Easing,
   FlatList,
   Image,
   SafeAreaView,
@@ -10,15 +11,17 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 import { useAuth } from '@/components/AuthContext';
 import { useCart } from '@/components/CartContext'; // ✅ Important: import CartContext
-import ProductModal from '@/components/ProductModal'; // ✅ Your working modal
-
+import ProductModal from '@/components/ProductModal';
+import { getToken } from '@/helpers/authStorage';
+import axios from 'axios';
+import Constants from 'expo-constants';
 const { width } = Dimensions.get('window');
-
+const { BASE_URL } = Constants.expoConfig?.extra || {};
 const sampleProducts = [
   {
     id: 101,
@@ -87,23 +90,52 @@ const sampleProducts = [
 ];
 
 export default function CategoryScreen() {
-  const { name } = useLocalSearchParams<{ name: string }>();
+  const { slug } = useLocalSearchParams<{ slug: string }>();
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
-
+  const [products, setProducts] = useState(null);
   const { cart ,addToCart } = useCart(); // ✅
   console.log('Cart Items:', cart); 
-  
+  const fadeAnim = useRef(new Animated.Value(0)).current; // ✅ FADE-IN animation
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const products = useMemo(
-    () =>
-      sampleProducts.filter(
-        (p) =>
-          p.category.toLowerCase() === (name?.toLowerCase() || '') &&
-          p.name.toLowerCase().includes(search.toLowerCase())
-      ),
-    [search, name]
-  );
+
+    const fetchProducts = async () => {
+    setLoading(true);
+    const url = `${BASE_URL}/ecart/user/product/products/slug/${slug}`;
+    const token = await getToken();
+
+    try {
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const formatted = response.data.data.map((item) => ({
+        id: item._id,
+        name: item.title,
+        price: item.finalPrice,
+        image: Array.isArray(item.images) && item.images.length > 0
+          ? item.images[0]
+          : 'https://via.placeholder.com/150',
+        sellerId: item.seller?._id || item.sellerId || 'unknown', 
+      }));
+
+      setProducts(formatted);
+
+      // ✅ Start fade-in animation
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 700, // smoother than 500ms
+        easing: Easing.inOut(Easing.ease), // ease-in-out effect
+        useNativeDriver: true,
+      }).start()
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const renderProduct = ({ item }) => (
     <TouchableOpacity style={styles.productWrapper} onPress={() => setSelectedProduct(item)}>
@@ -111,10 +143,10 @@ export default function CategoryScreen() {
         <Image source={{ uri: item.image }} style={styles.productImage} />
         <View style={styles.cardDetails}>
           <Text style={styles.productPrice}> ₹{item.price}</Text>
-          <View style={styles.ratingRow}>
+          {/* <View style={styles.ratingRow}>
             <FontAwesome name="star" size={12} color="#f1c40f" />
             <Text style={styles.productRating}>{item.rating}</Text>
-          </View>
+          </View> */}
           <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
         </View>
       </View>
@@ -125,10 +157,10 @@ export default function CategoryScreen() {
       const { isAuthenticated, user, logout } = useAuth();
   
       useEffect(() => {
-        console.log("is auth from index", isAuthenticated)
           if (isAuthenticated === false) {
             router.replace('/signin');
           }
+          fetchProducts()
       }, [isAuthenticated]);
 
   return (
@@ -136,11 +168,12 @@ export default function CategoryScreen() {
       <View style={styles.searchRow}>
         <TextInput
           style={styles.searchInput}
-          placeholder={`Search in ${name}`}
+          placeholder={`Search in ${slug}`}
           value={search}
           onChangeText={setSearch}
         />
       </View>
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
 
       <FlatList
         data={products}
@@ -164,6 +197,7 @@ export default function CategoryScreen() {
           }}
         />
       )}
+      </Animated.View>
     </SafeAreaView>
   );
 }

@@ -24,7 +24,7 @@ interface ProductModalProps {
     visible: boolean;
     onClose: () => void;
     product: {
-        id: number;
+        id: string;
         name: string;
         price: number;
         rating: number;

@@ -42,7 +42,7 @@ const CartScreen = () => {
                 <Image source={{ uri: item.image }} style={styles.image} />
                 <View style={styles.details}>
                   <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
-                  <Text style={styles.price}>₹{item.price.toFixed(2)}</Text>
+                  <Text style={styles.price}>₹{item.price?.toFixed(2)}</Text>
                   <View style={styles.qtyRow}>
                     <TouchableOpacity onPress={() => decreaseQty(item)} style={styles.qtyBtn}>
                       <Ionicons name="remove" size={18} color="#000" />
