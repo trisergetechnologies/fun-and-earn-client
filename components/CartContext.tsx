@@ -5,21 +5,34 @@ import Constants from 'expo-constants';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 const { BASE_URL } = Constants.expoConfig?.extra || {};
 
-type Product = {
-  id: number;
-  name: string;
+export type Product = {
+  __v: number;
+  _id: string;
+  categoryId: string;
+  createdAt: string;
+  createdByRole: string;
+  description: string;
+  discountPercent: number;
+  finalPrice: number;
+  images: string[];
+  isActive: boolean;
   price: number;
-  rating: number;
-  image: string;
+  sellerId: string;
+  stock: number;
+  title: string;
+  updatedAt: string;
 };
 
-type CartItem = Product & { qty: number };
+type CartItem = {
+  productId: Product;
+  quantity: number;
+};
 
 interface CartContextType {
   cart: CartItem[];
   addToCart: (product: Product) => void;
-  removeFromCart: (id: number) => void;
-  updateQty: (id: number, qty: number) => void;
+  removeFromCart: (id: string) => void;
+  updateQty: (id: string, qty: number) => void;
   clearCart: () => void;
 }
 
@@ -67,16 +80,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const url = `${BASE_URL}/ecart/user/cart/getcart`
     const addUrl = `${BASE_URL}/ecart/user/cart/addcart`
     const token = await getToken();
-    //  console.log('🛒 Adding to cart:', product);
-    // setCart((prev) => {
-    //   const existing = prev.find((item) => item.id === product.id);
-    //   if (existing) {
-    //     return prev.map((item) =>
-    //       item.id === product.id ? { ...item, qty: item.qty + 1 } : item
-    //     );
-    //   }
-    //   return [...prev, { ...product, qty: 1 }];
-    // });
+    
       try {
     // Fetch existing cart
     const cartRes = await axios.get(url, {headers: {Authorization: `Bearer ${token}`}});
@@ -85,14 +89,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     
     // Check if this product already exists in the cart
     const existingItem = currentCart.find(
-      (item: any) => item.productId === product.id || item.product._id === product.id
+      (item: any) => item.productId === product._id || item.product._id === product._id
     );
 
     const newQuantity = existingItem ? existingItem.quantity + 1 : 1;
 
     // Send API call to /cart/add
     const res = await axios.post(addUrl, {
-      productId: product.id,
+      productId: product._id,
       quantity: newQuantity,
     },{
       headers: {Authorization: `Bearer ${token}`}
@@ -100,7 +104,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     if (res.data.success) {
       console.log('✅ Product added/updated in cart');
-      fetchCart(); // Refresh cart state
+      fetchCart();
     } else {
       console.warn('⚠️ Failed to add to cart:', res.data.message);
     }
@@ -109,16 +113,55 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }
   };
 
-  const removeFromCart = (id: number) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
+  const removeFromCart = async (id: string) => {
+    const removeItemUrl = `${BASE_URL}/ecart/user/cart/removeitem`
+    const token = await getToken();
+
+    try {
+      const productId = id;
+      const res = await axios.delete(`${removeItemUrl}/${productId}`,{
+        headers:{
+          Authorization: `Bearer ${token}`
+        },
+        params: {
+          productId: id
+        }
+      })
+
+      if (res.data.success) {
+        console.log('✅ Product Removed From cart');
+        fetchCart(); // Refresh cart state
+      } else {
+        console.warn('⚠️ Failed to remove item:', res.data.message);
+      }
+    } catch (err) {
+      console.error('❌ Error removing the item:', err);
+      fetchCart();
+    }
   };
 
-  const updateQty = (id: number, qty: number) => {
-    setCart((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, qty } : item
-      )
-    );
+  const updateQty = async (id: string, qty: number) => {
+
+    const updateUrl = `${BASE_URL}/ecart/user/cart/updatecart`
+    const token = await getToken();
+
+    try {
+    const res = await axios.patch(updateUrl, {
+      productId: id,
+      quantity: qty,
+    },{
+      headers: {Authorization: `Bearer ${token}`}
+    });
+
+    if (res.data.success) {
+      console.log('✅ Product updated in cart');
+      fetchCart(); // Refresh cart state
+    } else {
+      console.warn('⚠️ Failed to update cart:', res.data.message);
+    }
+  } catch (err) {
+    console.error('❌ Error updating the cart:', err);
+  }
   };
 
   const clearCart = async () => {

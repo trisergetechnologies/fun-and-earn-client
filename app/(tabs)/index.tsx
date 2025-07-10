@@ -32,26 +32,44 @@ const { width } = Dimensions.get('window');
 // const sampleCategories = [
 //   { id: 1, name: 'Bikes', icon: 'https://picsum.photos/40?2' },
 //   { id: 2, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
-//   // { id: 3, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
-//   // { id: 4, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
-//   // { id: 5, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
-//   // { id: 6, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
-//   // { id: 7, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
-//   // { id: 8, name: 'Jewellery', icon: 'https://picsum.photos/40?5' },
+//   { id: 3, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
+//   { id: 4, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
+//   { id: 5, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
+//   { id: 6, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
+//   { id: 7, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
+//   { id: 8, name: 'Jewellery', icon: 'https://picsum.photos/40?5' },
 // ];
+
+type Product = {
+  __v: number;
+  _id: string;
+  categoryId: string;
+  createdAt: string;
+  createdByRole: string;
+  description: string;
+  discountPercent: number;
+  finalPrice: number;
+  images: string[];
+  isActive: boolean;
+  price: number;
+  sellerId: string;
+  stock: number;
+  title: string;
+  updatedAt: string;
+};
 
 const ExploreScreen = () => {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [sampleProducts, setSampleProducts] = useState([]);
-  const fadeAnim = useRef(new Animated.Value(0)).current; // ✅ FADE-IN animation
+  const [sampleProducts, setSampleProducts] = useState<Product[]>([]);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const [sampleCategories, setSampleCategories] = useState(null);
 
   const matchedProducts = sampleProducts.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase())
+    item.title.toLowerCase().includes(search.toLowerCase())
   );
 
   const fetchProducts = async () => {
@@ -64,17 +82,7 @@ const ExploreScreen = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const formatted = response.data.data.map((item) => ({
-        id: item._id,
-        name: item.title,
-        price: item.finalPrice,
-        image: Array.isArray(item.images) && item.images.length > 0
-          ? item.images[0]
-          : 'https://via.placeholder.com/150',
-        sellerId: item.seller?._id || item.sellerId || 'unknown', 
-      }));
-
-      setSampleProducts(formatted);
+      setSampleProducts(response.data.data);
 
       // ✅ Start fade-in animation
       Animated.timing(fadeAnim, {
@@ -140,28 +148,28 @@ const ExploreScreen = () => {
     </TouchableOpacity>
   );
 
-  const renderProduct = ({ item }) => (
+  const renderProduct = ({ item }: {item: Product}) => (
     <TouchableOpacity onPress={() => setSelectedProduct(item)} style={styles.productWrapper}>
       <View style={styles.productCard}>
-        <Image source={{ uri: item.image }} style={styles.productImage} />
+        <Image source={{ uri: item.images[0] }} style={styles.productImage} />
         <TouchableOpacity style={styles.favoriteIcon}>
           <Ionicons name="heart-outline" size={18} color="gray" />
         </TouchableOpacity>
         <View style={styles.cardDetails}>
-          <Text style={styles.productPrice}> ₹{item.price}</Text>
-          <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+          <Text style={styles.productPrice}> ₹{item.finalPrice}</Text>
+          <Text style={styles.productName} numberOfLines={2}>{item.title}</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
 
-  const renderSuggestionCard = ({ item }) => (
+  const renderSuggestionCard = ({ item }: {item: Product}) => (
     <TouchableOpacity onPress={() => setSelectedProduct(item)} style={styles.suggestionCardWrapper}>
       <View style={styles.suggestionCard}>
-        <Image source={{ uri: item.image }} style={styles.suggestionImage} />
+        <Image source={{ uri: item.images[0] }} style={styles.suggestionImage} />
         <View style={styles.suggestionInfo}>
-          <Text style={styles.suggestionName} numberOfLines={1}>{item.name}</Text>
-          <Text style={styles.suggestionPrice}>₹{item.price}</Text>
+          <Text style={styles.suggestionName} numberOfLines={1}>{item.title}</Text>
+          <Text style={styles.suggestionPrice}>₹{item.finalPrice}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -187,7 +195,7 @@ const ExploreScreen = () => {
         horizontal
         data={sampleProducts}
         renderItem={renderSuggestionCard}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 8 }}
       />
@@ -223,7 +231,7 @@ const ExploreScreen = () => {
             <ScrollView style={styles.suggestionBox} keyboardShouldPersistTaps="handled">
               {matchedProducts.map((item) => (
                 <TouchableOpacity
-                  key={item.id}
+                  key={item._id}
                   onPress={() => {
                     setSelectedProduct(item);
                     setSearch('');
@@ -238,7 +246,7 @@ const ExploreScreen = () => {
           <FlatList
             data={sampleProducts}
             renderItem={renderProduct}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item._id}
             numColumns={2}
             columnWrapperStyle={{ justifyContent: 'space-between' }}
             contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 100 }}

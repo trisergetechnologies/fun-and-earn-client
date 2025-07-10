@@ -14,12 +14,12 @@ import { useCart } from '../../components/CartContext';
 const CartScreen = () => {
   const { cart, removeFromCart, clearCart, updateQty } = useCart(); // ✅ fixed call
 
-  const increaseQty = (item) => updateQty(item.id, item.qty + 1);
+  const increaseQty = (item) => updateQty(item.productId._id, item.quantity + 1);
   const decreaseQty = (item) => {
-    if (item.qty > 1) {
-      updateQty(item.id, item.qty - 1);
+    if (item.quantity > 1) {
+      updateQty(item.productId._id, item.quantity - 1);
     } else {
-      removeFromCart(item.id);
+      removeFromCart(item.productId._id);
     }
   };
 
@@ -36,23 +36,23 @@ const CartScreen = () => {
         <>
           <FlatList
             data={cart}
-            keyExtractor={(item) => `${item.id}`}
+            keyExtractor={(item) => `${item.productId._id}`}
             renderItem={({ item }) => (
               <View style={styles.cartItem}>
-                <Image source={{ uri: item.image }} style={styles.image} />
+                <Image source={{ uri: item.productId.images[0] }} style={styles.image} />
                 <View style={styles.details}>
-                  <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
-                  <Text style={styles.price}>₹{item.price?.toFixed(2)}</Text>
+                  <Text style={styles.name} numberOfLines={2}>{item.productId.title}</Text>
+                  <Text style={styles.price}>₹{(item.productId.finalPrice * item.quantity).toFixed(2)}</Text>
                   <View style={styles.qtyRow}>
                     <TouchableOpacity onPress={() => decreaseQty(item)} style={styles.qtyBtn}>
                       <Ionicons name="remove" size={18} color="#000" />
                     </TouchableOpacity>
-                    <Text style={styles.qtyText}>{item.qty}</Text>
+                    <Text style={styles.qtyText}>{item.quantity}</Text>
                     <TouchableOpacity onPress={() => increaseQty(item)} style={styles.qtyBtn}>
                       <Ionicons name="add" size={18} color="#000" />
                     </TouchableOpacity>
                   </View>
-                  <TouchableOpacity onPress={() => removeFromCart(item.id)}>
+                  <TouchableOpacity onPress={() => removeFromCart(item.productId._id)}>
                     <Text style={styles.remove}>Remove</Text>
                   </TouchableOpacity>
                 </View>
@@ -62,7 +62,7 @@ const CartScreen = () => {
           <View style={styles.totalBox}>
             <Text style={styles.totalLabel}>Total:</Text>
             <Text style={styles.totalValue}>
-              ₹{cart.reduce((sum, item) => sum + item.price * item.qty, 0).toFixed(2)}
+              ₹{cart.reduce((sum, item) => sum + item.productId.finalPrice * item.quantity, 0).toFixed(2)}
             </Text>
           </View>
           <TouchableOpacity

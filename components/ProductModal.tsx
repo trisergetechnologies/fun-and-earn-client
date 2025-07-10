@@ -24,12 +24,21 @@ interface ProductModalProps {
     visible: boolean;
     onClose: () => void;
     product: {
-        id: string;
-        name: string;
-        price: number;
-        rating: number;
-        image: string;
-        
+    __v: number;
+    _id: string;
+    categoryId: string;
+    createdAt: string;
+    createdByRole: string;
+    description: string;
+    discountPercent: number;
+    finalPrice: number;
+    images: string[];
+    isActive: boolean;
+    price: number;
+    sellerId: string;
+    stock: number;
+    title: string;
+    updatedAt: string;
     } | null;
 }
 
@@ -51,21 +60,21 @@ const ProductModal: React.FC<ProductModalProps> = ({ visible, onClose, product }
     return (
         <Animated.View style={[styles.modalContainer, animatedStyle]}>
             <View style={styles.modalContent}>
-                <Image source={{ uri: product.image }} style={styles.productImage} />
-                <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.productPrice}>₹{product.price}</Text>
-                <View style={styles.ratingRow}>
+                <Image source={{ uri: product.images[0] }} style={styles.productImage} />
+                <Text style={styles.productName}>{product.title}</Text>
+                <Text style={styles.productPrice}>₹{product.finalPrice}</Text>
+                {/* <View style={styles.ratingRow}>
                     <FontAwesome name="star" size={14} color="#f1c40f" />
                     <Text style={styles.productRating}>{product.rating}</Text>
-                </View>
+                </View> */}
                 <View style={styles.buttonRow}>
 
                     <TouchableOpacity
                         style={styles.cartButton}
                         onPress={() => {
                             addToCart(product); // ✅ Add to cart context
-                            Alert.alert('Cart', `${product.name} added to cart`);
-                            onClose(); // ✅ Optional: close modal after adding
+                            Alert.alert('Cart', `${product.title} added to cart`);
+                            onClose(); 
                         }}
 
                     >
