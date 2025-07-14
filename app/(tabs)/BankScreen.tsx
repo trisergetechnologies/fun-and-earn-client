@@ -102,8 +102,9 @@ const BankScreen = () => {
 
   return (
     <>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
       <Stack.Screen options={{ headerTitle: 'Bank Details' }} />
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+
         <KeyboardAvoidingView
           style={styles.container}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
