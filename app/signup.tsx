@@ -44,7 +44,7 @@ const SignUpScreen = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loginApp, setLoginApp] = useState('eCart');
   const [role, setRole] = useState('user');
-  const [otpCode, setOtpCode] = useState('0000');
+  const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -78,10 +78,16 @@ const SignUpScreen = () => {
   const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleGetOtp = async () => {
+    const otpUrl = `${BASE_URL}/auth/sendotp`;
     try {
-      const response = await axios.post('', { email });
+      const response = await axios.post(otpUrl, { email });
       if (response.data.success) {
         setIsOtpSent(true);
+
+        setTimeout(() => {
+          setIsOtpSent(false);
+        }, 90000);
+
         Toast.show({ type: 'success', text1: 'OTP Sent', text2: 'Check your Gmail inbox.' });
       } else {
         Toast.show({ type: 'error', text1: 'OTP Failed', text2: 'Could not send OTP.' });
@@ -98,14 +104,14 @@ const SignUpScreen = () => {
       setEmail('');
       setPassword('');
       setConfirmPassword('');
-      setOtpCode('0000');
+      setOtp('');
       setStateAddress('');
       setIsOtpSent(false);
     }, [])
   );
 
   const handleRegister = async () => {
-    if (!name || !email || !state_address || !password || !confirmPassword || !otpCode) {
+    if (!name || !email || !state_address || !password || !confirmPassword || !otp) {
       Toast.show({ type: 'error', text1: 'Missing Fields', text2: 'Please fill all fields.' });
       return;
     }
@@ -120,6 +126,11 @@ const SignUpScreen = () => {
       return;
     }
 
+    if (!otp) {
+      Toast.show({ type: 'error', text1: 'Password Mismatch', text2: 'Passwords do not match.' });
+      return;
+    }
+
     const url = `${BASE_URL}/auth/register`;
     try {
       setLoading(true);
@@ -128,8 +139,7 @@ const SignUpScreen = () => {
         email,
         state_address,
         password,
-        confirmPassword,
-        otpCode,
+        otp,
         role,
         loginApp,
       });
@@ -182,8 +192,8 @@ const SignUpScreen = () => {
       </View>
 
       <View style={styles.otpRow}>
-        <TextInput placeholder="Enter OTP" placeholderTextColor="#666" style={[styles.input, { flex: 1 }]} value={otpCode} onChangeText={setOtpCode} keyboardType="number-pad" />
-        <TouchableOpacity onPress={handleGetOtp} style={styles.otpButton}>
+        <TextInput placeholder="Enter OTP" placeholderTextColor="#666" style={[styles.input, { flex: 1 }]} value={otp} onChangeText={setOtp} keyboardType="number-pad" />
+        <TouchableOpacity disabled={isOtpSent ? true: false} onPress={handleGetOtp} style={styles.otpButton}>
           <Text style={styles.otpBtnTxt}>Get OTP</Text>
         </TouchableOpacity>
       </View>

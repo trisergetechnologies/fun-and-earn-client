@@ -1,5 +1,7 @@
 import { useAuth } from '@/components/AuthContext';
+import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -13,23 +15,55 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import Constants from 'expo-constants';
+import { useProfile } from '@/components/ProfileContext';
+const { BASE_URL } = Constants.expoConfig?.extra || {};
 
 const UpdateProfile = () => {
-  const [name, setName] = useState('John Doe');
-  const [email, setEmail] = useState('johndoe@example.com');
-  const [phone, setPhone] = useState('9876543210');
-  const [address, setAddress] = useState('123 Street, City');
 
-  const handleSave = () => {
-    // TODO: connect to API
-    Alert.alert('Profile Updated!');
+  const router = useRouter();
+  const { isAuthenticated, user, updateUser } = useAuth();
+    const {userProfile, refreshUserProfile} = useProfile();
+
+  const [name, setName] = useState<string | undefined>(userProfile?.name);
+  const [email, setEmail] = useState<string | undefined>(userProfile?.email);
+  const [phone, setPhone] = useState<string | undefined>(userProfile?.phone);
+  const [disabled, setDisabled] = useState<boolean>(false);
+
+  const handleSave = async() => {
+
+    if(!name || !email || !phone){
+      return Alert.alert("No fields can be left incomplete.");
+    }
+    setDisabled(true);
+    const token = await getToken();
+    const updateUrl = `${BASE_URL}/ecart/user/general/updateprofile`;
+    try {
+      const response = await axios.patch(updateUrl, {
+        name,
+        phone
+      } ,{
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (response.data.success) {
+        await updateUser(name, phone);
+        Alert.alert(response.data.message);
+        await refreshUserProfile();
+        router.push('/(tabs)');
+      }
+      setDisabled(false);
+      Alert.alert(response.data.message);
+    } catch (error: any) {
+      setDisabled(false);
+      Alert.alert("Something went wrong");
+      console.error('Failed to fetch Wallet:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to fetch Wallet');
+    }
   };
 
-      const router = useRouter();
-      const { isAuthenticated, user, logout } = useAuth();
-  
       useEffect(() => {
-        console.log("is auth from index", isAuthenticated)
           if (isAuthenticated === false) {
             router.replace('/signin');
           }
@@ -37,7 +71,6 @@ const UpdateProfile = () => {
 
   return (
 
-    
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -58,12 +91,14 @@ const UpdateProfile = () => {
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Email Address</Text>
           <TextInput
+            readOnly={true}
             style={styles.input}
             value={email}
             onChangeText={setEmail}
             placeholder="Enter your email"
             keyboardType="email-address"
           />
+          <Text style={{color: 'red'}}>Can not update email</Text>
         </View>
 
         <View style={styles.inputGroup}>
@@ -77,18 +112,7 @@ const UpdateProfile = () => {
           />
         </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Address</Text>
-          <TextInput
-            style={[styles.input, { height: 80 }]}
-            value={address}
-            onChangeText={setAddress}
-            placeholder="Enter your address"
-            multiline
-          />
-        </View>
-
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+        <TouchableOpacity disabled={disabled} style={styles.saveButton} onPress={handleSave}>
           <Ionicons name="save-outline" size={18} color="#fff" />
           <Text style={styles.saveText}>Save Changes</Text>
         </TouchableOpacity>

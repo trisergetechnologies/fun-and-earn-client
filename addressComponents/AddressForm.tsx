@@ -1,6 +1,10 @@
+import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Constants from 'expo-constants';
+const { BASE_URL } = Constants.expoConfig?.extra || {};
 
 interface Address {
   addressName: string;
@@ -15,7 +19,7 @@ interface Address {
 }
 
 interface AddressFormProps {
-  address?: Address;
+  address?: Address | null;
   onSubmit: (addressData: Address) => void;
   onCancel: () => void;
 }
@@ -23,6 +27,7 @@ interface AddressFormProps {
 const AddressForm: React.FC<AddressFormProps> = ({ address, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState<Omit<Address, 'slugName'>>({
     addressName: address?.addressName || '',
+    // slugName: address?.slugName || '',
     fullName: address?.fullName || '',
     street: address?.street || '',
     city: address?.city || '',
@@ -42,7 +47,7 @@ const AddressForm: React.FC<AddressFormProps> = ({ address, onSubmit, onCancel }
   const handleSubmit = () => {
     const addressData: Address = {
       ...formData,
-      slugName: address?.slugName || `${formData.addressName.toLowerCase()}-${Date.now()}`
+      slugName: address?.slugName || ''
     };
     onSubmit(addressData);
   };

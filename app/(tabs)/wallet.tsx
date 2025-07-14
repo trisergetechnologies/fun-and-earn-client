@@ -1,13 +1,38 @@
+import { getToken } from '@/helpers/authStorage';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Constants from 'expo-constants';
+import axios from 'axios';
+import { useEffect, useState } from 'react';
+const { BASE_URL } = Constants.expoConfig?.extra || {};
 
 const WalletScreen = () => {
-  const walletBalance = 1350;
-  const earningBalance = 1350;
-  const shoppingBalance = 500.25;
+  const [walletBalance, setWalletBalance] = useState<number>(0);
 
   const router = useRouter();
+
+  const fetchWallet= async ()=>{
+    const token = await getToken();
+    const getWalletUrl = `${BASE_URL}/ecart/user/wallet/getwallet`;
+    try {
+      const response = await axios.get(getWalletUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (response.data.success) {
+        setWalletBalance(response.data.data.eCartWallet);
+      }
+    } catch (error: any) {
+      console.error('Failed to fetch Wallet:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to fetch Wallet');
+    }
+  }
+
+  useEffect(()=>{
+    fetchWallet();
+  })
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
@@ -20,28 +45,6 @@ const WalletScreen = () => {
           <Text style={styles.amount}>₹{walletBalance.toFixed(2)}</Text>
         </View>
       </View>
-
-      <View style={styles.sectionTitleBox}>
-        <Text style={styles.sectionTitle}>Wallet Breakdown</Text>
-      </View>
-
-      <View style={styles.walletCardGroup}>
-        <View style={styles.walletCard}>
-          <FontAwesome5 name="coins" size={24} color="#f59e0b" />
-          <Text style={styles.walletLabel}>Earnings Wallet</Text>
-          <Text style={styles.walletValue}>₹{earningBalance.toFixed(2)}</Text>
-        </View>
-
-        {/* <View style={styles.walletCard}>
-          <FontAwesome5 name="shopping-cart" size={24} color="#3b82f6" />
-          <Text style={styles.walletLabel}>Shopping Wallet</Text>
-          <Text style={styles.walletValue}>₹{shoppingBalance.toFixed(2)}</Text>
-        </View> */}
-      </View>
-
-      {/* <TouchableOpacity style={styles.actionButton}>
-        <Text style={styles.buttonText}>Withdraw Funds</Text>
-      </TouchableOpacity> */}
 
       <TouchableOpacity onPress={()=> router.push('/transactions')} style={[styles.actionButton, { backgroundColor: '#3b82f6' }]}>
         <Text style={styles.buttonText}>Wallet Summary</Text>

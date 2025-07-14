@@ -1,5 +1,6 @@
 import { useAuth } from '@/components/AuthContext';
 import ProductModal from '@/components/ProductModal';
+import Spinner from '@/components/Spinner';
 import { Colors } from '@/constants/Colors';
 import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
@@ -209,6 +210,7 @@ const ExploreScreen = () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f9f9f9' }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {/* ✅ Wrap full content in fade-in animation */}
+        {loading? <Spinner/> :
         <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
           <View style={[styles.container, styles.searchRow]}>
             <Text style={styles.logo}>F&E</Text>
@@ -237,7 +239,7 @@ const ExploreScreen = () => {
                     setSearch('');
                   }}
                 >
-                  <Text style={{ paddingVertical: 8, fontSize: 14 }}>{item.name}</Text>
+                  <Text style={{ paddingVertical: 8, fontSize: 14 }}>{item.title}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -262,7 +264,7 @@ const ExploreScreen = () => {
               onClose={() => setSelectedProduct(null)}
             />
           )}
-        </Animated.View>
+        </Animated.View> }
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

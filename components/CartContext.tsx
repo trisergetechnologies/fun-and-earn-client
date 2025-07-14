@@ -34,6 +34,7 @@ interface CartContextType {
   removeFromCart: (id: string) => void;
   updateQty: (id: string, qty: number) => void;
   clearCart: () => void;
+  refreshCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -42,7 +43,6 @@ const CART_STORAGE_KEY = 'user_cart';
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
-
 
   // Load cart from storage on mount
 
@@ -173,9 +173,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const refreshCart=()=>{
+      fetchCart();
+  }
+
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, removeFromCart, clearCart, updateQty }}
+      value={{ cart, addToCart, removeFromCart, clearCart, updateQty, refreshCart }}
     >
       {children}
     </CartContext.Provider>

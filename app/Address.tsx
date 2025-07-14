@@ -1,7 +1,11 @@
 // import AddressList from '@/addressComponents/AddressList';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import AddressList from '../addressComponents/AddressList';
+import { getToken } from '@/helpers/authStorage';
+import Constants from 'expo-constants';
+import axios from 'axios';
+const { BASE_URL } = Constants.expoConfig?.extra || {};
 
 interface Address {
   addressName: string;
@@ -16,45 +20,82 @@ interface Address {
 }
 
 const Address: React.FC = () => {
-  const [addresses, setAddresses] = useState<Address[]>([
-    {
-      addressName: 'Home',
-      slugName: 'home-1',
-      fullName: 'John Doe',
-      street: '123 Main Street',
-      city: 'Ghaziabad',
-      state: 'Uttar Pradesh',
-      pincode: '201010',
-      phone: '9876543210',
-      isDefault: true,
-    },
-    {
-      addressName: 'Work',
-      slugName: 'work-1',
-      fullName: 'John Doe',
-      street: '456 Business Park',
-      city: 'Noida',
-      state: 'Uttar Pradesh',
-      pincode: '201301',
-      phone: '9876543211',
-      isDefault: false,
-    }
-  ]);
+  const [addresses, setAddresses] = useState<Address[]>([]);
 
-  const handleUpdateAddress = (updatedAddress: Address) => {
+const fetchAddresses = async () => {
+  const token = await getToken();
+  const fetchUrl = `${BASE_URL}/ecart/user/address/addresses`;
+
+  try {
+    const response = await axios.get(fetchUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    if(response.data.success){
+      console.log("fetching addresses..............", response.data);
+      setAddresses(response.data.data);
+    }
+  } catch (error: any) {
+    // Handle any errors (e.g., network issues, API errors)
+    console.error('Failed to fetch addresses:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || 'Failed to fetch addresses');
+  }
+};
+
+  const handleUpdateAddress = async (updatedAddress: Address) => {
     if (addresses.some(addr => addr.slugName === updatedAddress.slugName)) {
-      // Update existing address
-      setAddresses(addresses.map(addr => 
-        addr.slugName === updatedAddress.slugName ? updatedAddress : addr
-      ));
+
+      const updateurl = `${BASE_URL}/ecart/user/address/updateaddress/${updatedAddress.slugName}`
+      const token = await getToken();
+      try {
+        const res = await axios.patch(updateurl, updatedAddress, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (res.data.success) {
+          await fetchAddresses();
+        }
+      } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to update address');
+      }
     } else {
-      // Add new address
-      setAddresses([...addresses, updatedAddress]);
+
+      const addUrl = `${BASE_URL}/ecart/user/address/addaddress`;
+      const token = await getToken();
+      try {
+        const res = await axios.post(addUrl, updatedAddress, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if(res.data.success){
+          await fetchAddresses();
+        }
+      } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Failed to add new address');
+      }
     }
   };
 
-  const handleDeleteAddress = (slugName: string) => {
-    setAddresses(addresses.filter(addr => addr.slugName !== slugName));
+  const handleDeleteAddress = async (slugName: string) => {
+    console.log("here in delete", slugName)
+    const deleteUrl = `${BASE_URL}/ecart/user/address/deleteaddress/${slugName}`;
+    const token = await getToken();
+    try {
+      const res = await axios.delete(deleteUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if(res.data.success){
+        await fetchAddresses();
+      }
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to add new address');
+    }
   };
 
   const handleSetDefault = (slugName: string) => {
@@ -63,6 +104,10 @@ const Address: React.FC = () => {
       isDefault: addr.slugName === slugName,
     })));
   };
+
+  useEffect(()=>{
+    fetchAddresses();
+  },[])
 
   return (
     <View style={{ flex: 1 }}>

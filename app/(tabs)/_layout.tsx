@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import AuthProvider, { useAuth } from '../../components/AuthContext';
 import CustomBottomNav from '../../components/CustomBottomNav'; // ✅ Create this if not already
 import Spinner from './../../components/Spinner';
+import ProfileProvider from '@/components/ProfileContext';
 
 export default function TabLayout() {
 
@@ -22,6 +23,7 @@ export default function TabLayout() {
 
   return (
     <AuthProvider>
+      <ProfileProvider>
           { loading ? <Spinner/> :
     <View style={styles.container}>
       <View style={styles.content}>
@@ -29,6 +31,7 @@ export default function TabLayout() {
       </View>
       <CustomBottomNav />
     </View> }
+    </ProfileProvider>
     </AuthProvider>
   );
 }

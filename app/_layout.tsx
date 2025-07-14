@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
 import { CartProvider } from '.././components/CartContext';
+import ProfileProvider from '@/components/ProfileContext';
 // import { AuthProvider } from '../components/AuthContext';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -30,6 +31,7 @@ export default function RootLayout() {
     // <ThemeProvider value={'light'}>
     
     <AuthProvider>
+      <ProfileProvider>
     <CartProvider>
       <>
       <Stack>
@@ -52,6 +54,7 @@ export default function RootLayout() {
       
       </>
       </CartProvider>
+      </ProfileProvider>
       </AuthProvider>
       
      

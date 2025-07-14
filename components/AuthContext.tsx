@@ -13,6 +13,8 @@ type User = {
   email: string;
   applications: string[];
   role: string;
+  phone: string;
+  referralCode: string;
 };
 
 type AuthContextType = {
@@ -20,6 +22,7 @@ type AuthContextType = {
   user: User | null;
   login: (token: string, userData: User) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (name: any, phone: any) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -69,8 +72,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log('logout worked');
   };
 
+  const updateUser = async (name: any, phone: any )=> {
+      setUser(user => user ? { ...user, name: name, phone: phone } : user);
+      await SecureStore.setItemAsync('userData', JSON.stringify(user));
+  }
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -25,6 +25,7 @@ const CartScreen = () => {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Your Cart</Text>
       {cart.length === 0 ? (
         // <Text style={styles.emptyText}>Your cart is empty.</Text>
         <View style={styles.emptyContainer}>
@@ -101,6 +102,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 40,
     color: 'gray',
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    marginBottom: 5,
+    color: '#111',
+    marginTop: 30, 
   },
   cartItem: {
     flexDirection: 'row',
