@@ -60,7 +60,7 @@ type Product = {
 };
 
 const ExploreScreen = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -135,11 +135,14 @@ const ExploreScreen = () => {
   }
 };
 
-
-
   useEffect(() => {
-    fetchCategories();
-    fetchProducts();
+    if(isAuthenticated == false){
+      router.replace('/signin');
+    }
+    else{
+      fetchCategories();
+      fetchProducts();
+    }
   }, []);
 
   const renderCategory = ({ item }) => (
