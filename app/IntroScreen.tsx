@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { Link, Stack } from "expo-router";
+import { Link, Stack, useRouter } from "expo-router";
 import { ImageBackground, StyleSheet, Text, TouchableOpacity } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 

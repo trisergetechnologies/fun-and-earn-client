@@ -13,7 +13,6 @@ export default function TabLayout() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-      console.log("is auth from index", isAuthenticated)
         if (isAuthenticated === false) {
           router.replace('/IntroScreen');
         }

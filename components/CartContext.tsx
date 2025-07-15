@@ -1,8 +1,10 @@
 import { getToken } from '@/helpers/authStorage';
+import { useProtectedScreen } from '@/hooks/useProtectedScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Constants from 'expo-constants';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { useAuth } from './AuthContext';
 const { BASE_URL } = Constants.expoConfig?.extra || {};
 
 export type Product = {
@@ -43,8 +45,8 @@ const CART_STORAGE_KEY = 'user_cart';
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const {isAuthenticated, isAuthLoading} = useAuth();
 
-  // Load cart from storage on mount
 
     const fetchCart = async () => {
     const url = `${BASE_URL}/ecart/user/cart/getcart`
@@ -65,6 +67,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    if(isAuthLoading && !isAuthenticated) return
     fetchCart();
   }, []);
 

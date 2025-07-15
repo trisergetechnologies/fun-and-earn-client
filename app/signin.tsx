@@ -60,6 +60,8 @@ const SignInScreen = () => {
   );
 
   const handleSignIn = async () => {
+    if(!email || !password) return Toast.show({type: 'error', text1: 'Missing Fields', text2: "Please fill all fields.", position: 'top' });
+    
     setLoading(true);
     try {
       const url = `${BASE_URL}/auth/login`;
@@ -140,7 +142,7 @@ const SignInScreen = () => {
                 style={styles.input}
                 keyboardType="email-address"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(e)=> setEmail(e.toLowerCase())}
               />
               <TextInput
                 placeholder="Password"

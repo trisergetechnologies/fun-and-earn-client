@@ -22,72 +22,7 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 const { width } = Dimensions.get('window');
 const { BASE_URL } = Constants.expoConfig?.extra || {};
-const sampleProducts = [
-  {
-    id: 101,
-    name: 'T-shirt',
-    price: 24,
-    rating: 4.7,
-    image: 'https://picsum.photos/200?random=1',
-    category: 'Clothes',
-  },
-  {
-    id: 102,
-    name: 'Puma',
-    price: 66,
-    rating: 4.7,
-    image: 'https://picsum.photos/200?random=2',
-    category: 'Shoes',
-  },
-  {
-    id: 103,
-    name: 'Earphone',
-    price: 39,
-    rating: 4.5,
-    image: 'https://picsum.photos/200?random=3',
-    category: 'Electronics',
-  },
-  {
-    id: 104,
-    name: 'Stylish Office Desk Lamp',
-    price: 19,
-    rating: 4.2,
-    image: 'https://picsum.photos/200?random=4',
-    category: 'Electronics',
-  },
-  {
-    id: 105,
-    name: 'Classic White Sneakers',
-    price: 49,
-    rating: 4.4,
-    image: 'https://picsum.photos/200?random=5',
-    category: 'Shoes',
-  },
-  {
-    id: 106,
-    name: 'Casual Round Neck T-Shirt',
-    price: 25,
-    rating: 4.3,
-    image: 'https://picsum.photos/200?random=6',
-    category: 'Clothes',
-  },
-  {
-    id: 107,
-    name: 'Gold Plated Necklace',
-    price: 99,
-    rating: 4.8,
-    image: 'https://picsum.photos/200?random=7',
-    category: 'Jewellery',
-  },
-  {
-    id: 108,
-    name: 'Necklace',
-    price: 99,
-    rating: 4.8,
-    image: 'https://picsum.photos/200?random=8',
-    category: 'Jewellery',
-  },
-];
+
 
 export default function CategoryScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -143,10 +78,6 @@ export default function CategoryScreen() {
         <Image source={{ uri: item.image }} style={styles.productImage} />
         <View style={styles.cardDetails}>
           <Text style={styles.productPrice}> ₹{item.price}</Text>
-          {/* <View style={styles.ratingRow}>
-            <FontAwesome name="star" size={12} color="#f1c40f" />
-            <Text style={styles.productRating}>{item.rating}</Text>
-          </View> */}
           <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
         </View>
       </View>

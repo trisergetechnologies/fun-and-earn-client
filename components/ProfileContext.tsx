@@ -9,6 +9,7 @@ import {
     useEffect,
     useState,
 } from 'react';
+import { useAuth } from './AuthContext';
 
 interface Address {
   addressName: string;
@@ -75,7 +76,7 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
 export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     const [userProfile, setUserProfile] = useState<User | null>(null);
-
+    const {isAuthenticated, isAuthLoading} = useAuth();
     const fetchUser = async () => {
         const token = await getToken();
         const profileUrl = `${BASE_URL}/ecart/user/general/getprofile`;
@@ -89,12 +90,13 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
                 setUserProfile(response.data.data);
             }
         } catch (error: any) {
-            console.error('Failed to fetch Wallet:', error.response?.data || error.message);
-            throw new Error(error.response?.data?.message || 'Failed to fetch Wallet');
+            console.error('Failed to fetch User:', error.response?.data || error.message);
+            throw new Error(error.response?.data?.message || 'Failed to fetch User');
         }
     }
 
     useEffect(() => {
+        if(isAuthLoading && !isAuthenticated) return
         fetchUser();
     }, []);
     const refreshUserProfile= async()=>{

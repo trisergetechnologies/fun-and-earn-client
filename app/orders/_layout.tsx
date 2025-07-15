@@ -8,7 +8,6 @@ export default function OrderLayout() {
       const { isAuthenticated, user, logout } = useAuth();
   
       useEffect(() => {
-        console.log("is auth from index", isAuthenticated)
           if (isAuthenticated === false) {
             router.replace('/signin');
           }

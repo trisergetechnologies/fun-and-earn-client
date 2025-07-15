@@ -26,6 +26,7 @@ const ActivateScreen = () => {
   const { user } = useAuth();
 
   const handleActivate = async() => {
+  if(!referralCode) return Alert.alert("Please enter referral code.");
   const token = await getToken();
   const activateUrl = `${BASE_URL}/auth/activateshortvideo`;
   try {
@@ -82,7 +83,9 @@ const ActivateScreen = () => {
               <TouchableOpacity disabled={already} style={styles.button} onPress={handleActivate}>
                 <Text style={styles.btnTxt}>{already? "Already Activated" :"Activate"}</Text>
               </TouchableOpacity>
-              <Text style={{color: 'red'}}>You are a shorVideo user. You can go to the application and login with the same email id and password.</Text>
+              {already ?
+                <Text style={{color: 'red'}}>You are a ShorVideo user. You can log in to the application using the same email ID and password.</Text>
+              : ''}
             </View>
           </ScrollView>
         </KeyboardAvoidingView>

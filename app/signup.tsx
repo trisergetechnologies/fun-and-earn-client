@@ -26,13 +26,12 @@ import Toast from 'react-native-toast-message';
 const { BASE_URL } = Constants.expoConfig?.extra || {};
 
 const indianStates = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Delhi",
-  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
-  "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
-  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
-  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
-  "Uttar Pradesh", "Uttarakhand", "West Bengal"
-];
+  "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam",
+  "Bihar", "Chandigarh", "Chhattisgarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Goa", "Gujarat",
+  "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka","Kerala",
+  "Ladakh", "Lakshadweep", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+  "Nagaland", "Odisha","Puducherry","Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"];
 
 const SignUpScreen = () => {
   const [name, setName] = useState('');
@@ -47,6 +46,8 @@ const SignUpScreen = () => {
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [disable, setDisable] = useState(true);
+  const [gender, setGender] = useState<string>('');
 
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
@@ -78,6 +79,26 @@ const SignUpScreen = () => {
   const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleGetOtp = async () => {
+    if (!name || !email || !state_address || !password || !confirmPassword || !gender) {
+      Toast.show({ type: 'error', text1: 'Missing Fields', text2: 'Please fill all fields.' });
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      Toast.show({ type: 'error', text1: 'Invalid Email', text2: 'Please enter a valid Gmail.' });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Toast.show({ type: 'error', text1: 'Password Mismatch', text2: 'Passwords do not match.' });
+      return;
+    }
+
+    if (!otp) {
+      Toast.show({ type: 'error', text1: 'Password Mismatch', text2: 'Passwords do not match.' });
+      return;
+    }
+
     const otpUrl = `${BASE_URL}/auth/sendotp`;
     try {
       const response = await axios.post(otpUrl, { email });
@@ -102,6 +123,7 @@ const SignUpScreen = () => {
     useCallback(() => {
       setName('');
       setEmail('');
+      setGender('');
       setPassword('');
       setConfirmPassword('');
       setOtp('');
@@ -111,7 +133,7 @@ const SignUpScreen = () => {
   );
 
   const handleRegister = async () => {
-    if (!name || !email || !state_address || !password || !confirmPassword || !otp) {
+    if (!name || !email || !state_address || !password || !confirmPassword || !gender || !otp) {
       Toast.show({ type: 'error', text1: 'Missing Fields', text2: 'Please fill all fields.' });
       return;
     }
@@ -137,6 +159,7 @@ const SignUpScreen = () => {
       const response = await axios.post(url, {
         name,
         email,
+        gender,
         state_address,
         password,
         otp,
@@ -169,7 +192,15 @@ const SignUpScreen = () => {
   const SignUp = () => (
     <View style={styles.inputWrapper}>
       <TextInput placeholder="Full Name" placeholderTextColor="#666" style={styles.input} value={name} onChangeText={setName} />
-      <TextInput placeholder="Email" placeholderTextColor="#666" style={styles.input} keyboardType="email-address" value={email} onChangeText={setEmail} />
+      <TextInput placeholder="Email" placeholderTextColor="#666" style={styles.input} keyboardType="email-address" value={email} onChangeText={(e)=> setEmail(e.toLowerCase())} />
+
+      <View style={styles.pickerWrapper}>
+        <Picker selectedValue={state_address} onValueChange={setGender} style={styles.picker} dropdownIconColor="#666">
+          <Picker.Item label="Select Gender" value="" />
+          {['male', 'female', 'other'].map((s) => <Picker.Item key={s} label={s} value={s} />)}
+        </Picker>
+      </View>
+
       <View style={styles.pickerWrapper}>
         <Picker selectedValue={state_address} onValueChange={setStateAddress} style={styles.picker} dropdownIconColor="#666">
           <Picker.Item label="Select State" value="" />
@@ -224,7 +255,7 @@ const SignUpScreen = () => {
             <Text style={styles.title}>Create Account</Text>
             <Text style={styles.subtitle}>Register now to join and earn!</Text>
             {SignUp()}
-            <TouchableOpacity style={styles.button} onPress={handleRegister}>
+            <TouchableOpacity disabled={disable} style={styles.button} onPress={handleRegister}>
               <Text style={styles.btnTxt}>Register</Text>
             </TouchableOpacity>
             <Text style={styles.signinPrompt}>
@@ -319,15 +350,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   otpButton: {
-    backgroundColor: Colors.primary,
+    // backgroundColor: Colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderRadius: 14,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   otpBtnTxt: {
-    color: '#fff',
+    color: 'black',
     fontWeight: '600',
     fontSize: 13,
   },

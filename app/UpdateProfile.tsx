@@ -109,6 +109,7 @@ const UpdateProfile = () => {
             onChangeText={setPhone}
             placeholder="Enter phone number"
             keyboardType="phone-pad"
+            maxLength={10}
           />
         </View>
 
