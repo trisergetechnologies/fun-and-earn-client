@@ -215,7 +215,7 @@ const ExploreScreen = () => {
         {loading? <SimpleSpinner/> :
         <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
           <View style={[styles.container, styles.searchRow]}>
-            <Text style={styles.logo}>F&E</Text>
+            <Text style={styles.logo}>D M</Text>
             <TextInput
               style={styles.searchInput}
               placeholder="Search"

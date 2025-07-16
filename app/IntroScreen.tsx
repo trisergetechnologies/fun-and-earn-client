@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { Link, Stack, useRouter } from "expo-router";
+import { Link, Stack } from "expo-router";
 import { ImageBackground, StyleSheet, Text, TouchableOpacity } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
@@ -29,7 +29,7 @@ const IntroScreen = (props: Props) => {
             entering={FadeInUp.duration(1000).delay(200)}
             style={styles.wrapper}
           >
-            <Text style={styles.title}> Fun & Earn Shop</Text>
+            <Text style={styles.title}>Dream Mart</Text>
             <Text style={styles.subtitle}>
               Unlock exclusive rewards, enjoy seamless shopping, and earn while you shop. Fast, secure and rewarding.
             </Text>

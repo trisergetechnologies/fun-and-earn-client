@@ -1,5 +1,7 @@
 // SignUpScreen.tsx
+import PrivacyPolicyModal from '@/components/PrivacyPolicyModal';
 import Spinner from '@/components/Spinner';
+import TermsAndConditionsModal from '@/components/TermsAndConditionsModal';
 import { Colors } from '@/constants/Colors';
 import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +10,7 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
 import {
   Animated,
   Easing,
@@ -28,9 +31,9 @@ const { BASE_URL } = Constants.expoConfig?.extra || {};
 const indianStates = [
   "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam",
   "Bihar", "Chandigarh", "Chhattisgarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Goa", "Gujarat",
-  "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka","Kerala",
+  "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka", "Kerala",
   "Ladakh", "Lakshadweep", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
-  "Nagaland", "Odisha","Puducherry","Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+  "Nagaland", "Odisha", "Puducherry", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
   "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"];
 
 const SignUpScreen = () => {
@@ -46,8 +49,10 @@ const SignUpScreen = () => {
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [disable, setDisable] = useState(true);
   const [gender, setGender] = useState<string>('');
+  const [showPolicy, setShowPolicy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+
 
   const rotateAnim = useRef(new Animated.Value(0)).current;
 
@@ -94,10 +99,7 @@ const SignUpScreen = () => {
       return;
     }
 
-    if (!otp) {
-      Toast.show({ type: 'error', text1: 'Password Mismatch', text2: 'Passwords do not match.' });
-      return;
-    }
+
 
     const otpUrl = `${BASE_URL}/auth/sendotp`;
     try {
@@ -149,7 +151,7 @@ const SignUpScreen = () => {
     }
 
     if (!otp) {
-      Toast.show({ type: 'error', text1: 'Password Mismatch', text2: 'Passwords do not match.' });
+      Toast.show({ type: 'error', text1: 'Enter otp', text2: 'Otp is required' });
       return;
     }
 
@@ -192,7 +194,7 @@ const SignUpScreen = () => {
   const SignUp = () => (
     <View style={styles.inputWrapper}>
       <TextInput placeholder="Full Name" placeholderTextColor="#666" style={styles.input} value={name} onChangeText={setName} />
-      <TextInput placeholder="Email" placeholderTextColor="#666" style={styles.input} keyboardType="email-address" value={email} onChangeText={(e)=> setEmail(e.toLowerCase())} />
+      <TextInput placeholder="Email" placeholderTextColor="#666" style={styles.input} keyboardType="email-address" value={email} onChangeText={(e) => setEmail(e.toLowerCase())} />
 
       <View style={styles.pickerWrapper}>
         <Picker selectedValue={state_address} onValueChange={setGender} style={styles.picker} dropdownIconColor="#666">
@@ -224,47 +226,76 @@ const SignUpScreen = () => {
 
       <View style={styles.otpRow}>
         <TextInput placeholder="Enter OTP" placeholderTextColor="#666" style={[styles.input, { flex: 1 }]} value={otp} onChangeText={setOtp} keyboardType="number-pad" />
-        <TouchableOpacity disabled={isOtpSent ? true: false} onPress={handleGetOtp} style={styles.otpButton}>
+        <TouchableOpacity disabled={isOtpSent ? true : false} onPress={handleGetOtp} style={styles.otpButton}>
           <Text style={styles.otpBtnTxt}>Get OTP</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
-      useEffect(() => {
-        setLoading(true);
-        let token
-        const getAuth=async()=>{
-          token = await getToken();
-        }
-        getAuth();
-          if (token) {
-            router.replace('/(tabs)');
-          }
-          setLoading(false);
-  
-      }, []);
+  useEffect(() => {
+    setLoading(true);
+    let token
+    const getAuth = async () => {
+      token = await getToken();
+    }
+    getAuth();
+    if (token) {
+      router.replace('/(tabs)');
+    }
+    setLoading(false);
+
+  }, []);
 
   return (
     <>
       <Stack.Screen options={{ headerTitle: 'Sign Up' }} />
-        {loading ? <Spinner/> : 
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
-          <ScrollView contentContainerStyle={styles.scrollWrapper} showsVerticalScrollIndicator={false}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Register now to join and earn!</Text>
-            {SignUp()}
-            <TouchableOpacity disabled={disable} style={styles.button} onPress={handleRegister}>
-              <Text style={styles.btnTxt}>Register</Text>
-            </TouchableOpacity>
-            <Text style={styles.signinPrompt}>
-              Already have an account? <Text onPress={() => router.push('/signin')} style={styles.signinLink}>Sign In</Text>
-            </Text>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-}
+      {loading ? <Spinner /> :
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scrollWrapper} showsVerticalScrollIndicator={false}>
+              <Text style={styles.title}>Create Account</Text>
+              <Text style={styles.subtitle}>Register now to join and earn!</Text>
+              {SignUp()}
+              <TouchableOpacity style={styles.button} onPress={handleRegister}>
+                <Text style={styles.btnTxt}>Register</Text>
+              </TouchableOpacity>
+
+              {/* 👇 Terms & Privacy Links */}
+              <Text style={{ fontSize: 12, color: '#6b7280', textAlign: 'center', marginTop: 12 }}>
+                By signing up, you agree to our{' '}
+                <Text
+                  onPress={() => setShowTerms(true)}
+                  style={{ textDecorationLine: 'underline', color: Colors.primary }}
+                >
+                  T&C
+                </Text>{' '}
+                and{' '}
+                <Text
+                  onPress={() => setShowPolicy(true)}
+                  style={{ textDecorationLine: 'underline', color: Colors.primary }}
+                >
+                  Privacy Policy
+                </Text>
+                .
+              </Text>
+
+              <Text style={styles.signinPrompt}>
+                Already have an account?{' '}
+                <Text onPress={() => router.push('/signin')} style={styles.signinLink}>
+                  Sign In
+                </Text>
+              </Text>
+            </ScrollView>
+
+
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+
+      }
+
+      <PrivacyPolicyModal visible={showPolicy} onClose={() => setShowPolicy(false)} />
+        <TermsAndConditionsModal visible={showTerms} onClose={() => setShowTerms(false)} />
       <Toast />
     </>
   );

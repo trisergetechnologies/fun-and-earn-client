@@ -132,7 +132,7 @@ const SignInScreen = () => {
           >
             <Text style={styles.title}>Welcome Back!</Text>
             <Text style={styles.subtitle}>
-              Sign in to continue exploring and earning with Fun & Earn Shop
+              Sign in to continue exploring and earning with Dream Mart
             </Text>
 
             <View style={styles.inputWrapper}>
