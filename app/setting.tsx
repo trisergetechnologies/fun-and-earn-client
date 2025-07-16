@@ -1,5 +1,7 @@
 import { useAuth } from '@/components/AuthContext';
+import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -14,12 +16,18 @@ import {
   View,
 } from 'react-native';
 
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
+
 export default function ChangePasswordScreen() {
+
+  const router = useRouter();
+  const { isAuthenticated, user, logout } = useAuth();
+
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       Alert.alert('All fields are required.');
       return;
@@ -30,19 +38,41 @@ export default function ChangePasswordScreen() {
       return;
     }
 
-    // TODO: API call here
-    Alert.alert('Password changed successfully!');
+    if (currentPassword == confirmPassword) {
+      Alert.alert('New Password can not be same as the current password !');
+      return;
+    }
+    const updateurl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/general/changepassword`;
+    const token = await getToken();
+
+    try {
+      const res = await axios.patch(updateurl, {
+        oldPassword: currentPassword,
+        newPassword
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (res.data.success) {
+        Alert.alert(res.data.message);
+        router.push('/profile');
+      }
+      Alert.alert(res.data.message);
+    } catch (error: any) {
+      Alert.alert("Something Went Wrong");
+      throw new Error(error.response?.data?.message || 'Failed to update address');
+    }
   };
 
-      const router = useRouter();
-      const { isAuthenticated, user, logout } = useAuth();
-  
-      useEffect(() => {
-        console.log("is auth from index", isAuthenticated)
-          if (isAuthenticated === false) {
-            router.replace('/signin');
-          }
-      }, [isAuthenticated]);
+
+
+  useEffect(() => {
+    if (isAuthenticated === false) {
+      logout();
+      router.replace('/signin');
+    }
+  }, [isAuthenticated]);
 
   return (
     <KeyboardAvoidingView
