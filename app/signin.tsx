@@ -19,7 +19,7 @@ import {
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../components/AuthContext';
 
-const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 const SignInScreen = () => {
   const router = useRouter();

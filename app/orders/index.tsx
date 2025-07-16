@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Alert, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 interface OrderItem {
   productId: string;

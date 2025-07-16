@@ -28,7 +28,7 @@ import {
 } from 'react-native';
 
 // const { EXPO_PUBLIC_BASE_URL } = Constants.expoConfig?.extra || {};
-const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 const { width } = Dimensions.get('window');
 
 // const sampleCategories = [

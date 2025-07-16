@@ -55,9 +55,9 @@ const config: ExpoConfig = {
     typedRoutes: true,
   },
   extra: {
-    EXPO_PUBLIC_BASE_URL: 'http://147.93.58.23:6005/api/v1',
+    EXPO_PUBLIC_BASE_URL: 'https://amp-api.mpdreams.in/api/v1',
     eas: {
-      projectId: '80d34574-db42-4327-9362-32592954cf16',
+      projectId: 'f2d35fba-8f60-4dfd-a990-a0a0b2550eb6',
     },
   },
 };

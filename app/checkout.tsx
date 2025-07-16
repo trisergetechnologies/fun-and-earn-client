@@ -14,7 +14,7 @@ import {
 import { useCart } from '.././components/CartContext';
 import { getToken } from '@/helpers/authStorage';
 import axios from 'axios';
-const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 const PaymentGateway = async () => {
   return {status: 'success'}
