@@ -7,7 +7,6 @@ import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
-import Constants from 'expo-constants';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -26,7 +25,7 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 
 const indianStates = [
   "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam",
@@ -101,7 +100,7 @@ const SignUpScreen = () => {
 
 
 
-    const otpUrl = `${BASE_URL}/auth/sendotp`;
+    const otpUrl = `${EXPO_PUBLIC_BASE_URL}/auth/sendotp`;
     try {
       const response = await axios.post(otpUrl, { email });
       if (response.data.success) {
@@ -155,7 +154,7 @@ const SignUpScreen = () => {
       return;
     }
 
-    const url = `${BASE_URL}/auth/register`;
+    const url = `${EXPO_PUBLIC_BASE_URL}/auth/register`;
     try {
       setLoading(true);
       const response = await axios.post(url, {

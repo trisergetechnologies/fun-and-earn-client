@@ -2,7 +2,6 @@ import Spinner from '@/components/Spinner';
 import { Colors } from '@/constants/Colors';
 import { getToken, saveToken } from '@/helpers/authStorage';
 import axios from 'axios';
-import Constants from 'expo-constants';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -20,7 +19,7 @@ import {
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../components/AuthContext';
 
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 
 const SignInScreen = () => {
   const router = useRouter();
@@ -64,7 +63,7 @@ const SignInScreen = () => {
     
     setLoading(true);
     try {
-      const url = `${BASE_URL}/auth/login`;
+      const url = `${EXPO_PUBLIC_BASE_URL}/auth/login`;
 
       const response = await axios.post(url, {
         email,

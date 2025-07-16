@@ -8,9 +8,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import Constants from 'expo-constants';
 import axios from 'axios';
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 
 interface Coupon {
   _id?: string;
@@ -60,7 +59,7 @@ const RewardScreen = () => {
 
   const fetchCoupons = async () => {
     const token = await getToken();
-    const getCouponsUrl = `${BASE_URL}/ecart/user/general/getrewards`;
+    const getCouponsUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/general/getrewards`;
     try {
       const response = await axios.get(getCouponsUrl, {
         headers: {

@@ -15,9 +15,8 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import Constants from 'expo-constants';
 import { useProfile } from '@/components/ProfileContext';
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 
 const UpdateProfile = () => {
 
@@ -37,7 +36,7 @@ const UpdateProfile = () => {
     }
     setDisabled(true);
     const token = await getToken();
-    const updateUrl = `${BASE_URL}/ecart/user/general/updateprofile`;
+    const updateUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/general/updateprofile`;
     try {
       const response = await axios.patch(updateUrl, {
         name,

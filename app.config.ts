@@ -2,8 +2,8 @@ import { ExpoConfig } from '@expo/config';
 
 const config: ExpoConfig = {
   name: 'Dream Mart',
-  slug: 'Dream Mart',
-  version: '1.0.0',
+  slug: 'dream-mart',
+  version: '1.2.0',
   orientation: 'portrait',
   icon: './assets/images/splash-icon.png',
   scheme: 'Dream Mart',
@@ -13,6 +13,8 @@ const config: ExpoConfig = {
     supportsTablet: true,
   },
   android: {
+    package: 'com.mpdreams.dreammart',
+    permissions: ["INTERNET"],
     adaptiveIcon: {
       foregroundImage: './assets/images/splash-icon.png',
       backgroundColor: '#ffffff',
@@ -35,13 +37,30 @@ const config: ExpoConfig = {
         backgroundColor: '#ffffff',
       },
     ],
+    [
+      'expo-build-properties',
+      {
+        android: {
+          manifestApplication: [
+            {
+              usesCleartextTraffic: 'true',
+            },
+          ],
+        },
+      },
+    ],
   ],
+
   experiments: {
     typedRoutes: true,
   },
   extra: {
-    BASE_URL: 'http://147.93.58.23:6005/api/v1',
+    EXPO_PUBLIC_BASE_URL: 'http://147.93.58.23:6005/api/v1',
+    eas: {
+      projectId: '80d34574-db42-4327-9362-32592954cf16',
+    },
   },
 };
 
 export default config;
+

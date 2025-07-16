@@ -19,9 +19,8 @@ import { useCart } from '@/components/CartContext'; // ✅ Important: import Car
 import ProductModal from '@/components/ProductModal';
 import { getToken } from '@/helpers/authStorage';
 import axios from 'axios';
-import Constants from 'expo-constants';
 const { width } = Dimensions.get('window');
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 
 
 export default function CategoryScreen() {
@@ -37,7 +36,7 @@ export default function CategoryScreen() {
 
     const fetchProducts = async () => {
     setLoading(true);
-    const url = `${BASE_URL}/ecart/user/product/products/slug/${slug}`;
+    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/product/products/slug/${slug}`;
     const token = await getToken();
 
     try {

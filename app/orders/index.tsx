@@ -2,10 +2,9 @@ import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Alert, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Constants from 'expo-constants';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 
 interface OrderItem {
   productId: string;
@@ -60,7 +59,7 @@ export default function OrdersScreen() {
 
   const fetchOrders = async () => {
     const token = await getToken();
-    const getOrdersUrl = `${BASE_URL}/ecart/user/order/getorders`;
+    const getOrdersUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/getorders`;
     try {
       const response = await axios.get(getOrdersUrl, {
         headers: {

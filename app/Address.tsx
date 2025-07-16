@@ -3,9 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
 import AddressList from '../addressComponents/AddressList';
 import { getToken } from '@/helpers/authStorage';
-import Constants from 'expo-constants';
 import axios from 'axios';
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 
 interface Address {
   addressName: string;
@@ -24,7 +23,7 @@ const Address: React.FC = () => {
 
 const fetchAddresses = async () => {
   const token = await getToken();
-  const fetchUrl = `${BASE_URL}/ecart/user/address/addresses`;
+  const fetchUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/address/addresses`;
 
   try {
     const response = await axios.get(fetchUrl, {
@@ -46,7 +45,7 @@ const fetchAddresses = async () => {
   const handleUpdateAddress = async (updatedAddress: Address) => {
     if (addresses.some(addr => addr.slugName === updatedAddress.slugName)) {
 
-      const updateurl = `${BASE_URL}/ecart/user/address/updateaddress/${updatedAddress.slugName}`
+      const updateurl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/address/updateaddress/${updatedAddress.slugName}`
       const token = await getToken();
       try {
         const res = await axios.patch(updateurl, updatedAddress, {
@@ -62,7 +61,7 @@ const fetchAddresses = async () => {
       }
     } else {
 
-      const addUrl = `${BASE_URL}/ecart/user/address/addaddress`;
+      const addUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/address/addaddress`;
       const token = await getToken();
       try {
         const res = await axios.post(addUrl, updatedAddress, {
@@ -82,7 +81,7 @@ const fetchAddresses = async () => {
 
   const handleDeleteAddress = async (slugName: string) => {
     console.log("here in delete", slugName)
-    const deleteUrl = `${BASE_URL}/ecart/user/address/deleteaddress/${slugName}`;
+    const deleteUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/address/deleteaddress/${slugName}`;
     const token = await getToken();
     try {
       const res = await axios.delete(deleteUrl, {

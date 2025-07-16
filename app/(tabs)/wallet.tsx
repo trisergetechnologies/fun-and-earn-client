@@ -2,10 +2,9 @@ import { getToken } from '@/helpers/authStorage';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Constants from 'expo-constants';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 
 const WalletScreen = () => {
   const [walletBalance, setWalletBalance] = useState<number>(0);
@@ -14,7 +13,7 @@ const WalletScreen = () => {
 
   const fetchWallet= async ()=>{
     const token = await getToken();
-    const getWalletUrl = `${BASE_URL}/ecart/user/wallet/getwallet`;
+    const getWalletUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/getwallet`;
     try {
       const response = await axios.get(getWalletUrl, {
         headers: {

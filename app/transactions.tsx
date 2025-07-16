@@ -27,8 +27,7 @@ interface Transaction {
   updatedAt: string;
 }
 import axios from 'axios';
-import Constants from 'expo-constants';
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 
 export default function TransactionScreen() {
     const router = useRouter();
@@ -40,7 +39,7 @@ export default function TransactionScreen() {
 
     const fetchTransactions= async ()=>{
     const token = await getToken();
-    const getWalletUrl = `${BASE_URL}/ecart/user/wallet/getwallettransactions`;
+    const getWalletUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/getwallettransactions`;
     try {
       const response = await axios.get(getWalletUrl, {
         headers: {
@@ -58,7 +57,7 @@ export default function TransactionScreen() {
   
     const fetchWallet= async ()=>{
     const token = await getToken();
-    const getWalletUrl = `${BASE_URL}/ecart/user/wallet/getwallet`;
+    const getWalletUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/getwallet`;
     try {
       const response = await axios.get(getWalletUrl, {
         headers: {

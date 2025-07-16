@@ -1,7 +1,6 @@
 import { getToken } from '@/helpers/authStorage';
 import axios from 'axios';
-import Constants from 'expo-constants';
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 import {
     createContext,
     ReactNode,
@@ -79,7 +78,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     const {isAuthenticated, isAuthLoading} = useAuth();
     const fetchUser = async () => {
         const token = await getToken();
-        const profileUrl = `${BASE_URL}/ecart/user/general/getprofile`;
+        const profileUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/general/getprofile`;
         try {
             const response = await axios.get(profileUrl, {
                 headers: {

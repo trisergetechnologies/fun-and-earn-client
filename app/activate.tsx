@@ -13,11 +13,10 @@ import {
   ScrollView,
   Alert
 } from 'react-native';
-import Constants from 'expo-constants';
 import axios from 'axios';
 import { getToken } from '@/helpers/authStorage';
 import { useAuth } from '@/components/AuthContext';
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 
 const ActivateScreen = () => {
   const [referralCode, setReferralCode] = useState('');
@@ -28,7 +27,7 @@ const ActivateScreen = () => {
   const handleActivate = async() => {
   if(!referralCode) return Alert.alert("Please enter referral code.");
   const token = await getToken();
-  const activateUrl = `${BASE_URL}/auth/activateshortvideo`;
+  const activateUrl = `${EXPO_PUBLIC_BASE_URL}/auth/activateshortvideo`;
   try {
     const response = await axios.post(activateUrl, {
         referralCode: referralCode

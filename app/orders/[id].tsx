@@ -2,9 +2,8 @@ import { useLocalSearchParams } from 'expo-router';
 import { Alert, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { getToken } from '@/helpers/authStorage';
-import Constants from 'expo-constants';
 import axios from 'axios';
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 
 interface OrderItem {
   productId: string;
@@ -57,7 +56,7 @@ const OrderDetails = () => {
 
     const fetchOrder = async () => {
     const token = await getToken();
-    const getOrdersUrl = `${BASE_URL}/ecart/user/order/getorders?id=${id}`;
+    const getOrdersUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/getorders?id=${id}`;
     try {
       const response = await axios.get(getOrdersUrl, {
         headers: {

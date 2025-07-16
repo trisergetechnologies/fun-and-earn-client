@@ -13,12 +13,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Constants from 'expo-constants';
 import axios from 'axios';
 import { getToken } from '@/helpers/authStorage';
 import { useProfile } from '@/components/ProfileContext';
 
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 
 const BankScreen = () => {
   const {userProfile, refreshUserProfile} = useProfile();
@@ -43,7 +42,7 @@ const BankScreen = () => {
         upiId,
       };
 
-      const url = bankDetails ? `${BASE_URL}/ecart/user/general/updatebankdetails` : `${BASE_URL}/ecart/user/general/addbankdetails`;
+      const url = bankDetails ? `${EXPO_PUBLIC_BASE_URL}/ecart/user/general/updatebankdetails` : `${EXPO_PUBLIC_BASE_URL}/ecart/user/general/addbankdetails`;
       const method = bankDetails ? 'patch' : 'post';
       const response = await axios[method](url, payload, {
         headers: { Authorization: `Bearer ${token}` },
@@ -66,7 +65,7 @@ const BankScreen = () => {
   const handleDelete = async () => {
     try {
       const token = await getToken();
-      const res = await axios.delete(`${BASE_URL}/ecart/user/general/deletebankdetails`, {
+      const res = await axios.delete(`${EXPO_PUBLIC_BASE_URL}/ecart/user/general/deletebankdetails`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

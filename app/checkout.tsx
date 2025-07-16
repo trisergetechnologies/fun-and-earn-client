@@ -13,9 +13,8 @@ import {
 } from 'react-native';
 import { useCart } from '.././components/CartContext';
 import { getToken } from '@/helpers/authStorage';
-import Constants from 'expo-constants';
 import axios from 'axios';
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 
 const PaymentGateway = async () => {
   return {status: 'success'}
@@ -58,7 +57,7 @@ const CheckoutScreen = () => {
 
   const fetchAddresses = async () => {
     const token = await getToken();
-    const fetchUrl = `${BASE_URL}/ecart/user/address/addresses`;
+    const fetchUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/address/addresses`;
     try {
       const response = await axios.get(fetchUrl, {
         headers: {
@@ -77,7 +76,7 @@ const CheckoutScreen = () => {
 
   const getWallet = async () => {
     const token = await getToken();
-    const getWalletUrl = `${BASE_URL}/ecart/user/wallet/getwallet`;
+    const getWalletUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/getwallet`;
     try {
       const response = await axios.get(getWalletUrl, {
         headers: {
@@ -121,7 +120,7 @@ const CheckoutScreen = () => {
 
     if (currBal >= total && useWallet === true) {
       const token = await getToken();
-      const placeWalletOnlyOrderUrl = `${BASE_URL}/ecart/user/placeorder/walletonly`;
+      const placeWalletOnlyOrderUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/placeorder/walletonly`;
       try {
         const response = await axios.post(placeWalletOnlyOrderUrl, {
           deliverySlug: selectedSlug
@@ -145,7 +144,7 @@ const CheckoutScreen = () => {
       const payRes = await Payment();
       if (payRes.success) {
         const token = await getToken();
-        const placeOrderUrl = `${BASE_URL}/ecart/user/order/placeorder`;
+        const placeOrderUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/placeorder`;
         try {
           const response = await axios.post(placeOrderUrl, {
             paymentId: payRes.paymentId,
@@ -173,7 +172,7 @@ const CheckoutScreen = () => {
   };
 
   const fetchCart = async () => {
-    const url = `${BASE_URL}/ecart/user/cart/getcart`
+    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/getcart`
     const token = await getToken();
 
     try {
@@ -208,7 +207,7 @@ const CheckoutScreen = () => {
 
   const toggleUseWallet = async() => {
     const token = await getToken();
-    const useWalletUrl = `${BASE_URL}/ecart/user/cart/usewallet`;
+    const useWalletUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/usewallet`;
     try {
       const response = await axios.patch(useWalletUrl, { useWallet: !useWallet } ,{
         headers: {

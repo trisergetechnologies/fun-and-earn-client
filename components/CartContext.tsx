@@ -1,11 +1,9 @@
 import { getToken } from '@/helpers/authStorage';
-import { useProtectedScreen } from '@/hooks/useProtectedScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import Constants from 'expo-constants';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 
 export type Product = {
   __v: number;
@@ -49,7 +47,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
 
     const fetchCart = async () => {
-    const url = `${BASE_URL}/ecart/user/cart/getcart`
+    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/getcart`
     const token = await getToken();
  
     try {
@@ -80,8 +78,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addToCart = async (product: Product) => {
 
-    const url = `${BASE_URL}/ecart/user/cart/getcart`
-    const addUrl = `${BASE_URL}/ecart/user/cart/addcart`
+    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/getcart`
+    const addUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/addcart`
     const token = await getToken();
     
       try {
@@ -117,7 +115,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const removeFromCart = async (id: string) => {
-    const removeItemUrl = `${BASE_URL}/ecart/user/cart/removeitem`
+    const removeItemUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/removeitem`
     const token = await getToken();
 
     try {
@@ -145,7 +143,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const updateQty = async (id: string, qty: number) => {
 
-    const updateUrl = `${BASE_URL}/ecart/user/cart/updatecart`
+    const updateUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/updatecart`
     const token = await getToken();
 
     try {

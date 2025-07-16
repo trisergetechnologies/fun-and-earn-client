@@ -5,7 +5,7 @@ import { Colors } from '@/constants/Colors';
 import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import Constants from 'expo-constants';
+// import Constants from 'expo-constants';
 
 
 import { router } from 'expo-router';
@@ -27,7 +27,8 @@ import {
   View,
 } from 'react-native';
 
-const { BASE_URL } = Constants.expoConfig?.extra || {};
+// const { EXPO_PUBLIC_BASE_URL } = Constants.expoConfig?.extra || {};
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'http://147.93.58.23:6005/api/v1';
 const { width } = Dimensions.get('window');
 
 // const sampleCategories = [
@@ -75,7 +76,7 @@ const ExploreScreen = () => {
 
   const fetchProducts = async () => {
     setLoading(true);
-    const url = `${BASE_URL}/ecart/user/product/products`;
+    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/product/products`;
     const token = await getToken();
 
     try {
@@ -101,7 +102,7 @@ const ExploreScreen = () => {
 
   const fetchCategories = async () => {
   setLoading(true);
-  const url = `${BASE_URL}/ecart/user/categories`; // ✅ Corrected route
+  const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/categories`; // ✅ Corrected route
   const token = await getToken();
 
   try {
