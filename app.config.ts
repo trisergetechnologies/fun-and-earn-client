@@ -16,7 +16,7 @@ const config: ExpoConfig = {
     package: 'com.mpdreams.dreammart',
     permissions: ["INTERNET"],
     adaptiveIcon: {
-      foregroundImage: './assets/images/splash-icon.png',
+      foregroundImage: './assets/images/icon-dream-mart.png',
       backgroundColor: '#ffffff',
     },
     edgeToEdgeEnabled: true,

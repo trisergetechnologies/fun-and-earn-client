@@ -1,6 +1,6 @@
+import { useAuth } from '@/components/AuthContext';
 import Spinner from '@/components/Spinner';
 import { Colors } from '@/constants/Colors';
-import { getToken, saveToken } from '@/helpers/authStorage';
 import axios from 'axios';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -17,7 +17,6 @@ import {
   View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
-import { useAuth } from '../components/AuthContext';
 
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
@@ -26,7 +25,7 @@ const SignInScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { isAuthenticated, login } = useAuth();
+  const { login } = useAuth();
 
   // Spinner animation
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -46,10 +45,6 @@ const SignInScreen = () => {
     if (loading) startRotation();
   }, [loading]);
 
-  const rotateY = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
 
   useFocusEffect(
     useCallback(() => {
@@ -57,6 +52,7 @@ const SignInScreen = () => {
       setPassword('');
     }, [])
   );
+
 
   const handleSignIn = async () => {
     if(!email || !password) return Toast.show({type: 'error', text1: 'Missing Fields', text2: "Please fill all fields.", position: 'top' });
@@ -83,9 +79,8 @@ const SignInScreen = () => {
         return;
       }
 
-      await saveToken(data.token);
       await login(data.token, data.user);
-      router.replace('/(tabs)'); // No success message shown
+      router.push('/tabs/explore');
     } catch (error: any) {
       const msg = axios.isAxiosError(error)
         ? error.response?.data?.message || error.message
@@ -100,21 +95,7 @@ const SignInScreen = () => {
       setLoading(false);
     }
   };
-
-    useEffect(() => {
-      console.log("is auth from index", isAuthenticated)
-      setLoading(true);
-      let token
-      const getAuth=async()=>{
-        token = await getToken();
-      }
-      getAuth();
-        if (token) {
-          router.replace('/(tabs)');
-        }
-        setLoading(false);
-
-    }, [isAuthenticated]);
+  console.log("in sign in screen")
 
   return (
     <>

@@ -83,6 +83,7 @@ const SignUpScreen = () => {
   const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleGetOtp = async () => {
+
     if (!name || !email || !state_address || !password || !confirmPassword || !gender) {
       Toast.show({ type: 'error', text1: 'Missing Fields', text2: 'Please fill all fields.' });
       return;
@@ -102,9 +103,9 @@ const SignUpScreen = () => {
 
     const otpUrl = `${EXPO_PUBLIC_BASE_URL}/auth/sendotp`;
     try {
+      setIsOtpSent(true);
       const response = await axios.post(otpUrl, { email });
       if (response.data.success) {
-        setIsOtpSent(true);
 
         setTimeout(() => {
           setIsOtpSent(false);
@@ -112,9 +113,11 @@ const SignUpScreen = () => {
 
         Toast.show({ type: 'success', text1: 'OTP Sent', text2: 'Check your Gmail inbox.' });
       } else {
+        setIsOtpSent(false);
         Toast.show({ type: 'error', text1: 'OTP Failed', text2: 'Could not send OTP.' });
       }
     } catch (error) {
+      setIsOtpSent(false);
       console.error(error);
       Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to send OTP.' });
     }
@@ -176,7 +179,7 @@ const SignUpScreen = () => {
         });
 
         setTimeout(() => {
-          router.replace('/signin');
+          router.push('/(public)/signin');
         }, 1000);
 
       } else {
@@ -189,7 +192,7 @@ const SignUpScreen = () => {
       setLoading(false);
     }
   };
-
+  const otpBtnColor = isOtpSent ? 'grey' : '';
   const SignUp = () => (
     <View style={styles.inputWrapper}>
       <TextInput placeholder="Full Name" placeholderTextColor="#666" style={styles.input} value={name} onChangeText={setName} />
@@ -225,26 +228,12 @@ const SignUpScreen = () => {
 
       <View style={styles.otpRow}>
         <TextInput placeholder="Enter OTP" placeholderTextColor="#666" style={[styles.input, { flex: 1 }]} value={otp} onChangeText={setOtp} keyboardType="number-pad" />
-        <TouchableOpacity disabled={isOtpSent ? true : false} onPress={handleGetOtp} style={styles.otpButton}>
+        <TouchableOpacity disabled={isOtpSent} onPress={handleGetOtp} style={[styles.otpButton, {backgroundColor: otpBtnColor}]}>
           <Text style={styles.otpBtnTxt}>Get OTP</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
-
-  useEffect(() => {
-    setLoading(true);
-    let token
-    const getAuth = async () => {
-      token = await getToken();
-    }
-    getAuth();
-    if (token) {
-      router.replace('/(tabs)');
-    }
-    setLoading(false);
-
-  }, []);
 
   return (
     <>

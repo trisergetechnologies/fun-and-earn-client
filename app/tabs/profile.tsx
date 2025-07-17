@@ -11,49 +11,46 @@ import {
 import { useAuth } from '../../components/AuthContext';
 import { useEffect } from 'react';
 import { useProfile } from '@/components/ProfileContext';
+import User from '@/assets/images/user.png';
 
 
 const ProfileScreen = () => {
   const router = useRouter();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { user, logout } = useAuth();
   const {userProfile, refreshUserProfile} = useProfile();
 
   const handleLogout = async () => {
     console.log(handleLogout)
     await logout();         
-    router.replace('/signin');
+    router.replace('/(public)/signin');
   };
 
   useEffect(() => {
-      if (isAuthenticated === false) {
-        logout();
-        router.replace('/signin');
-      }
       refreshUserProfile();
-  }, [isAuthenticated]);
+  }, []);
 
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* <Text style={styles.heading}>  </Text> */}
       <Image
-        source={{ uri: 'https://avatar.iran.liara.run/public/boy' }}
+        source={User}
         style={styles.avatar}
       />
       <Text style={styles.name}>{userProfile?.name}</Text>
       <Text style={{marginBottom: 24}}>{userProfile?.email}</Text>
 
       <View style={styles.options}>
-        <Option icon={<Ionicons name="clipboard-outline" size={20} />} label="Your Orders" onPress={() => router.push('/orders')} />   
+        <Option icon={<Ionicons name="clipboard" size={18} />} label="Your Orders" onPress={() => router.push('/orders')} />   
 
-        <Option icon={<FontAwesome name="credit-card" size={18} />} label="Wallet Transactions" onPress={() => router.push('/transactions')} />
-        <Option icon={<FontAwesome name="bank" size={18} />} label="Bank Details" onPress={() => router.push('/BankScreen')} />
-        <Option icon={<Entypo name="edit" size={18} />} label="Edit Profile" onPress={() => router.push('/UpdateProfile')} />
-        <Option icon={<Ionicons name="key" size={20} />} label="Change Password" onPress={() => router.push('/setting')} />
-        <Option icon={<Entypo name="edit" size={18} />} label="Manage Address" onPress={() => router.push('/Address')} />        
-        <Option icon={<Ionicons name="log-out-outline" size={20} />} label="Logout" onPress={handleLogout}/>
-        <Option icon={<Ionicons name="play-outline" size={20} />} label="Activate Short Video" onPress={()=> router.push('/activate')}/>
-        <Option icon={<Ionicons name="chatbubbles-outline" size={20} />} label="Customer Support" onPress={() => router.push('/CustomerSupport')} />
+        <Option icon={<FontAwesome name="credit-card" size={18} />} label="Wallet Transactions" onPress={() => router.push('/private/transactions')} />
+        <Option icon={<FontAwesome name="bank" size={18} />} label="Bank Details" onPress={() => router.push('/tabs/BankScreen')} />
+        <Option icon={<Entypo name="edit" size={18} />} label="Edit Profile" onPress={() => router.push('/private/UpdateProfile')} />
+        <Option icon={<Ionicons name="key" size={18} />} label="Change Password" onPress={() => router.push('/private/setting')} />
+        <Option icon={<Entypo name="edit" size={18} />} label="Manage Address" onPress={() => router.push('/private/Address')} />        
+        <Option icon={<Ionicons name="log-out" size={18} />} label="Logout" onPress={handleLogout}/>
+        <Option icon={<Ionicons name="play" size={18} />} label="Activate Short Video" onPress={()=> router.push('/private/activate')}/>
+        <Option icon={<Ionicons name="chatbubbles" size={18} />} label="Customer Support" onPress={() => router.push('/private/CustomerSupport')} />
       </View>
     </ScrollView>
   );

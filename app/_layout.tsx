@@ -1,62 +1,38 @@
-import AuthProvider from '@/components/AuthContext';
-import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import 'react-native-reanimated';
-import Toast from 'react-native-toast-message';
-import { CartProvider } from '.././components/CartContext';
+import AuthProvider from '@/components/AuthContext';
 import ProfileProvider from '@/components/ProfileContext';
-// import { AuthProvider } from '../components/AuthContext';
+import { CartProvider } from '@/components/CartContext';
+import Toast from 'react-native-toast-message';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [loaded] = useFonts({
+  const [fontsLoaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+    if (fontsLoaded) SplashScreen.hideAsync();
+  }, [fontsLoaded]);
 
-  if (!loaded) {
-    return null;
-  }
+  if (!fontsLoaded) return null;
 
   return (
-    // <ThemeProvider value={'light'}>
-    
     <AuthProvider>
       <ProfileProvider>
-    <CartProvider>
-      <>
-      <Stack>
-      
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="signin" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name="signup" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name ="checkout" options={{headerShown: false}}/>
-        <Stack.Screen name ="success" options={{headerShown: false}}/>
-        <Stack.Screen name ="CustomerSupport" options={{headerShown: false}}/>
-        <Stack.Screen name ="setting" options={{headerShown: false}}/>
-        <Stack.Screen name ="UpdateProfile" options={{headerShown: false}}/>
-        <Stack.Screen name ="transactions" options={{headerShown: false}}/>
-        <Stack.Screen name="orders" options={{ headerShown: false }} />
-        <Stack.Screen name="category" options={{ headerShown: false }} />
-        <Stack.Screen name="Address" options={{ headerShown: false }} />
-        
-      </Stack>
-      <Toast/>
-      
-      </>
-      </CartProvider>
+        <CartProvider>
+          <Stack>
+            <Stack.Screen name="(public)" options={{ headerShown: false }} />
+            <Stack.Screen name="orders" options={{ headerShown: false }} />
+            <Stack.Screen name="private" options={{ headerShown: false }} />
+            <Stack.Screen name="tabs" options={{ headerShown: false }} />
+          </Stack>
+          <Toast />
+        </CartProvider>
       </ProfileProvider>
-      </AuthProvider>
-      
-     
+    </AuthProvider>
   );
 }

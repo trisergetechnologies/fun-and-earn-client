@@ -1,7 +1,7 @@
 // import AddressList from '@/addressComponents/AddressList';
 import React, { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
-import AddressList from '../addressComponents/AddressList';
+import AddressList from '../../addressComponents/AddressList';
 import { getToken } from '@/helpers/authStorage';
 import axios from 'axios';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';

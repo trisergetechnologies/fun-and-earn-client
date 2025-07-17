@@ -3,9 +3,10 @@ import { usePathname, useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCart } from './CartContext';
+import { useEffect } from 'react';
 
 const tabs = [
-  { name: 'index', label: 'Home', icon: 'home-outline' },
+  { name: 'explore', label: 'Home', icon: 'home-outline' },
   { name: 'rewards', label: 'Rewards', icon: 'cash-outline' },
   { name: 'wallet', label: 'Wallet', icon: 'wallet-outline' },
   { name: 'cart', label: 'Cart', icon: 'cart-outline' },
@@ -15,10 +16,14 @@ const tabs = [
 export default function CustomBottomNav() {
   const router = useRouter();
   const pathname = usePathname();
-  const { cart } = useCart();
+  const { cart, refreshCart } = useCart();
 
-  const active = pathname === '/(tabs)' ? 'index' : pathname.split('/').pop();
 
+  const active = tabs.find(tab => pathname.includes(tab.name))?.name;
+
+  useEffect(()=>{
+    refreshCart();
+  },[])
 
   return (
      <SafeAreaView edges={['bottom']} style={styles.wrapper}>
@@ -26,7 +31,7 @@ export default function CustomBottomNav() {
       {tabs.map(tab => (
         <TouchableOpacity
           key={tab.name}
-          onPress={() => router.push(tab.name === 'index' ? '/(tabs)' : `/${tab.name}`)}
+          onPress={() => router.replace(tab.name === 'explore' ? '/tabs/explore' : `/tabs/${tab.name}`)}
           style={styles.item}
         >
           <Ionicons

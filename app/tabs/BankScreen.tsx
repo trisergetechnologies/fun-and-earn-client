@@ -51,7 +51,7 @@ const BankScreen = () => {
       if (response.data.success) {
         refreshUserProfile();
         Alert.alert(response.data.message);
-        router.replace('/profile');
+        router.push('/(public)/signin');
       } else {
         Alert.alert(response.data.message || 'Failed');
       }
@@ -76,7 +76,7 @@ const BankScreen = () => {
         setIfscCode('');
         setUpiId('');
         Alert.alert('Bank details removed.');
-        router.replace('/profile');
+        router.replace('/(public)/signin');
       }
     } catch (error: any) {
       console.error(error?.response?.data || error.message);

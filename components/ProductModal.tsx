@@ -1,12 +1,11 @@
 import React from 'react';
 import { useCart } from '../components/CartContext';
-
 import { FontAwesome } from '@expo/vector-icons';
 import {
     Alert,
     Dimensions,
     Image,
-
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -24,31 +23,30 @@ interface ProductModalProps {
     visible: boolean;
     onClose: () => void;
     product: {
-    __v: number;
-    _id: string;
-    categoryId: string;
-    createdAt: string;
-    createdByRole: string;
-    description: string;
-    discountPercent: number;
-    finalPrice: number;
-    images: string[];
-    isActive: boolean;
-    price: number;
-    sellerId: string;
-    stock: number;
-    title: string;
-    updatedAt: string;
+        __v: number;
+        _id: string;
+        categoryId: string;
+        createdAt: string;
+        createdByRole: string;
+        description: string;
+        discountPercent: number;
+        finalPrice: number;
+        images: string[];
+        isActive: boolean;
+        price: number;
+        sellerId: string;
+        stock: number;
+        title: string;
+        updatedAt: string;
     } | null;
 }
 
 const ProductModal: React.FC<ProductModalProps> = ({ visible, onClose, product }) => {
     const translateY = useSharedValue(height);
-    const { addToCart } = useCart(); // ✅ Access addToCart from context
-
+    const { addToCart } = useCart();
 
     React.useEffect(() => {
-        translateY.value = withTiming(visible ? height * 0.25 : height, { duration: 300 });
+        translateY.value = withTiming(visible ? height * 0.1 : height, { duration: 300 });
     }, [visible]);
 
     const animatedStyle = useAnimatedStyle(() => ({
@@ -60,30 +58,38 @@ const ProductModal: React.FC<ProductModalProps> = ({ visible, onClose, product }
     return (
         <Animated.View style={[styles.modalContainer, animatedStyle]}>
             <View style={styles.modalContent}>
-                <Image source={{ uri: product.images[0] }} style={styles.productImage} />
-                <Text style={styles.productName}>{product.title}</Text>
-                <Text style={styles.productPrice}>₹{product.finalPrice}</Text>
-                {/* <View style={styles.ratingRow}>
-                    <FontAwesome name="star" size={14} color="#f1c40f" />
-                    <Text style={styles.productRating}>{product.rating}</Text>
-                </View> */}
-                <View style={styles.buttonRow}>
 
-                    <TouchableOpacity
-                        style={styles.cartButton}
-                        onPress={() => {
-                            addToCart(product); // ✅ Add to cart context
-                            Alert.alert('Cart', `${product.title} added to cart`);
-                            onClose(); 
-                        }}
-
-                    >
-                        <Text style={styles.cartButtonText}>Add to Cart</Text>
-                    </TouchableOpacity>
-                </View>
-                <TouchableOpacity onPress={onClose}>
-                    <Text style={styles.closeText}>Close</Text>
+                {/* Close button in top-right */}
+                <TouchableOpacity style={styles.closeIcon} onPress={onClose}>
+                    <Text style={styles.closeIconText}>✕</Text>
                 </TouchableOpacity>
+
+                <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <Image source={{ uri: product.images[0] }} style={styles.productImage} />
+
+                    <Text style={styles.productName}>{product.title}</Text>
+                    <Text style={styles.productPrice}>₹{product.finalPrice}</Text>
+
+                    <Text style={styles.sectionTitle}>Description</Text>
+                    <Text style={styles.productDescription}>{product.description}</Text>
+
+                    <View style={styles.buttonRow}>
+                        <TouchableOpacity
+                            style={styles.cartButton}
+                            onPress={() => {
+                                addToCart(product);
+                                Alert.alert('Cart', `${product.title} added to cart`);
+                                onClose();
+                            }}
+                        >
+                            <Text style={styles.cartButtonText}>Add to Cart</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
             </View>
         </Animated.View>
     );
@@ -96,7 +102,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 0,
         width: '100%',
-        height: '75%',
+        height: '90%',
         backgroundColor: '#fff',
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
@@ -108,70 +114,77 @@ const styles = StyleSheet.create({
         zIndex: 100,
     },
     modalContent: {
-        padding: 20,
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingTop: 40,
+        paddingBottom: 20,
+    },
+    scrollContent: {
+        paddingBottom: 30,
+    },
+    closeIcon: {
+        position: 'absolute',
+        top: 14,
+        right: 18,
+        zIndex: 10,
+        backgroundColor: '#fee2e2',
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    closeIconText: {
+        color: '#dc2626',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
     productImage: {
         width: '100%',
-        height: 180,
+        height: 200,
         borderRadius: 10,
-        resizeMode: 'cover',
+        resizeMode: 'contain',
+        backgroundColor: '#f3f4f6',
     },
     productName: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
         marginTop: 12,
+        color: '#111827',
     },
     productPrice: {
-        fontSize: 16,
+        fontSize: 18,
         color: '#3b82f6',
         marginTop: 6,
         fontWeight: '600',
     },
-    ratingRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 6,
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginTop: 18,
+        marginBottom: 4,
+        color: '#111827',
     },
-    productRating: {
-        fontSize: 13,
-        marginLeft: 5,
-        color: '#333',
+    productDescription: {
+        fontSize: 14,
+        lineHeight: 20,
+        color: '#4b5563',
     },
     buttonRow: {
         flexDirection: 'row',
-        marginTop: 14,
-        justifyContent: 'space-between',
-    },
-    buyButton: {
-        backgroundColor: '#10b981',
-        borderRadius: 6,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        flex: 1,
-        marginRight: 8,
-    },
-    buyButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        textAlign: 'center',
+        marginTop: 24,
+        justifyContent: 'center',
     },
     cartButton: {
         backgroundColor: '#3b82f6',
-        borderRadius: 6,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        flex: 1,
-        marginLeft: 8,
+        borderRadius: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 28,
     },
     cartButtonText: {
         color: '#fff',
         fontWeight: 'bold',
         textAlign: 'center',
-    },
-    closeText: {
-        textAlign: 'center',
-        marginTop: 20,
-        color: '#888',
-        fontSize: 13,
+        fontSize: 15,
     },
 });

@@ -23,7 +23,7 @@ type AuthContextType = {
   user: User | null;
   login: (token: string, userData: User) => Promise<void>;
   logout: () => Promise<void>;
-  updateUser: (name: any, phone: any) => Promise<void>;
+  updateUser: (name: string, phone: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,7 +31,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<User | null>(null);
-   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const loadAuthData = async () => {
@@ -68,20 +68,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
-    await SecureStore.deleteItemAsync('authToken');
-    await SecureStore.deleteItemAsync('userData');
-    setUser(null);
-    setIsAuthenticated(false);
-    console.log('logout worked');
+    try {
+      await SecureStore.deleteItemAsync('authToken');
+      await SecureStore.deleteItemAsync('userData');
+      setUser(null);
+      setIsAuthenticated(false);
+      console.log('Logout worked');
+    } catch (e) {
+      console.error('Logout failed:', e);
+    }
   };
 
-  const updateUser = async (name: any, phone: any )=> {
-      setUser(user => user ? { ...user, name: name, phone: phone } : user);
-      await SecureStore.setItemAsync('userData', JSON.stringify(user));
-  }
+  const updateUser = async (name: string, phone: string) => {
+    const updatedUser = user ? { ...user, name, phone } : user;
+    setUser(updatedUser);
+    if (updatedUser) {
+      await SecureStore.setItemAsync('userData', JSON.stringify(updatedUser));
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, updateUser, isAuthLoading, }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        user,
+        login,
+        logout,
+        updateUser,
+        isAuthLoading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -93,5 +109,4 @@ export const useAuth = () => {
   return context;
 };
 
-// ✅ Fix: Add this line for Expo Router compatibility
-export default AuthProvider;
+export default AuthProvider; // ✅ required for expo-router layout import

@@ -29,13 +29,13 @@ const IntroScreen = (props: Props) => {
             entering={FadeInUp.duration(1000).delay(200)}
             style={styles.wrapper}
           >
-            <Text style={styles.title}> Dream Mart</Text>
+            <Text style={styles.title}>Dream Mart</Text>
             <Text style={styles.subtitle}>
               Unlock exclusive rewards, enjoy seamless shopping, and earn while you shop. Fast, secure and rewarding.
             </Text>
 
             <Animated.View entering={FadeInDown.delay(500).duration(1000)}>
-              <Link href="/signin" asChild>
+              <Link href="/(public)/signin" asChild>
                 <TouchableOpacity style={styles.button}>
                  
                   <Text style={styles.buttonText}>Get Started</Text>

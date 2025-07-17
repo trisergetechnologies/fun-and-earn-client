@@ -103,6 +103,7 @@ const AddressForm: React.FC<AddressFormProps> = ({ address, onSubmit, onCancel }
         keyboardType="phone-pad"
         value={formData.phone}
         onChangeText={(text) => handleChange('phone', text)}
+        maxLength={10}
       />
 
       <View style={styles.checkboxContainer}>

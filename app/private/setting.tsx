@@ -21,7 +21,6 @@ const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-ap
 export default function ChangePasswordScreen() {
 
   const router = useRouter();
-  const { isAuthenticated, user, logout } = useAuth();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -56,7 +55,7 @@ export default function ChangePasswordScreen() {
       });
       if (res.data.success) {
         Alert.alert(res.data.message);
-        router.push('/profile');
+        router.push('/tabs/profile');
       }
       Alert.alert(res.data.message);
     } catch (error: any) {
@@ -67,12 +66,6 @@ export default function ChangePasswordScreen() {
 
 
 
-  useEffect(() => {
-    if (isAuthenticated === false) {
-      logout();
-      router.replace('/signin');
-    }
-  }, [isAuthenticated]);
 
   return (
     <KeyboardAvoidingView

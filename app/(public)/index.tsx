@@ -1,17 +1,20 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { Link, Stack } from "expo-router";
+import { Link, Stack, useRouter } from "expo-router";
 import { ImageBackground, StyleSheet, Text, TouchableOpacity } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
 
 import { Colors } from "@/constants/Colors";
+import { useAuth } from "@/components/AuthContext";
 
 type Props = {};
 
 const IntroScreen = (props: Props) => {
+  const router = useRouter();
+  const { isAuthenticated } = useAuth(); 
   return (
     <>
-     <Stack initialRouteName="index"> {/* 👈 Forces /app/index.tsx */}
+     <Stack>
       <Stack.Screen name="index" />
       
     </Stack>
@@ -35,12 +38,9 @@ const IntroScreen = (props: Props) => {
             </Text>
 
             <Animated.View entering={FadeInDown.delay(500).duration(1000)}>
-              <Link href="/signin" asChild>
-                <TouchableOpacity style={styles.button}>
-                 
-                  <Text style={styles.buttonText}>Get Started</Text>
+                <TouchableOpacity style={styles.button} onPress={()=> router.push(isAuthenticated ?'/tabs/explore':'/signin')}>
+                  <Text style={styles.buttonText}>{isAuthenticated ? "Explore Dream Cart": "Get Started"}</Text>
                 </TouchableOpacity>
-              </Link>
             </Animated.View>
           </Animated.View>
         </LinearGradient>

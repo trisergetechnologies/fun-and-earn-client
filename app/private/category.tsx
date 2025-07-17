@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -14,22 +14,39 @@ import {
   View
 } from 'react-native';
 
-import { useAuth } from '@/components/AuthContext';
 import { useCart } from '@/components/CartContext'; // ✅ Important: import CartContext
 import ProductModal from '@/components/ProductModal';
 import { getToken } from '@/helpers/authStorage';
 import axios from 'axios';
+import { Ionicons } from '@expo/vector-icons';
 const { width } = Dimensions.get('window');
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
+type Product = {
+  __v: number;
+  _id: string;
+  categoryId: string;
+  createdAt: string;
+  createdByRole: string;
+  description: string;
+  discountPercent: number;
+  finalPrice: number;
+  images: string[];
+  isActive: boolean;
+  price: number;
+  sellerId: string;
+  stock: number;
+  title: string;
+  updatedAt: string;
+};
+
 
 export default function CategoryScreen() {
+
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const [search, setSearch] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [products, setProducts] = useState(null);
-  const { cart ,addToCart } = useCart(); // ✅
-  console.log('Cart Items:', cart); 
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [products, setProducts] = useState<Product[] | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current; // ✅ FADE-IN animation
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -44,17 +61,7 @@ export default function CategoryScreen() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const formatted = response.data.data.map((item) => ({
-        id: item._id,
-        name: item.title,
-        price: item.finalPrice,
-        image: Array.isArray(item.images) && item.images.length > 0
-          ? item.images[0]
-          : 'https://via.placeholder.com/150',
-        sellerId: item.seller?._id || item.sellerId || 'unknown', 
-      }));
-
-      setProducts(formatted);
+      setProducts(response.data.data);
 
       // ✅ Start fade-in animation
       Animated.timing(fadeAnim, {
@@ -71,27 +78,33 @@ export default function CategoryScreen() {
   };
 
 
-  const renderProduct = ({ item }) => (
-    <TouchableOpacity style={styles.productWrapper} onPress={() => setSelectedProduct(item)}>
+  // const renderProduct = ({ item }) => (
+  //   <TouchableOpacity style={styles.productWrapper} onPress={() => setSelectedProduct(item)}>
+  //     <View style={styles.productCard}>
+  //       <Image source={{ uri: item.image[0] }} style={styles.productImage} />
+  //       <View style={styles.cardDetails}>
+  //         <Text style={styles.productPrice}> ₹{item.price}</Text>
+  //         <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+  //       </View>
+  //     </View>
+  //   </TouchableOpacity>
+  // );
+
+    const renderProduct = ({ item }: { item: Product }) => (
+    <TouchableOpacity onPress={() => setSelectedProduct(item)} style={styles.productWrapper}>
       <View style={styles.productCard}>
-        <Image source={{ uri: item.image }} style={styles.productImage} />
+        <Image source={{ uri: item.images[0] }} style={styles.productImage} />
         <View style={styles.cardDetails}>
-          <Text style={styles.productPrice}> ₹{item.price}</Text>
-          <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+          <Text style={styles.productPrice}> ₹{item.finalPrice}</Text>
+          <Text style={styles.productName} numberOfLines={2}>{item.title}</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
-
-      const router = useRouter();
-      const { isAuthenticated, user, logout } = useAuth();
   
       useEffect(() => {
-          if (isAuthenticated === false) {
-            router.replace('/signin');
-          }
           fetchProducts()
-      }, [isAuthenticated]);
+      }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f9f9f9' }}>
@@ -108,23 +121,18 @@ export default function CategoryScreen() {
       <FlatList
         data={products}
         renderItem={renderProduct}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item._id.toString()}
         numColumns={2}
         columnWrapperStyle={{ justifyContent: 'space-between' }}
         contentContainerStyle={{ padding: 12 }}
         ListEmptyComponent={<Text style={{ textAlign: 'center', marginTop: 300 }}>No products found</Text>}
       />
 
-      {/* ✅ Working Product Modal */}
       {selectedProduct && (
         <ProductModal
           visible={!!selectedProduct}
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
-          onAddToCart={() => {
-            addToCart(selectedProduct);
-            setSelectedProduct(null);
-          }}
         />
       )}
       </Animated.View>
@@ -165,6 +173,7 @@ const styles = StyleSheet.create({
   productImage: {
     width: '100%',
     height: width * 0.38,
+    resizeMode: 'contain'
   },
   cardDetails: {
     padding: 10,

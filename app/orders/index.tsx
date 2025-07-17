@@ -92,32 +92,6 @@ export default function OrdersScreen() {
         <Ionicons name="cart-outline" size={24} />
       </View>
 
-      {/* <TextInput
-        style={styles.searchInput}
-        placeholder="Search your order here"
-      /> */}
-
-      {/* <FlatList
-        data={orders}
-        keyExtractor={item => item._id}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.card} onPress={() => router.push(`/orders/${item._id}`)}>
-            <Image source={{ uri: item.image }} style={styles.image} />
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.deliveryText}>Delivered on {item.date}</Text>
-              <Text style={styles.productName} numberOfLines={1}>{item.product}</Text>
-              <View style={styles.ratingRow}>
-                {[...Array(5)].map((_, i) => (
-                  <Ionicons key={i} name="star-outline" size={16} color="#999" />
-                ))}
-              </View>
-              <Text style={styles.rateText}>Rate this product now</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#888" />
-          </TouchableOpacity>
-        )}
-      /> */}
-
    <FlatList
       data={orders}
       keyExtractor={item => item._id}

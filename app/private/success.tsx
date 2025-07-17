@@ -1,25 +1,15 @@
-import { useAuth } from '@/components/AuthContext';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const SuccessScreen = () => {
   const router = useRouter();
-      const { isAuthenticated, user, logout } = useAuth();
-  
-      useEffect(() => {
-        console.log("is auth from index", isAuthenticated)
-          if (isAuthenticated === false) {
-            router.replace('/signin');
-          }
-      }, [isAuthenticated]);
 
   return (
   
     <View style={styles.container}>
       <Text style={styles.title}>🎉 Order Placed!</Text>
       <Text style={styles.subtitle}>Thank you for shopping with us.</Text>
-      <TouchableOpacity style={styles.homeButton} onPress={() => router.replace('/(tabs)')}>
+      <TouchableOpacity style={styles.homeButton} onPress={() => router.push('/tabs/explore')}>
         <Text style={styles.homeText}>Go to Home</Text>
       </TouchableOpacity>
     </View>

@@ -45,7 +45,7 @@ const WalletScreen = () => {
         </View>
       </View>
 
-      <TouchableOpacity onPress={()=> router.push('/transactions')} style={[styles.actionButton, { backgroundColor: '#3b82f6' }]}>
+      <TouchableOpacity onPress={()=> router.push('/private/transactions')} style={[styles.actionButton, { backgroundColor: '#3b82f6' }]}>
         <Text style={styles.buttonText}>Wallet Summary</Text>
       </TouchableOpacity>
     </ScrollView>

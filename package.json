@@ -20,6 +20,7 @@
     "axios": "^1.9.0",
     "expo": "53.0.19",
     "expo-blur": "~14.1.5",
+    "expo-build-properties": "~0.14.8",
     "expo-constants": "~17.1.6",
     "expo-font": "~13.3.1",
     "expo-haptics": "~14.1.4",
@@ -48,8 +49,7 @@
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
     "tailwindcss": "^3.4.17",
-    "uninstall": "^0.0.0",
-    "expo-build-properties": "~0.14.8"
+    "uninstall": "^0.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

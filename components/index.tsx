@@ -31,17 +31,6 @@ import {
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 const { width } = Dimensions.get('window');
 
-// const sampleCategories = [
-//   { id: 1, name: 'Bikes', icon: 'https://picsum.photos/40?2' },
-//   { id: 2, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
-//   { id: 3, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
-//   { id: 4, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
-//   { id: 5, name: 'Electronics', icon: 'https://picsum.photos/40?2' },
-//   { id: 6, name: 'Furniture', icon: 'https://picsum.photos/40?3' },
-//   { id: 7, name: 'Shoes', icon: 'https://picsum.photos/40?4' },
-//   { id: 8, name: 'Jewellery', icon: 'https://picsum.photos/40?5' },
-// ];
-
 type Product = {
   __v: number;
   _id: string;
@@ -61,7 +50,7 @@ type Product = {
 };
 
 const ExploreScreen = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isAuthLoading } = useAuth();
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -101,58 +90,66 @@ const ExploreScreen = () => {
   };
 
   const fetchCategories = async () => {
-  setLoading(true);
-  const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/categories`; // ✅ Corrected route
-  const token = await getToken();
+    setLoading(true);
+    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/categories`; // ✅ Corrected route
+    const token = await getToken();
 
-  try {
-    const response = await axios.get(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    try {
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    const formattedCategories = response.data.data.map((item) => ({
-      id: item._id,
-      name: item.title,
-      slug: item.slug,
-      image: 'https://via.placeholder.com/150', // fallback since schema has no image
-      ownerId: item.ownerId || 'unknown',
-    }));
+      const formattedCategories = response.data.data.map((item: any) => ({
+        id: item._id,
+        name: item.title,
+        slug: item.slug,
+        image: 'https://via.placeholder.com/150', // fallback since schema has no image
+        ownerId: item.ownerId || 'unknown',
+      }));
 
-    setSampleCategories(formattedCategories); // ✅ Setting category state
-    console.log("sample categories", formattedCategories)
+      setSampleCategories(formattedCategories); // ✅ Setting category state
+      console.log("sample categories", formattedCategories)
 
-    // Optional: start animation if needed
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 700,
-      easing: Easing.inOut(Easing.ease),
-      useNativeDriver: true,
-    }).start();
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-  } finally {
-    setLoading(false);
-  }
-};
+      // Optional: start animation if needed
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 700,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if(isAuthenticated == false){
-      router.replace('/signin');
-    }
-    else{
       fetchCategories();
       fetchProducts();
-    }
   }, []);
 
-  const renderCategory = ({ item }) => (
-    <TouchableOpacity style={styles.categoryItem} onPress={() => router.push(`/category?slug=${item.slug}`)}>
-      <Image source={{ uri: item.icon }} style={styles.categoryIcon} />
-      <Text style={styles.categoryText}>{item.name}</Text>
-    </TouchableOpacity>
-  );
+  if(isAuthLoading) return <SimpleSpinner/>
 
-  const renderProduct = ({ item }: {item: Product}) => (
+
+  const renderCategory = ({ item }: {item:any}) => {
+    const iconUri = item.icon?.trim()
+      ? item.icon
+      : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name.charAt(0))}&background=3b82f6&color=fff&size=128&font-size=0.5`;
+
+    return (
+      <TouchableOpacity
+        style={styles.categoryItem}
+        onPress={() => router.push(`/private/category?slug=${item.slug}`)}
+      >
+        <Image source={{ uri: iconUri }} style={styles.categoryIcon} />
+        <Text style={styles.categoryText}>{item.name}</Text>
+      </TouchableOpacity>
+    );
+  };
+
+
+  const renderProduct = ({ item }: { item: Product }) => (
     <TouchableOpacity onPress={() => setSelectedProduct(item)} style={styles.productWrapper}>
       <View style={styles.productCard}>
         <Image source={{ uri: item.images[0] }} style={styles.productImage} />
@@ -167,7 +164,7 @@ const ExploreScreen = () => {
     </TouchableOpacity>
   );
 
-  const renderSuggestionCard = ({ item }: {item: Product}) => (
+  const renderSuggestionCard = ({ item }: { item: Product }) => (
     <TouchableOpacity onPress={() => setSelectedProduct(item)} style={styles.suggestionCardWrapper}>
       <View style={styles.suggestionCard}>
         <Image source={{ uri: item.images[0] }} style={styles.suggestionImage} />
@@ -213,61 +210,61 @@ const ExploreScreen = () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f9f9f9' }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {/* ✅ Wrap full content in fade-in animation */}
-        {loading? <SimpleSpinner/> :
-        <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-          <View style={[styles.container, styles.searchRow]}>
-            <Text style={styles.logo}>D M</Text>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search"
-              value={search}
-              onChangeText={setSearch}
-            />
-            <Ionicons
-              style={styles.cartIcon}
-              name="cart-outline"
-              size={30}
-              color={Colors.gray}
-              onPress={() => router.push('/cart')}
-            />
-          </View>
+        {loading ? <SimpleSpinner /> :
+          <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+            <View style={[styles.container, styles.searchRow]}>
+              <Text style={styles.logo}>D M</Text>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search"
+                value={search}
+                onChangeText={setSearch}
+              />
+              <Ionicons
+                style={styles.cartIcon}
+                name="cart-outline"
+                size={30}
+                color={Colors.gray}
+                onPress={() => router.push('/tabs/cart')}
+              />
+            </View>
 
-          {search.length > 0 && (
-            <ScrollView style={styles.suggestionBox} keyboardShouldPersistTaps="handled">
-              {matchedProducts.map((item) => (
-                <TouchableOpacity
-                  key={item._id}
-                  onPress={() => {
-                    setSelectedProduct(item);
-                    setSearch('');
-                  }}
-                >
-                  <Text style={{ paddingVertical: 8, fontSize: 14 }}>{item.title}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
+            {search.length > 0 && (
+              <ScrollView style={styles.suggestionBox} keyboardShouldPersistTaps="handled">
+                {matchedProducts.map((item) => (
+                  <TouchableOpacity
+                    key={item._id}
+                    onPress={() => {
+                      setSelectedProduct(item);
+                      setSearch('');
+                    }}
+                  >
+                    <Text style={{ paddingVertical: 8, fontSize: 14 }}>{item.title}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
 
-          <FlatList
-            data={sampleProducts}
-            renderItem={renderProduct}
-            keyExtractor={(item) => item._id}
-            numColumns={2}
-            columnWrapperStyle={{ justifyContent: 'space-between' }}
-            contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 100 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            ListHeaderComponent={ListHeader}
-          />
-
-          {selectedProduct && (
-            <ProductModal
-              visible={!!selectedProduct}
-              product={selectedProduct}
-              onClose={() => setSelectedProduct(null)}
+            <FlatList
+              data={sampleProducts}
+              renderItem={renderProduct}
+              keyExtractor={(item) => item._id}
+              numColumns={2}
+              columnWrapperStyle={{ justifyContent: 'space-between' }}
+              contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 100 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              ListHeaderComponent={ListHeader}
             />
-          )}
-        </Animated.View> }
+
+            {selectedProduct && (
+              <ProductModal
+                visible={!!selectedProduct}
+                product={selectedProduct}
+                onClose={() => setSelectedProduct(null)}
+              />
+            )}
+          </Animated.View>}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -391,7 +388,7 @@ const styles = StyleSheet.create({
   productImage: {
     width: '100%',
     height: width * 0.38,
-    resizeMode: 'cover',
+    resizeMode: 'contain',
   },
   cardDetails: {
     padding: 10,
@@ -441,7 +438,7 @@ const styles = StyleSheet.create({
   suggestionImage: {
     width: '100%',
     height: 100,
-    resizeMode: 'cover',
+    resizeMode: 'contain',
   },
   suggestionInfo: {
     padding: 8,

@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { useCart } from '.././components/CartContext';
+import { useCart } from '../../components/CartContext';
 import { getToken } from '@/helpers/authStorage';
 import axios from 'axios';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
@@ -44,6 +44,7 @@ interface Address {
 }
 
 const CheckoutScreen = () => {
+  console.log("mai checkout pe aaya")
   const { cart, refreshCart } = useCart();
   const router = useRouter();
 
@@ -132,7 +133,7 @@ const CheckoutScreen = () => {
         if (response.data.success) {
           setLoading(false);
           refreshCart();
-          router.replace('/success');
+          router.push('/private/success');
         }
       } catch (error: any) {
         setLoading(false);
@@ -157,7 +158,7 @@ const CheckoutScreen = () => {
           if (response.data.success) {
             setLoading(false);
             refreshCart();
-            router.replace('/success');
+            router.push('/private/success');
           }
           setLoading(false);
         } catch (error: any) {
@@ -190,19 +191,12 @@ const CheckoutScreen = () => {
     }
   };
 
-  const { isAuthenticated, user, logout } = useAuth();
 
   useEffect(() => {
-    console.log("is auth from index", isAuthenticated)
-    if (isAuthenticated === false) {
-      router.replace('/signin');
-    }
-    else {
       fetchAddresses();
       getWallet();
       fetchCart();
-    }
-  }, [isAuthenticated]);
+  }, []);
 
 
   const toggleUseWallet = async() => {

@@ -114,13 +114,9 @@ export default function TransactionScreen() {
   };
   
       useEffect(() => {
-          if (isAuthenticated === false) {
-            router.replace('/signin');
-          }
           fetchTransactions();
           fetchWallet();
-
-      }, [isAuthenticated]);
+      }, []);
 
   return (
     <SafeAreaView style={styles.container}>

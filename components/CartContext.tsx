@@ -56,7 +56,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }});
 
       if (res.data.success) {
-        console.log(res.data.data.items);
         setCart(res.data.data.items);
       }
     } catch (err) {

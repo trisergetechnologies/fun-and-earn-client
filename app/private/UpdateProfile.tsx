@@ -16,17 +16,18 @@ import {
   View
 } from 'react-native';
 import { useProfile } from '@/components/ProfileContext';
+import SimpleSpinner from '@/components/SimpleSpinner';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 const UpdateProfile = () => {
 
   const router = useRouter();
-  const { isAuthenticated, user, updateUser } = useAuth();
+  const { updateUser } = useAuth();
     const {userProfile, refreshUserProfile} = useProfile();
 
-  const [name, setName] = useState<string | undefined>(userProfile?.name);
-  const [email, setEmail] = useState<string | undefined>(userProfile?.email);
-  const [phone, setPhone] = useState<string | undefined>(userProfile?.phone);
+  const [name, setName] = useState<string | undefined>(userProfile?.name || '');
+  const [email, setEmail] = useState<string | undefined>(userProfile?.email || '');
+  const [phone, setPhone] = useState<string | undefined>(userProfile?.phone || '');
   const [disabled, setDisabled] = useState<boolean>(false);
 
   const handleSave = async() => {
@@ -50,7 +51,7 @@ const UpdateProfile = () => {
         await updateUser(name, phone);
         Alert.alert(response.data.message);
         await refreshUserProfile();
-        router.push('/(tabs)');
+        router.push('/tabs/explore');
       }
       setDisabled(false);
       Alert.alert(response.data.message);
@@ -62,11 +63,17 @@ const UpdateProfile = () => {
     }
   };
 
-      useEffect(() => {
-          if (isAuthenticated === false) {
-            router.replace('/signin');
-          }
-      }, [isAuthenticated]);
+useEffect(() => {
+  refreshUserProfile();
+}, [userProfile]);
+
+if (!userProfile) {
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text><SimpleSpinner/></Text>
+    </View>
+  );
+}
 
   return (
 

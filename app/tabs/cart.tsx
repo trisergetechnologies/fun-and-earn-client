@@ -10,18 +10,23 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCart } from '../../components/CartContext';
-
+import { useEffect } from 'react';
 const CartScreen = () => {
-  const { cart, removeFromCart, clearCart, updateQty } = useCart(); // ✅ fixed call
+  const { cart, removeFromCart, refreshCart, updateQty } = useCart(); // ✅ fixed call
 
-  const increaseQty = (item) => updateQty(item.productId._id, item.quantity + 1);
-  const decreaseQty = (item) => {
+  const increaseQty = (item: any) => updateQty(item.productId._id, item.quantity + 1);
+  const decreaseQty = (item: any) => {
     if (item.quantity > 1) {
       updateQty(item.productId._id, item.quantity - 1);
     } else {
       removeFromCart(item.productId._id);
     }
   };
+
+  useEffect(()=>{
+    refreshCart();
+  },[])
+
 
   return (
     <View style={styles.container}>
@@ -68,21 +73,10 @@ const CartScreen = () => {
           </View>
           <TouchableOpacity
             style={styles.checkoutButton}
-            onPress={() => router.push('/checkout')}
+            onPress={() => router.push('/private/checkout')}
           >
             <Text style={styles.clearText}>Proceed to pay</Text>
           </TouchableOpacity>
-          {/* <TouchableOpacity
-            style={styles.clearButton}
-            onPress={() =>
-              Alert.alert('Clear Cart', 'Are you sure?', [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Yes', onPress: () => clearCart() },
-              ])
-            }
-          >
-            <Text style={styles.clearText}>Clear Cart</Text>
-          </TouchableOpacity> */}
         </>
       )}
     </View>

@@ -25,34 +25,6 @@ interface Coupon {
   createdAt?: Date | string;
 }
 
-const mockCoupons: Coupon[] = [
-  {
-    _id: '1',
-    code: 'SV1000BONUS',
-    title: '₹1000 for Short Videos',
-    description: 'Earned via watch time. Use in Short Video wallet.',
-    earnedBy: 'user123',
-    isActive: true,
-    isRedeemed: false,
-    value: 1000,
-    createdAt: new Date(),
-    expiresAt: '2025-08-01',
-  },
-  {
-    _id: '2',
-    code: 'FLAT300',
-    title: '₹300 Off on Cart',
-    description: 'Applicable on orders above ₹999',
-    earnedBy: 'user123',
-    earnedFromOrder: 'order#1281',
-    isActive: false,
-    isRedeemed: true,
-    value: 300,
-    createdAt: new Date(),
-    expiresAt: '2025-07-25',
-  },
-];
-
 const RewardScreen = () => {
 
   const [coupons, setCoupons] = useState<Coupon[] | null>(null);
