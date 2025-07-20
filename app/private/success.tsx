@@ -9,7 +9,7 @@ const SuccessScreen = () => {
     <View style={styles.container}>
       <Text style={styles.title}>🎉 Order Placed!</Text>
       <Text style={styles.subtitle}>Thank you for shopping with us.</Text>
-      <TouchableOpacity style={styles.homeButton} onPress={() => router.push('/tabs/explore')}>
+      <TouchableOpacity style={styles.homeButton} onPress={() => router.replace('/tabs/explore')}>
         <Text style={styles.homeText}>Go to Home</Text>
       </TouchableOpacity>
     </View>

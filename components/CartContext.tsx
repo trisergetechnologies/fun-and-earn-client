@@ -129,7 +129,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       })
 
       if (res.data.success) {
-        console.log('✅ Product Removed From cart');
+        
         fetchCart(); // Refresh cart state
       } else {
         console.warn('⚠️ Failed to remove item:', res.data.message);
@@ -154,7 +154,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     });
 
     if (res.data.success) {
-      console.log('✅ Product updated in cart');
+    
       fetchCart(); // Refresh cart state
     } else {
       console.warn('⚠️ Failed to update cart:', res.data.message);

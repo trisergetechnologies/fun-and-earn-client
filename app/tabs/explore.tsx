@@ -142,7 +142,7 @@ const ExploreScreen = () => {
       <TouchableOpacity
         style={styles.categoryItem}
         onPress={() => {
-          console.log("categories pe bheja gya hai");
+         
           router.push(`/private/category?slug=${item.slug}`)
         }}
       >

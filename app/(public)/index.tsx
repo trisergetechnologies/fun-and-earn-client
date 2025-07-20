@@ -38,7 +38,7 @@ const IntroScreen = (props: Props) => {
             </Text>
 
             <Animated.View entering={FadeInDown.delay(500).duration(1000)}>
-                <TouchableOpacity style={styles.button} onPress={()=> router.push(isAuthenticated ?'/tabs/explore':'/signin')}>
+                <TouchableOpacity style={styles.button} onPress={()=> router.replace(isAuthenticated ?'/tabs/explore':'/signin')}>
                   <Text style={styles.buttonText}>{isAuthenticated ? "Explore Dream Cart": "Get Started"}</Text>
                 </TouchableOpacity>
             </Animated.View>

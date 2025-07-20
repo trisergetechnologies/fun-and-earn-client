@@ -44,7 +44,7 @@ interface Address {
 }
 
 const CheckoutScreen = () => {
-  console.log("mai checkout pe aaya")
+ 
   const { cart, refreshCart } = useCart();
   const router = useRouter();
 

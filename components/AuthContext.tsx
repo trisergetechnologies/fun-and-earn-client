@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await SecureStore.deleteItemAsync('userData');
       setUser(null);
       setIsAuthenticated(false);
-      console.log('Logout worked');
+     
     } catch (e) {
       console.error('Logout failed:', e);
     }

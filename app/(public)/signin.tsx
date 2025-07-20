@@ -95,7 +95,7 @@ const SignInScreen = () => {
       setLoading(false);
     }
   };
-  console.log("in sign in screen")
+  
 
   return (
     <>
