@@ -51,7 +51,7 @@ const UpdateProfile = () => {
         await updateUser(name, phone);
         Alert.alert(response.data.message);
         await refreshUserProfile();
-        router.push('/tabs/explore');
+        router.replace('/tabs/explore');
       }
       setDisabled(false);
       Alert.alert(response.data.message);

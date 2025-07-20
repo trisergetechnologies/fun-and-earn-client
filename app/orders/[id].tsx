@@ -64,7 +64,6 @@ const OrderDetails = () => {
         }
       });
       if (response.data.success) {
-        console.log(response.data)
         setOrder(response.data.data);
       }
       else {

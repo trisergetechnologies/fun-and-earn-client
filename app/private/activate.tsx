@@ -39,7 +39,7 @@ const ActivateScreen = () => {
     if(response.data.success){
         console.log(response.data)
         Alert.alert("Account activated successfullly, you can login into that application(with same Email Id and Password).");
-        router.push('/tabs/profile');
+        router.replace('/tabs/profile');
     }
     else{
       Alert.alert(response.data.message);

@@ -11,11 +11,11 @@ import {
 
 export default function CustomerSupport() {
   const handleCall = () => {
-    Linking.openURL('tel:1800123456');
+    Linking.openURL('tel:8970948374');
   };
 
   const handleEmail = () => {
-    Linking.openURL('mailto:support@dreamcart.com');
+    Linking.openURL('mailto:ampdreammart@gmail.com');
   };
 
   const handleChat = () => {
@@ -32,7 +32,7 @@ export default function CustomerSupport() {
         <Ionicons name="call-outline" size={24} color="#10b981" />
         <View style={styles.cardText}>
           <Text style={styles.title}>Call Us</Text>
-          <Text style={styles.subtitle}>1800-123-456 (Toll-free)</Text>
+          <Text style={styles.subtitle}>+91 8970948374</Text>
         </View>
         <TouchableOpacity onPress={handleCall}>
           <Text style={styles.action}>Call</Text>
@@ -43,7 +43,7 @@ export default function CustomerSupport() {
         <MaterialIcons name="email" size={24} color="#3b82f6" />
         <View style={styles.cardText}>
           <Text style={styles.title}>Email Us</Text>
-          <Text style={styles.subtitle}>support@yourapp.com</Text>
+          <Text style={styles.subtitle}>ampdreammart@gmail.com</Text>
         </View>
         <TouchableOpacity onPress={handleEmail}>
           <Text style={styles.action}>Email</Text>
@@ -67,8 +67,8 @@ export default function CustomerSupport() {
         <Text style={styles.faqA}>You can view your order status in the "My Orders" section.</Text>
         <Text style={styles.faqQ}>• Can I cancel my order?</Text>
         <Text style={styles.faqA}>Orders can be canceled before they are shipped.</Text>
-        <Text style={styles.faqQ}>• How do I request a refund?</Text>
-        <Text style={styles.faqA}>Go to your order and tap on "Return or Refund" option.</Text>
+        {/* <Text style={styles.faqQ}>• How do I request a refund?</Text>
+        <Text style={styles.faqA}>Go to your order and tap on "Return or Refund" option.</Text> */}
       </View>
     </ScrollView>
   );

@@ -32,7 +32,6 @@ const fetchAddresses = async () => {
       }
     });
     if(response.data.success){
-      console.log("fetching addresses..............", response.data);
       setAddresses(response.data.data);
     }
   } catch (error: any) {

@@ -179,7 +179,7 @@ const SignUpScreen = () => {
         });
 
         setTimeout(() => {
-          router.push('/(public)/signin');
+          router.replace('/(public)/signin');
         }, 1000);
 
       } else {

@@ -1,5 +1,5 @@
 import { Colors } from '@/constants/Colors';
-import { Stack, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -51,7 +51,7 @@ const BankScreen = () => {
       if (response.data.success) {
         refreshUserProfile();
         Alert.alert(response.data.message);
-        router.push('/(public)/signin');
+        router.replace('/(public)/signin');
       } else {
         Alert.alert(response.data.message || 'Failed');
       }

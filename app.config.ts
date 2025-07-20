@@ -5,7 +5,7 @@ const config: ExpoConfig = {
   slug: 'dream-mart',
   version: '1.2.0',
   orientation: 'portrait',
-  icon: './assets/images/splash-icon.png',
+  icon: './assets/images/icon.png',
   scheme: 'Dream Mart',
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
@@ -15,10 +15,6 @@ const config: ExpoConfig = {
   android: {
     package: 'com.mpdreams.dreammart',
     permissions: ["INTERNET"],
-    adaptiveIcon: {
-      foregroundImage: './assets/images/icon-dream-mart.png',
-      backgroundColor: '#ffffff',
-    },
     edgeToEdgeEnabled: true,
   },
   web: {
@@ -63,4 +59,3 @@ const config: ExpoConfig = {
 };
 
 export default config;
-

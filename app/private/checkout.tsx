@@ -121,7 +121,7 @@ const CheckoutScreen = () => {
 
     if (currBal >= total && useWallet === true) {
       const token = await getToken();
-      const placeWalletOnlyOrderUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/placeorder/walletonly`;
+      const placeWalletOnlyOrderUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/placeorder/walletonly`;
       try {
         const response = await axios.post(placeWalletOnlyOrderUrl, {
           deliverySlug: selectedSlug
@@ -133,11 +133,12 @@ const CheckoutScreen = () => {
         if (response.data.success) {
           setLoading(false);
           refreshCart();
-          router.push('/private/success');
+          router.replace('/private/success');
         }
       } catch (error: any) {
         setLoading(false);
-        console.error('Failed to fetch Wallet:', error.response?.data || error.message);
+        console.log(error);
+        console.error('Failed to Place Order Wallet Only:', error.response?.data || error.message);
         throw new Error(error.response?.data?.message || 'Failed to fetch Wallet');
       }
     }

@@ -55,7 +55,7 @@ export default function ChangePasswordScreen() {
       });
       if (res.data.success) {
         Alert.alert(res.data.message);
-        router.push('/tabs/profile');
+        router.replace('/tabs/profile');
       }
       Alert.alert(res.data.message);
     } catch (error: any) {
