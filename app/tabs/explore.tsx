@@ -157,9 +157,7 @@ const ExploreScreen = () => {
     <TouchableOpacity onPress={() => setSelectedProduct(item)} style={styles.productWrapper}>
       <View style={styles.productCard}>
         <Image source={{ uri: item.images[0] }} style={styles.productImage} />
-        <TouchableOpacity style={styles.favoriteIcon}>
-          <Ionicons name="heart-outline" size={18} color="gray" />
-        </TouchableOpacity>
+        
         <View style={styles.cardDetails}>
           <Text style={styles.productPrice}> ₹{item.finalPrice}</Text>
           <Text style={styles.productName} numberOfLines={2}>{item.title}</Text>

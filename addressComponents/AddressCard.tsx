@@ -84,11 +84,7 @@ const AddressCard: React.FC<AddressCardProps> = ({
             <TouchableOpacity onPress={onDelete} style={styles.actionButton}>
               <Ionicons name="trash-outline" size={18} color="#ef4444" />
             </TouchableOpacity>
-            {!address.isDefault && (
-              <TouchableOpacity onPress={onSetDefault} style={styles.actionButton}>
-                <Ionicons name="star-outline" size={18} color="#f59e0b" />
-              </TouchableOpacity>
-            )}
+            
           </View>
         </View>
       )}
