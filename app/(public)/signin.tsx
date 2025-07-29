@@ -151,6 +151,15 @@ const SignInScreen = () => {
                 Sign Up
               </Text>
             </Text>
+              <Text style={styles.signupPrompt}>
+                Forgot Password?{' '}
+                <Text
+                  onPress={() => router.push('/(public)/reset')}
+                  style={styles.signupLink}
+                >
+                  Reset Password
+                </Text>
+              </Text>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>

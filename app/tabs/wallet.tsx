@@ -1,5 +1,5 @@
 import { getToken } from '@/helpers/authStorage';
-import { FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import axios from 'axios';
@@ -33,6 +33,35 @@ const WalletScreen = () => {
     fetchWallet();
   })
 
+  const handleWithdraw = async () => {
+    // if (walletBalance <= 0) return;
+
+    try {
+      const token = await getToken();
+      const withdrawUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/withdraw`;
+
+      const response = await axios.put(
+        withdrawUrl,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        alert('Withdrawal request successful!');
+        fetchWallet();
+      } else {
+        alert(response.data.message || 'Withdrawal failed.');
+      }
+    } catch (error: any) {
+      console.error('Withdraw Error:', error.response?.data || error.message);
+      alert(error.response?.data?.message || 'Failed to withdraw.');
+    }
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <Text style={styles.title}>Your Wallet</Text>
@@ -44,6 +73,24 @@ const WalletScreen = () => {
           <Text style={styles.amount}>₹{walletBalance.toFixed(2)}</Text>
         </View>
       </View>
+
+      <TouchableOpacity
+        onPress={handleWithdraw}
+        style={[
+          styles.withdrawButton,
+          walletBalance <= 0 && styles.withdrawButtonDisabled
+        ]}
+        // disabled={walletBalance <= 0}
+      >
+        <Text
+          style={[
+            styles.withdrawButtonText,
+            walletBalance <= 0 && styles.withdrawButtonTextDisabled
+          ]}
+        >
+          Withdraw
+        </Text>
+      </TouchableOpacity>
 
       <TouchableOpacity onPress={()=> router.push('/private/transactions')} style={[styles.actionButton, { backgroundColor: '#3b82f6' }]}>
         <Text style={styles.buttonText}>Wallet Summary</Text>
@@ -136,4 +183,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
   },
+  withdrawButton: {
+  backgroundColor: '#047857', // strong emerald green
+  paddingVertical: 10,
+  borderRadius: 50,
+  marginTop: 12,
+  borderWidth: 1,
+  borderColor: '#047857',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3,
+},
+
+withdrawButtonDisabled: {
+  backgroundColor: 'transparent',
+  borderColor: '#ccc',
+  elevation: 0,
+},
+
+withdrawButtonText: {
+  color: '#fff',
+  textAlign: 'center',
+  fontWeight: '600',
+  fontSize: 15,
+},
+
+withdrawButtonTextDisabled: {
+  color: '#888',
+}
 });
