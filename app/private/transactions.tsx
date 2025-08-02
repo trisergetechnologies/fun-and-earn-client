@@ -1,7 +1,5 @@
-import { useAuth } from '@/components/AuthContext';
 import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   FlatList,
@@ -30,8 +28,6 @@ import axios from 'axios';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 export default function TransactionScreen() {
-    const router = useRouter();
-    const { isAuthenticated } = useAuth();
 
     const [walletBalance, setWalletBalance] = useState<number>(0);
     const [transactions, setTransactions] = useState<Transaction[] | null>(null);
@@ -113,10 +109,10 @@ export default function TransactionScreen() {
     );
   };
   
-      useEffect(() => {
-          fetchTransactions();
-          fetchWallet();
-      }, []);
+  useEffect(() => {
+    fetchTransactions();
+    fetchWallet();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -126,7 +122,7 @@ export default function TransactionScreen() {
         <Ionicons name="wallet-outline" size={28} color="#3b82f6" />
         <View style={{ marginLeft: 12 }}>
           <Text style={styles.walletText}>Current Balance</Text>
-          <Text style={styles.walletAmount}>₹{walletBalance}</Text>
+          <Text style={styles.walletAmount}>₹{walletBalance.toFixed(2)}</Text>
         </View>
       </View>
 
@@ -183,71 +179,3 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
 });
-
-
-// const styles = StyleSheet.create({
-//   container: {
-//     padding: 16,
-//     backgroundColor: '#f9f9f9',
-//     flex: 1,
-//   },
-//   header: {
-//     fontSize: 20,
-//     fontWeight: '700',
-//     marginBottom: 16,
-//     color: '#111',
-//     marginTop: 28,
-//   },
-//   walletCard: {
-//     backgroundColor: '#e0f2fe',
-//     padding: 16,
-//     borderRadius: 10,
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     marginBottom: 24,
-//   },
-//   walletText: {
-//     fontSize: 14,
-//     color: '#555',
-//   },
-//   walletAmount: {
-//     fontSize: 22,
-//     fontWeight: '700',
-//     color: '#3b82f6',
-//   },
-//   sectionHeader: {
-//     fontSize: 16,
-//     fontWeight: '600',
-//     marginBottom: 10,
-//     color: '#333',
-//   },
-//   transactionCard: {
-//     backgroundColor: '#fff',
-//     borderRadius: 10,
-//     padding: 14,
-//     marginBottom: 12,
-//     borderWidth: 1,
-//     borderColor: '#eee',
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     elevation: 1,
-//     shadowColor: '#000',
-//     shadowOpacity: 0.05,
-//     shadowOffset: { width: 0, height: 2 },
-//     shadowRadius: 4,
-//   },
-//   txnTitle: {
-//     fontSize: 14,
-//     fontWeight: '500',
-//     color: '#111',
-//   },
-//   txnDate: {
-//     fontSize: 12,
-//     color: '#888',
-//     marginTop: 2,
-//   },
-//   txnAmount: {
-//     fontSize: 16,
-//     fontWeight: '600',
-//   },
-// });

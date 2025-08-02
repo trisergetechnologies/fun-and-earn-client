@@ -3,7 +3,7 @@ import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -17,13 +17,14 @@ import {
 } from 'react-native';
 import { useProfile } from '@/components/ProfileContext';
 import SimpleSpinner from '@/components/SimpleSpinner';
+import { useFocusEffect } from '@react-navigation/native';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 const UpdateProfile = () => {
 
   const router = useRouter();
   const { updateUser } = useAuth();
-    const {userProfile, refreshUserProfile} = useProfile();
+    const {userProfile, refreshUserProfile, profileLoading} = useProfile();
 
   const [name, setName] = useState<string | undefined>(userProfile?.name || '');
   const [email, setEmail] = useState<string | undefined>(userProfile?.email || '');
@@ -63,11 +64,13 @@ const UpdateProfile = () => {
     }
   };
 
-useEffect(() => {
-  refreshUserProfile();
-}, [userProfile]);
+useFocusEffect(
+  useCallback(() => {
+    refreshUserProfile();
+  }, [])
+);
 
-if (!userProfile) {
+if (profileLoading) {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <Text><SimpleSpinner/></Text>

@@ -1,5 +1,5 @@
 import { getToken } from '@/helpers/authStorage';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import axios from 'axios';
+import * as Clipboard from 'expo-clipboard';
+import { useFocusEffect } from '@react-navigation/native';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 interface Coupon {
@@ -28,6 +30,7 @@ interface Coupon {
 const RewardScreen = () => {
 
   const [coupons, setCoupons] = useState<Coupon[] | null>(null);
+  const [copied, setCopied] = useState<string>('');
 
   const fetchCoupons = async () => {
     const token = await getToken();
@@ -47,9 +50,24 @@ const RewardScreen = () => {
     }
   }
 
-  useEffect(()=>{
+useFocusEffect(
+  useCallback(() => {
     fetchCoupons();
-  })
+  }, [])
+);
+
+
+  const copyToClipboard = async(code: string) => {
+    try {
+      await Clipboard.setStringAsync(code);
+      setCopied("Copied");
+      setTimeout(()=>{
+        setCopied('');
+      }, 4000)
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const renderHeader = () => (
     <View>
@@ -94,11 +112,10 @@ const RewardScreen = () => {
             { opacity: item.isActive ? 1 : 0.5 },
           ]}
           onPress={() => {
-            // Copy logic can go here
-            console.log('Copied:', item.code);
+            copyToClipboard(item.code);
           }}
         >
-          <Text style={styles.applyText}>Copy Code</Text>
+          <Text style={styles.applyText}>{copied ? copied : "Copy Code"}</Text>
         </TouchableOpacity>
       )}
     </View>

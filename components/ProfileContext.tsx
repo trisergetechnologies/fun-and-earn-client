@@ -9,6 +9,7 @@ import {
     useState,
 } from 'react';
 import { useAuth } from './AuthContext';
+import { useRouter } from 'expo-router';
 
 interface Address {
   addressName: string;
@@ -68,6 +69,7 @@ export interface User {
 
 type ProfileContextType = {
     userProfile: User | null;
+    profileLoading: boolean
     refreshUserProfile: () => Promise<void>;
 };
 
@@ -75,8 +77,13 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
 export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     const [userProfile, setUserProfile] = useState<User | null>(null);
-    const {isAuthenticated, isAuthLoading} = useAuth();
+    const {isAuthenticated, isAuthLoading, logout} = useAuth();
+    const [profileLoading, setProfileLoading] = useState<boolean>(false);
+    const router = useRouter();
+
     const fetchUser = async () => {
+        console.log("hit");
+        setProfileLoading(true);
         const token = await getToken();
         const profileUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/general/getprofile`;
         try {
@@ -87,15 +94,23 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
             });
             if (response.data.success) {
                 setUserProfile(response.data.data);
+                setProfileLoading(false);
             }
+            setProfileLoading(false);
         } catch (error: any) {
+            setProfileLoading(false);
             console.error('Failed to fetch User:', error.response?.data || error.message);
             throw new Error(error.response?.data?.message || 'Failed to fetch User');
         }
     }
 
     useEffect(() => {
-        if(isAuthLoading && !isAuthenticated) return
+        if(isAuthLoading) return
+
+        if(!isAuthenticated){
+            logout();
+            router.replace('/(public)/signin');
+        }
         fetchUser();
     }, []);
     const refreshUserProfile= async()=>{
@@ -103,7 +118,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     }
 
     return (
-        <ProfileContext.Provider value={{ userProfile, refreshUserProfile }}>
+        <ProfileContext.Provider value={{ userProfile, refreshUserProfile, profileLoading }}>
             {children}
         </ProfileContext.Provider>
     );

@@ -256,7 +256,7 @@ const CheckoutScreen = () => {
           />
         </View>
         <Text style={useWalletStyles.description}>
-          Available Balance: ₹{currBal}
+          Available Balance: ₹{currBal.toFixed(2)}
         </Text>
       </View>
 
