@@ -14,6 +14,7 @@ import {
 import { useCart } from '../../components/CartContext';
 import { getToken } from '@/helpers/authStorage';
 import axios from 'axios';
+import { Ionicons } from '@expo/vector-icons';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 const PaymentGateway = async () => {
@@ -256,7 +257,7 @@ const CheckoutScreen = () => {
           />
         </View>
         <Text style={useWalletStyles.description}>
-          Available Balance: ₹{currBal.toFixed(2)}
+          Available Balance:  <Ionicons name="ribbon" size={16} color="#10b981" /> {currBal.toFixed(2)}
         </Text>
       </View>
 

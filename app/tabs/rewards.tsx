@@ -11,6 +11,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import axios from 'axios';
 import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 interface Coupon {
@@ -84,7 +85,7 @@ useFocusEffect(
           Use Code: <Text style={styles.codeText}>{item.code}</Text>
         </Text>
         <Text style={styles.couponDesc}>{item.description}</Text>
-        <Text style={styles.metaText}>Value: ₹{item.value}</Text>
+        <Text style={styles.metaText}>Value: <Ionicons name="ribbon" size={16} color="#10b981" /> {item.value}</Text>
         {item.expiresAt && (
           <Text style={styles.metaText}>
             Expires on: {new Date(item.expiresAt).toLocaleDateString()}

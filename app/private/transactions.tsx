@@ -29,11 +29,11 @@ const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-ap
 
 export default function TransactionScreen() {
 
-    const [walletBalance, setWalletBalance] = useState<number>(0);
-    const [transactions, setTransactions] = useState<Transaction[] | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [transactions, setTransactions] = useState<Transaction[] | null>(null);
 
 
-    const fetchTransactions= async ()=>{
+  const fetchTransactions = async () => {
     const token = await getToken();
     const getWalletUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/getwallettransactions`;
     try {
@@ -50,8 +50,8 @@ export default function TransactionScreen() {
       throw new Error(error.response?.data?.message || 'Failed to fetch Wallet');
     }
   }
-  
-    const fetchWallet= async ()=>{
+
+  const fetchWallet = async () => {
     const token = await getToken();
     const getWalletUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/getwallet`;
     try {
@@ -69,30 +69,30 @@ export default function TransactionScreen() {
     }
   }
 
-    const renderItem = ({ item }: { item: Transaction }) => {
+  const renderItem = ({ item }: { item: Transaction }) => {
     const isEarn = item.type === 'earn';
     const icon =
       item.type === 'earn'
         ? 'arrow-down-circle-outline'
         : item.type === 'spend'
-        ? 'arrow-up-circle-outline'
-        : 'swap-horizontal-outline';
+          ? 'arrow-up-circle-outline'
+          : 'swap-horizontal-outline';
 
     const iconColor =
       item.status === 'failed'
         ? 'red'
         : item.status === 'pending'
-        ? 'orange'
-        : isEarn
-        ? 'green'
-        : '#3b82f6';
+          ? 'orange'
+          : isEarn
+            ? 'green'
+            : '#3b82f6';
 
     return (
       <View style={styles.transactionCard}>
         <Ionicons name={icon} size={24} color={iconColor} />
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={styles.transactionText}>
-            {item.type.toUpperCase()} - ₹{item.amount.toFixed(2)}
+            {item.type.toUpperCase()} - <Ionicons name="ribbon" size={16} color="#10b981" /> {item.amount.toFixed(2)}
           </Text>
           <Text style={styles.metaText}>
             From: {item.fromWallet} {item.toWallet ? `→ ${item.toWallet}` : ''}
@@ -108,7 +108,7 @@ export default function TransactionScreen() {
       </View>
     );
   };
-  
+
   useEffect(() => {
     fetchTransactions();
     fetchWallet();
@@ -119,10 +119,11 @@ export default function TransactionScreen() {
       <Text style={styles.header}>💰 Wallet Summary</Text>
 
       <View style={styles.walletCard}>
-        <Ionicons name="wallet-outline" size={28} color="#3b82f6" />
+        {/* <Ionicons name="wallet-outline" size={28} color="#3b82f6" /> */}
+        <Ionicons name="ribbon" size={24} color="#10b981" />
         <View style={{ marginLeft: 12 }}>
           <Text style={styles.walletText}>Current Balance</Text>
-          <Text style={styles.walletAmount}>₹{walletBalance.toFixed(2)}</Text>
+          <Text style={styles.walletAmount}>{walletBalance.toFixed(2)}</Text>
         </View>
       </View>
 
@@ -147,13 +148,17 @@ const styles = StyleSheet.create({
   walletCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#e6fff2',
     padding: 16,
     borderRadius: 10,
-    backgroundColor: '#f1f5ff',
-    marginVertical: 12,
+    marginBottom: 24,
   },
   walletText: { color: '#555', fontSize: 14 },
-  walletAmount: { fontSize: 20, fontWeight: 'bold', color: '#3b82f6' },
+  walletAmount: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#10b981',
+  },
   sectionHeader: { fontSize: 16, fontWeight: '600', marginTop: 16 },
   transactionCard: {
     flexDirection: 'row',

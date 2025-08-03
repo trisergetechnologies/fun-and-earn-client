@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
+import DreamPointsInfo from '@/components/DreamPointMessage';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 const WalletScreen = () => {
@@ -106,70 +107,73 @@ const WalletScreen = () => {
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <Text style={styles.title}>Your Wallet</Text>
 
-<View style={styles.balanceCard}>
-  <Ionicons name="wallet-outline" size={32} color="#10b981" />
-  <View style={styles.balanceTextGroup}>
-    <Text style={styles.label}>Total Balance</Text>
-    <Text style={styles.amount}>₹{walletBalance.toFixed(2)}</Text>
-  </View>
-</View>
+      <View style={styles.balanceCard}>
+        {/* <Ionicons name="wallet-outline" size={32} color="#10b981" /> */}
+        <Ionicons name="ribbon" size={24} color="#10b981" />
+        <View style={styles.balanceTextGroup}>
+          <Text style={styles.label}>Total Dream Cash</Text>
+          <Text style={styles.amount}>{walletBalance.toFixed(2)}</Text>
+        </View>
+      </View>
 
-<View style={styles.actionCard}>
-  <TouchableOpacity
-    onPress={handleWithdraw}
-    style={[
-      styles.pillButton,
-      walletBalance <= 0 && styles.buttonDisabled
-    ]}
-    disabled={walletBalance <= 0}
-  >
-    <Ionicons name="cash-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-    <Text
-      style={[
-        styles.buttonTextWhite,
-        walletBalance <= 0 && styles.buttonTextDisabled
-      ]}
-    >
-      Withdraw
-    </Text>
-  </TouchableOpacity>
+      <View style={styles.actionCard}>
+        <TouchableOpacity
+          onPress={handleWithdraw}
+          style={[
+            styles.pillButton,
+            walletBalance <= 0 && styles.buttonDisabled
+          ]}
+          disabled={walletBalance <= 0}
+        >
+          <Ionicons name="cash-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
+          <Text
+            style={[
+              styles.buttonTextWhite,
+              walletBalance <= 0 && styles.buttonTextDisabled
+            ]}
+          >
+            Withdraw
+          </Text>
+        </TouchableOpacity>
 
-  <TouchableOpacity
-    onPress={() => router.push('/private/transactions')}
-    style={[styles.pillButtonSecondary]}
-  >
-    <Ionicons name="list-outline" size={18} color="#3b82f6" style={{ marginRight: 6 }} />
-    <Text style={styles.buttonTextBlue}>Wallet Summary</Text>
-  </TouchableOpacity>
-</View>
+        <TouchableOpacity
+          onPress={() => router.push('/private/transactions')}
+          style={[styles.pillButtonSecondary]}
+        >
+          <Ionicons name="list-outline" size={18} color="#3b82f6" style={{ marginRight: 6 }} />
+          <Text style={styles.buttonTextBlue}>Wallet Summary</Text>
+        </TouchableOpacity>
+      </View>
 
-<View style={styles.redeemCard}>
-  <Text style={styles.redeemTitle}>Have a Coupon Code?</Text>
+      <View style={styles.redeemCard}>
+        <Text style={styles.redeemTitle}>Have a Coupon Code?</Text>
 
-  <View style={styles.inputWrapper}>
-    <Ionicons name="ticket-outline" size={20} color="#10b981" />
-    <TextInput
-      style={styles.input}
-      placeholder="Enter coupon code"
-      placeholderTextColor="#999"
-      value={couponCode}
-      onChangeText={setCouponCode}
-      editable={!loading}
-    />
-  </View>
+        <View style={styles.inputWrapper}>
+          <Ionicons name="ticket-outline" size={20} color="#10b981" />
+          <TextInput
+            style={styles.input}
+            placeholder="Enter coupon code"
+            placeholderTextColor="#999"
+            value={couponCode}
+            onChangeText={setCouponCode}
+            editable={!loading}
+          />
+        </View>
 
-  {message && <Text style={styles.messageText}>{message}</Text>}
+        {message && <Text style={styles.messageText}>{message}</Text>}
 
-  <TouchableOpacity
-    style={[styles.redeemButton]}
-    onPress={handleRedeem}
-    disabled={loading}
-  >
-    <Text style={styles.redeemButtonText}>
-      {loading ? 'Redeeming...' : 'Redeem Coupon'}
-    </Text>
-  </TouchableOpacity>
-</View>
+        <TouchableOpacity
+          style={[styles.redeemButton]}
+          onPress={handleRedeem}
+          disabled={loading}
+        >
+          <Text style={styles.redeemButtonText}>
+            {loading ? 'Redeeming...' : 'Redeem Coupon'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <DreamPointsInfo />
     </ScrollView>
   );
 };
@@ -238,16 +242,16 @@ const styles = StyleSheet.create({
   },
 
   redeemCard: {
-  backgroundColor: '#ecfdf5',
-  padding: 16,
-  borderRadius: 16,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.06,
-  shadowRadius: 4,
-  elevation: 3,
-  marginTop: 20,
-},
+    backgroundColor: '#ecfdf5',
+    padding: 16,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 3,
+    marginTop: 20,
+  },
 
   // Pill secondary (blue accent) button
   pillButtonSecondary: {

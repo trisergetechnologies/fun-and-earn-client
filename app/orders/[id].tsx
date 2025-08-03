@@ -3,6 +3,7 @@ import { Alert, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
 import { getToken } from '@/helpers/authStorage';
 import axios from 'axios';
+import { Ionicons } from '@expo/vector-icons';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 interface OrderItem {
@@ -120,7 +121,7 @@ const OrderDetails = () => {
       <View style={styles.detailBox}>
         <Text>Final Paid: ₹{order.finalAmountPaid.toFixed(2)}</Text>
         <Text>Total Before Wallet/Coupon: ₹{order.totalAmount.toFixed(2)}</Text>
-        <Text>Used Wallet: -₹{order.usedWalletAmount.toFixed(2)}</Text>
+        <Text>Used Wallet: - <Ionicons name="ribbon" size={16} color="#10b981" /> {order.usedWalletAmount.toFixed(2)}</Text>
         {order.usedCouponCode && <Text>Coupon: {order.usedCouponCode}</Text>}
         <Text style={styles.total}>Total Paid: ₹{order.finalAmountPaid.toFixed(2)}</Text>
       </View>
