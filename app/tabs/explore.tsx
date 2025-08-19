@@ -4,12 +4,13 @@ import SimpleSpinner from '@/components/SimpleSpinner';
 import { Colors } from '@/constants/Colors';
 import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 // import Constants from 'expo-constants';
 
 
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -125,10 +126,12 @@ const ExploreScreen = () => {
     }
   };
 
-  useEffect(() => {
-      fetchCategories();
-      fetchProducts();
-  }, []);
+useFocusEffect(
+  useCallback(() => {
+    fetchCategories();
+    fetchProducts();
+  }, [])
+);
 
   if(isAuthLoading) return <SimpleSpinner/>
 

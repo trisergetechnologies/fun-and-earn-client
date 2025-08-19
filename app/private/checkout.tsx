@@ -1,7 +1,7 @@
 import { useAuth } from '@/components/AuthContext';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -15,6 +15,7 @@ import { useCart } from '../../components/CartContext';
 import { getToken } from '@/helpers/authStorage';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 const PaymentGateway = async () => {
@@ -46,7 +47,7 @@ interface Address {
 
 const CheckoutScreen = () => {
  
-  const { cart, refreshCart } = useCart();
+  const { cart, refreshCart, totalGstAmount } = useCart();
   const router = useRouter();
 
   const [address, setAddress] = useState('');
@@ -185,7 +186,7 @@ const CheckoutScreen = () => {
         }
       });
       if (res.data.success) {
-        console.log("cart from checkout page", res.data.data.useWallet);
+        console.log("cart from checkout page", res.data.data);
         setUseWallet(res.data.data.useWallet);
       }
     } catch (err) {
@@ -194,11 +195,14 @@ const CheckoutScreen = () => {
   };
 
 
-  useEffect(() => {
-      fetchAddresses();
-      getWallet();
-      fetchCart();
-  }, []);
+useFocusEffect(
+  useCallback(() => {
+    fetchAddresses();
+    getWallet();
+    fetchCart();
+    console.log("cart from ling", cart)
+  }, [])
+);
 
 
   const toggleUseWallet = async() => {
@@ -271,9 +275,22 @@ const CheckoutScreen = () => {
             {/* <Text style={styles.price}>₹{(item.price * item.qty).toFixed(2)}</Text> */}
           </View>
         ))}
+        {/* 🔹 Amount */}
+        <View style={styles.row}>
+          <Text style={styles.totalLabel}>Amount:</Text>
+          <Text style={styles.totalValue}>₹{total.toFixed(2)}</Text>
+        </View>
+
+        {/* 🔹 GST */}
+        <View style={styles.row}>
+          <Text style={styles.totalLabel}>GST {Math.round((totalGstAmount / total) * 100)}%:</Text>
+          <Text style={styles.totalValue}>₹{totalGstAmount?.toFixed(2)}</Text>
+        </View>
+
+        {/* 🔹 Final Total */}
         <View style={styles.row}>
           <Text style={styles.totalLabel}>Total:</Text>
-          <Text style={styles.totalValue}>₹{total.toFixed(2)}</Text>
+          <Text style={styles.totalValue}>₹{(total + totalGstAmount)?.toFixed(2)}</Text>
         </View>
       </View>
 
@@ -330,6 +347,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 10,
+  },
+  rowanother: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 4,
   },
   name: {
     fontSize: 14,

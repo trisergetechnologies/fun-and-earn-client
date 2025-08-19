@@ -3,7 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Alert, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 interface OrderItem {
@@ -34,6 +35,7 @@ interface Order {
   };
   finalAmountPaid: number;
   totalAmount: number;
+  totalGstAmount: number
   usedWalletAmount: number;
   usedCouponCode: string | null;
   items: OrderItem[];
@@ -79,9 +81,11 @@ export default function OrdersScreen() {
     }
   }
 
-  useEffect(()=>{
+useFocusEffect(
+  useCallback(() => {
     fetchOrders();
-  },[])
+  }, [])
+);
 
 
   return (
@@ -154,21 +158,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 16,
   },
-  // card: {
-  //   flexDirection: 'row',
-  //   backgroundColor: '#fff',
-  //   borderRadius: 10,
-  //   padding: 12,
-  //   marginBottom: 12,
-  //   elevation: 2,
-  //   alignItems: 'center',
-  //   marginTop:8,
-  // },
-  // image: { width: 60, height: 60, borderRadius: 8 },
-  // deliveryText: { fontSize: 13, color: '#555' },
-  // productName: { fontSize: 14, fontWeight: '600', marginTop: 2 },
-  // ratingRow: { flexDirection: 'row', marginTop: 6 },
-  // rateText: { fontSize: 12, color: '#888', marginTop: 6 },
    card: {
     backgroundColor: '#fff',
     padding: 16,
