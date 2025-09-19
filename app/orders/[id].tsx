@@ -67,7 +67,7 @@ const OrderDetails = () => {
 
 
   const handleCloseModal = () => {
-  setModalVisible(false);
+    setModalVisible(false);
   };
 
   const handleViewInvoice = async () => {
@@ -89,9 +89,9 @@ const OrderDetails = () => {
     }
     setInvoiceUrl(data?.url);
     setModalVisible(true);
-    setTimeout(()=>{
+    setTimeout(() => {
       handleCloseModal();
-    },1000)
+    }, 1000)
   };
 
 
@@ -117,40 +117,40 @@ const OrderDetails = () => {
   }
 
 
-const handleDownloadInvoice = async () => {
-  try {
-    const token = await getToken();
+  const handleDownloadInvoice = async () => {
+    try {
+      const token = await getToken();
 
-    // 🔹 Step 1: Fetch invoice URL
-    const response = await axios.get(
-      `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/get-invoice/${id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      // 🔹 Step 1: Fetch invoice URL
+      const response = await axios.get(
+        `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/get-invoice/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = response.data;
+      if (!data?.url) {
+        Alert.alert("Error", "Invoice URL not found");
+        return;
       }
-    );
-
-    const data = response.data;
-    if (!data?.url) {
-      Alert.alert("Error", "Invoice URL not found");
-      return;
-    }
-    setInvoiceUrl(data?.url);
-    const fileUri = FileSystem.documentDirectory + `invoice-${id}.pdf`;
-    const { uri } = await FileSystem.downloadAsync(data.url, fileUri);
+      setInvoiceUrl(data?.url);
+      const fileUri = FileSystem.documentDirectory + `invoice-${id}.pdf`;
+      const { uri } = await FileSystem.downloadAsync(data.url, fileUri);
 
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri);
       } else {
         Alert.alert("Download complete", "File saved at: " + uri);
       }
-    
-  } catch (error) {
-    console.error("Invoice download error:", error);
-    Alert.alert("Error", "Failed to download invoice");
-  }
-};
+
+    } catch (error) {
+      console.error("Invoice download error:", error);
+      Alert.alert("Error", "Failed to download invoice");
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -168,7 +168,7 @@ const handleDownloadInvoice = async () => {
       <Text style={styles.sectionTitle}>Order Id: {order._id}</Text>
       {/* Products Section */}
       <View style={styles.card}>
-      
+
         <Text style={styles.sectionTitle}>Products</Text>
         {order.items.map((item, index) => (
           <View key={index} style={styles.productRow}>
@@ -209,8 +209,8 @@ const handleDownloadInvoice = async () => {
         </View>
 
         <View style={styles.rowBetween}>
-          <Text>GST ({ order ? Math.round((order?.totalGstAmount / order?.totalAmount) * 100): 0}%)</Text>
-          <Text>₹{order.totalGstAmount ? order.totalGstAmount.toFixed(2): 0}</Text>
+          <Text>GST ({order ? Math.round((order?.totalGstAmount / order?.totalAmount) * 100) : 0}%)</Text>
+          <Text>₹{order.totalGstAmount ? order.totalGstAmount.toFixed(2) : 0}</Text>
         </View>
 
         {order.usedWalletAmount > 0 && (
@@ -238,21 +238,40 @@ const handleDownloadInvoice = async () => {
       {/* Download Invoice Button */}
 
       <View style={styles.buttonRow}>
-  <TouchableOpacity style={styles.button} onPress={handleViewInvoice}>
-    <Ionicons name="download-outline" size={18} color="#fff" />
-    <Text style={styles.buttonText}>Download Invoice</Text>
-  </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleViewInvoice}>
+          <Ionicons name="download-outline" size={18} color="#fff" />
+          <Text style={styles.buttonText}>Download Invoice</Text>
+        </TouchableOpacity>
 
-  <TouchableOpacity style={styles.button} onPress={handleDownloadInvoice}>
-    <Ionicons name="share-outline" size={18} color="#fff" />
-    <Text style={styles.buttonText}>Share Invoice</Text>
-  </TouchableOpacity>
-</View>
-<InvoicePreview
-  visible={isModalVisible}
-  onClose={handleCloseModal}
-  uri={invoiceUrl}
-/>
+        <TouchableOpacity style={styles.button} onPress={handleDownloadInvoice}>
+          <Ionicons name="share-outline" size={18} color="#fff" />
+          <Text style={styles.buttonText}>Share Invoice</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Return & Refund Policy */}
+
+      <View style={[styles.card, { marginTop: 20, borderLeftWidth: 4, borderLeftColor: "#f87171" }]}>
+        <Text style={[styles.sectionTitle, { color: "#dc2626" }]}>Return & Refund Policy</Text>
+        <Text style={{ fontSize: 13, color: "#374151", lineHeight: 20 }}>
+          You may request a return within{" "}
+          <Text style={{ fontWeight: "600", color: "#dc2626" }}>2 days of delivery</Text>.
+          To initiate, please email us at{" "}
+          <Text style={{ fontWeight: "600", color: "#2563eb" }}>ampdreammart@gmail.com</Text>.
+          Make sure your email has a{" "}
+          <Text style={{ fontWeight: "600" }}>clear subject line mentioning "Return Request – [Your Order ID]"</Text>.
+          In the message body, briefly describe the{" "}
+          <Text style={{ fontWeight: "600" }}>reason for return</Text>.
+          Our support team will review your request and get back to you with the next steps.
+        </Text>
+      </View>
+
+      
+      <InvoicePreview
+        visible={isModalVisible}
+        onClose={handleCloseModal}
+        uri={invoiceUrl}
+      />
     </ScrollView>
   );
 };
@@ -284,23 +303,23 @@ const styles = StyleSheet.create({
   divider: { borderBottomColor: '#e5e7eb', borderBottomWidth: 1, marginVertical: 8 },
   totalLabel: { fontWeight: 'bold', fontSize: 15 },
   totalValue: { fontWeight: 'bold', fontSize: 15, color: '#16a34a' },
-button: {
-  flexDirection: "row",
-  alignItems: "center",
-  backgroundColor: "#3b82f6",
-  paddingVertical: 10,
-  paddingHorizontal: 15,
-  borderRadius: 6,
-},
+  button: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#3b82f6",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 6,
+  },
 
   buttonRow: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  gap: 10, // optional, for spacing if using React Native 0.71+
-},
- buttonText: {
-  color: "#fff",
-  fontSize: 14,
-  marginLeft: 6,
-},
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10, // optional, for spacing if using React Native 0.71+
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 14,
+    marginLeft: 6,
+  },
 });

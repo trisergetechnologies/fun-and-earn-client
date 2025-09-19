@@ -1,5 +1,6 @@
 // SignUpScreen.tsx
 import PrivacyPolicyModal from '@/components/PrivacyPolicyModal';
+import ReturnRefundPolicyModal from '@/components/ReturnRefundPolicyModal';
 import Spinner from '@/components/Spinner';
 import TermsAndConditionsModal from '@/components/TermsAndConditionsModal';
 import { Colors } from '@/constants/Colors';
@@ -51,6 +52,7 @@ const SignUpScreen = () => {
   const [gender, setGender] = useState<string>('');
   const [showPolicy, setShowPolicy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [showReturnRefund, setReturnRefund] = useState(false);
 
 
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -256,9 +258,15 @@ const SignUpScreen = () => {
                   onPress={() => setShowTerms(true)}
                   style={{ textDecorationLine: 'underline', color: Colors.primary }}
                 >
-                  T&C
-                </Text>{' '}
-                and{' '}
+                  Terms & Conditions
+                </Text>{'   ,'}
+                <Text
+                  onPress={() => setReturnRefund(true)}
+                  style={{ textDecorationLine: 'underline', color: Colors.primary }}
+                >
+                  Return & Refund Policy
+                </Text>{'   '}
+                and{'   '}
                 <Text
                   onPress={() => setShowPolicy(true)}
                   style={{ textDecorationLine: 'underline', color: Colors.primary }}
@@ -284,6 +292,7 @@ const SignUpScreen = () => {
 
       <PrivacyPolicyModal visible={showPolicy} onClose={() => setShowPolicy(false)} />
         <TermsAndConditionsModal visible={showTerms} onClose={() => setShowTerms(false)} />
+          <ReturnRefundPolicyModal visible={showReturnRefund} onClose={() => setReturnRefund(false)} />
       <Toast />
     </>
   );

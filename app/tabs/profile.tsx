@@ -9,15 +9,22 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../../components/AuthContext';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useProfile } from '@/components/ProfileContext';
 import User from '../../assets/images/user.png';
+import PrivacyPolicyModal from '@/components/PrivacyPolicyModal';
+import TermsAndConditionsModal from '@/components/TermsAndConditionsModal';
+import ReturnRefundPolicyModal from '@/components/ReturnRefundPolicyModal';
 
 
 const ProfileScreen = () => {
   const router = useRouter();
   const { user, logout } = useAuth();
   const {userProfile, refreshUserProfile} = useProfile();
+
+  const [showPolicy, setShowPolicy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showReturnRefund, setReturnRefund] = useState(false);
 
   const handleLogout = async () => {
    
@@ -53,6 +60,38 @@ const ProfileScreen = () => {
         
         <Option icon={<Ionicons name="chatbubbles" size={18} />} label="Customer Support" onPress={() => router.push('/private/CustomerSupport')} />
       </View>
+
+
+      <View style={{
+        flexDirection: "row",
+        justifyContent: "center",
+        marginTop: 30,
+        marginBottom: 20
+      }}>
+        <TouchableOpacity onPress={() => setShowTerms(true)}>
+          <Text style={{ fontSize: 12, color: "#2563eb", marginHorizontal: 10 }}>
+            Terms & Conditions
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setShowPolicy(true)}>
+          <Text style={{ fontSize: 12, color: "#2563eb", marginHorizontal: 10 }}>
+            Privacy Policy
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setReturnRefund(true)}>
+          <Text style={{ fontSize: 12, color: "#2563eb", marginHorizontal: 10 }}>
+            Return & Refund
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <PrivacyPolicyModal visible={showPolicy} onClose={() => setShowPolicy(false)} />
+      <TermsAndConditionsModal visible={showTerms} onClose={() => setShowTerms(false)} />
+      <ReturnRefundPolicyModal visible={showReturnRefund} onClose={() => setReturnRefund(false)} />
+
+
     </ScrollView>
   );
 };

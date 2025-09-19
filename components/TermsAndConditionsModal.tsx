@@ -30,46 +30,93 @@ const TermsAndConditionsModal = ({ visible, onClose }: Props) => {
 
                     {/* Content */}
                     <ScrollView contentContainerStyle={styles.content}>
-                        <Text style={styles.sectionTitle}>1. Maintenance Charges</Text>
+                        <Text style={styles.sectionTitle}>1. Introduction</Text>
                         <Text style={styles.section}>
-                            The maintenance charges are for maintenance of the application hosted on our servers, including periodic updates.
+                            Welcome to DreamMart! These Terms and Conditions govern your use of our mobile application and services. 
+                            By accessing or using our platform, you agree to comply with these terms. Please read them carefully before making any purchases.
                         </Text>
 
-                        <Text style={styles.sectionTitle}>2. Configuration Responsibility</Text>
+                        <Text style={styles.sectionTitle}>2. Account Registration</Text>
                         <Text style={styles.section}>
-                            The Company will guide the Client and provide all possible training and training material for the platform configuration. However, the Company is not responsible for configuring the platform. The Client is required to complete the configuration independently.
+                            To place an order, you may be required to register an account by providing accurate details such as your name, 
+                            contact information, and a valid email address. You are responsible for maintaining the confidentiality of your account 
+                            and all activities under it.
                         </Text>
 
-                        <Text style={styles.sectionTitle}>3. No Response Situation</Text>
+                        <Text style={styles.sectionTitle}>3. Product Information</Text>
                         <Text style={styles.section}>
-                            If the Client fails to respond for more than 7 days despite reminders, the Company may put the development on hold. If there is no response for more than 14 days, the Company may terminate the contract.
+                            We strive to provide accurate descriptions, images, and pricing of products. However, we do not guarantee that all 
+                            information is error-free. In case of discrepancies, we reserve the right to correct errors and update details without prior notice.
                         </Text>
 
-                        <Text style={styles.sectionTitle}>4. Payment Terms</Text>
-                        <Text style={styles.bullet}>• Refund Policy: Refer here.</Text>
-                        <Text style={styles.bullet}>• 18% GST is included in the above-mentioned cost.</Text>
-
-                        <Text style={styles.sectionTitle}>5. Renewal on Plan Expiry</Text>
+                        <Text style={styles.sectionTitle}>4. Pricing & Payments</Text>
                         <Text style={styles.section}>
-                            Upon plan expiry, the standard cost will apply as per the Client's selected plan from the available options at that time.
+                            All prices are displayed in Indian Rupees (₹) unless stated otherwise. Prices may change without notice. 
+                            Accepted payment methods include UPI, credit/debit cards, net banking, and wallets. Payment must be completed at the time of purchase.
+                        </Text>
+                        <Text style={styles.bullet}>• All transactions are secure and encrypted.</Text>
+                        <Text style={styles.bullet}>• 18% GST may be applicable where required.</Text>
+                        <Text style={styles.bullet}>• We reserve the right to cancel orders in case of payment failure.</Text>
+
+                        <Text style={styles.sectionTitle}>5. Shipping & Delivery</Text>
+                        <Text style={styles.section}>
+                            Delivery timelines vary depending on your location and product availability. 
+                            While we make every effort to deliver on time, delays may occur due to unforeseen circumstances.
+                        </Text>
+                        <Text style={styles.bullet}>• Estimated delivery times are shown at checkout.</Text>
+                        <Text style={styles.bullet}>• We are not liable for delays caused by courier services.</Text>
+                        <Text style={styles.bullet}>• Tracking information will be provided once the order is shipped.</Text>
+
+                        <Text style={styles.sectionTitle}>6. Returns & Refunds</Text>
+                        <Text style={styles.section}>
+                            Products are eligible for return within{" "}
+                            <Text style={{ fontWeight: '600', color: '#dc2626' }}>2 days of delivery</Text>.  
+                            Please refer to our Return & Refund Policy for detailed steps. Refunds are processed within 5–7 business days 
+                            after the returned item is received and approved.
                         </Text>
 
-                        <Text style={styles.sectionTitle}>6. Timeline</Text>
+                        <Text style={styles.sectionTitle}>7. User Responsibilities</Text>
                         <Text style={styles.section}>
-                            The solution will be delivered within 15–20 working days.
+                            You agree not to misuse the platform for fraudulent activities, illegal purposes, or to harm other users. 
+                            Any violations may lead to suspension or permanent termination of your account.
                         </Text>
 
-                        <Text style={styles.sectionTitle}>7. Important Note</Text>
+                        <Text style={styles.sectionTitle}>8. Intellectual Property</Text>
                         <Text style={styles.section}>
-                            The timeline will be applicable from the project kick-off date and only after the Client shares all the required information and assets.
+                            All logos, content, designs, and software are the intellectual property of DreamMart. 
+                            You may not copy, reproduce, or distribute our content without prior written permission.
                         </Text>
 
-                        <Text style={styles.sectionTitle}>Contact Us</Text>
+                        <Text style={styles.sectionTitle}>9. Limitation of Liability</Text>
                         <Text style={styles.section}>
-                            If you have any questions regarding these terms, please contact us at <Text style={styles.email}>info@aarushmp.com</Text>.
+                            DreamMart will not be held responsible for indirect, incidental, or consequential damages arising from 
+                            the use of our platform, including but not limited to delivery delays, product defects, or technical errors.
+                        </Text>
+
+                        <Text style={styles.sectionTitle}>10. Termination</Text>
+                        <Text style={styles.section}>
+                            We reserve the right to suspend or terminate your account at our discretion if you breach these Terms 
+                            and Conditions or engage in fraudulent or unlawful activities.
+                        </Text>
+
+                        <Text style={styles.sectionTitle}>11. Governing Law</Text>
+                        <Text style={styles.section}>
+                            These Terms & Conditions are governed by the laws of India. Any disputes shall be subject to the jurisdiction 
+                            of the courts located in your city.
+                        </Text>
+
+                        <Text style={styles.sectionTitle}>12. Updates to Terms</Text>
+                        <Text style={styles.section}>
+                            We may update these Terms & Conditions from time to time. Any changes will be reflected in this section, and 
+                            continued use of our services after changes constitutes acceptance.
+                        </Text>
+
+                        <Text style={styles.sectionTitle}>13. Contact Us</Text>
+                        <Text style={styles.section}>
+                            If you have any questions regarding these Terms, please contact us at{" "}
+                            <Text style={styles.email}>ampdreammart@gmail.com</Text>.
                         </Text>
                     </ScrollView>
-
                 </View>
             </SafeAreaView>
         </Modal>
