@@ -6,7 +6,6 @@ import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as FileSystem from "expo-file-system";
-import * as MediaLibrary from "expo-media-library";
 import * as Sharing from "expo-sharing";
 import Constants from "expo-constants";
 import InvoicePreview from '@/components/InvoicePreview';
