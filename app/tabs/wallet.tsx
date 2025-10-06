@@ -1,4 +1,5 @@
 import { getToken } from '@/helpers/authStorage';
+import { Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -12,18 +13,39 @@ const WalletScreen = () => {
   const [couponCode, setCouponCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
+  const toastAnim = useState(new Animated.Value(-100))[0]; // off-screen at start
+
+  const [withdrawAmount, setWithdrawAmount] = useState<string>(''); // using string for TextInput
 
   const router = useRouter();
 
-  const showMessage = (msg: string) => {
+  const showMessage = (msg: string, type: 'success' | 'error' = 'success') => {
     setMessage(msg);
-    setTimeout(() => setMessage(null), 3000);
+    setMessageType(type);
+
+    Animated.timing(toastAnim, {
+      toValue: 0,
+      duration: 300,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+
+    setTimeout(() => {
+      Animated.timing(toastAnim, {
+        toValue: -100,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        setMessage(null);
+      });
+    }, 3000);
   };
 
 
   const handleRedeem = async () => {
     if (!couponCode.trim()) {
-      showMessage("Enter a valid coupon code");
+      showMessage("Enter a valid coupon code", 'error');
       return;
     }
 
@@ -41,12 +63,16 @@ const WalletScreen = () => {
           },
         }
       );
+      if (res.data.success) {
+        showMessage(res?.data?.message || "Coupon redeemed successfully", 'success');
+        setCouponCode('');
+        fetchWallet(); // refresh balance
+      }
 
-      showMessage(res?.data?.message || "Coupon redeemed successfully");
-      setCouponCode('');
-      fetchWallet(); // refresh balance
+      showMessage(res?.data?.message, 'error');
+
     } catch (err: any) {
-      showMessage(err?.response?.data?.message || "Invalid coupon");
+      showMessage(err?.response?.data?.message || "Invalid coupon", 'error');
     } finally {
       setLoading(false);
     }
@@ -75,36 +101,64 @@ const WalletScreen = () => {
   })
 
   const handleWithdraw = async () => {
-    // if (walletBalance <= 0) return;
+    const amount = parseFloat(withdrawAmount);
+
+    if (!amount || amount <= 0) {
+      showMessage("Enter a valid amount to withdraw.", 'error');
+      return;
+    }
+
+    if (amount > walletBalance) {
+      showMessage("Withdrawal amount exceeds available balance.", 'error');
+      return;
+    }
 
     try {
+      setLoading(true);
       const token = await getToken();
-      const withdrawUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/withdraw`;
+      const withdrawUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/requestwithdrawal`;
 
-      const response = await axios.put(
+      const response = await axios.post(
         withdrawUrl,
-        {},
+        { amount },
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
         }
       );
 
       if (response.data.success) {
-        alert('Withdrawal request successful!');
+        showMessage(response.data.message || 'Withdrawal request submitted.', 'success');
+        setWithdrawAmount('');
         fetchWallet();
       } else {
-        alert(response.data.message || 'Withdrawal failed.');
+        showMessage(response.data.message || 'Withdrawal failed.', 'error');
       }
     } catch (error: any) {
       console.error('Withdraw Error:', error.response?.data || error.message);
-      alert(error.response?.data?.message || 'Failed to withdraw.');
+      showMessage(error.response?.data?.message || 'Failed to withdraw.', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      {message && (
+        <Animated.View
+          style={[
+            styles.toast,
+            {
+              transform: [{ translateY: toastAnim }],
+              backgroundColor: messageType === 'success' ? '#10b981' : '#dc2626',
+            },
+          ]}
+        >
+          <Text style={styles.toastText}>{message}</Text>
+        </Animated.View>
+      )}
       <Text style={styles.title}>Your Wallet</Text>
 
       <View style={styles.balanceCard}>
@@ -118,25 +172,6 @@ const WalletScreen = () => {
 
       <View style={styles.actionCard}>
         <TouchableOpacity
-          onPress={handleWithdraw}
-          style={[
-            styles.pillButton,
-            walletBalance <= 0 && styles.buttonDisabled
-          ]}
-          disabled={walletBalance <= 0}
-        >
-          <Ionicons name="cash-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-          <Text
-            style={[
-              styles.buttonTextWhite,
-              walletBalance <= 0 && styles.buttonTextDisabled
-            ]}
-          >
-            Withdraw
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
           onPress={() => router.push('/private/transactions')}
           style={[styles.pillButtonSecondary]}
         >
@@ -144,6 +179,37 @@ const WalletScreen = () => {
           <Text style={styles.buttonTextBlue}>Wallet Summary</Text>
         </TouchableOpacity>
       </View>
+
+
+
+      <View style={styles.withdrawCard}>
+        <Text style={styles.withdrawTitle}>Withdraw Amount</Text>
+
+        <View style={styles.inputWrapper}>
+          <Ionicons name="cash-outline" size={20} color="#3b82f6" />
+          <TextInput
+            style={styles.input}
+            placeholder="Enter amount to withdraw"
+            placeholderTextColor="#aaa"
+            keyboardType="numeric"
+            value={withdrawAmount}
+            onChangeText={setWithdrawAmount}
+            editable={!loading}
+          />
+        </View>
+
+        <TouchableOpacity
+          style={[styles.withdrawButton]}
+          onPress={handleWithdraw}
+          disabled={loading}
+        >
+          <Text style={styles.withdrawButtonText}>
+            {loading ? 'Processing...' : 'Request Withdrawal'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+
 
       <View style={styles.redeemCard}>
         <Text style={styles.redeemTitle}>Have a Coupon Code?</Text>
@@ -160,7 +226,7 @@ const WalletScreen = () => {
           />
         </View>
 
-        {message && <Text style={styles.messageText}>{message}</Text>}
+        {/* {message && <Text style={styles.messageText}>{message}</Text>} */}
 
         <TouchableOpacity
           style={[styles.redeemButton]}
@@ -300,35 +366,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  // Withdraw (legacy-style, still applies when not using grouped buttons)
-  withdrawButton: {
-    backgroundColor: '#047857',
-    paddingVertical: 10,
-    borderRadius: 50,
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: '#047857',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  withdrawButtonDisabled: {
-    backgroundColor: 'transparent',
-    borderColor: '#ccc',
-    elevation: 0,
-  },
-  withdrawButtonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  withdrawButtonTextDisabled: {
-    color: '#888',
-  },
-
   // Redeem section styles
   redeemContainer: {
     backgroundColor: '#ecfdf5',
@@ -380,5 +417,63 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
   },
+  //withdrawal design
+  withdrawCard: {
+    backgroundColor: '#eef2ff', // soft blue
+    padding: 16,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 3,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+
+  withdrawTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e3a8a', // deep blue
+    marginBottom: 12,
+  },
+
+  withdrawButton: {
+    marginTop: 16,
+    backgroundColor: '#3b82f6', // vibrant blue
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+
+  withdrawButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+
+  toast: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    right: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    zIndex: 9999,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+
+  toastText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+
 });
 
