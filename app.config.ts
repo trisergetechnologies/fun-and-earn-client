@@ -9,19 +9,23 @@ const config: ExpoConfig = {
   scheme: 'Dream Mart',
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
+
   ios: {
     supportsTablet: true,
   },
+
   android: {
     package: 'com.mpdream.dreammart',
-    permissions: ["INTERNET"],
+    permissions: ['INTERNET'],
     edgeToEdgeEnabled: true,
   },
+
   web: {
     bundler: 'metro',
     output: 'static',
     favicon: './assets/images/splash-icon.png',
   },
+
   plugins: [
     'expo-router',
     [
@@ -38,18 +42,24 @@ const config: ExpoConfig = {
       {
         android: {
           manifestApplication: [
-            {
-              usesCleartextTraffic: 'true',
-            },
+            { usesCleartextTraffic: 'true' },
           ],
+          manifestAdditions: `
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android" 
+                      xmlns:tools="http://schemas.android.com/tools">
+              <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove" />
+              <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove" />
+            </manifest>
+          `,
         },
       },
     ],
   ],
 
-  experiments: {  
+  experiments: {
     typedRoutes: true,
   },
+
   extra: {
     EXPO_PUBLIC_BASE_URL: 'https://amp-api.mpdreams.in/api/v1',
     eas: {
