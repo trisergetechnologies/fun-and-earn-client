@@ -6,7 +6,7 @@ const config: ExpoConfig = {
   version: '1.2.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
-  scheme: 'Dream Mart',
+  scheme: 'dreammart',
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
 
