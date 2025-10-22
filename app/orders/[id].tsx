@@ -235,18 +235,26 @@ const OrderDetails = () => {
       </View>
 
       {/* Download Invoice Button */}
+<View style={styles.buttonRow}>
+  {["Download", "Share"].map((type) => (
+    <TouchableOpacity
+      key={type}
+      style={[styles.button, order.paymentStatus !== "paid" && { backgroundColor: "#9ca3af" }]}
+      onPress={order.paymentStatus === "paid" ? (type === "Download" ? handleViewInvoice : handleDownloadInvoice) : undefined}
+      disabled={order.paymentStatus !== "paid"}
+    >
+      <Ionicons
+        name={type === "Download" ? "download-outline" : "share-outline"}
+        size={18}
+        color="#fff"
+      />
+      <Text style={styles.buttonText}>
+        {order.paymentStatus === "paid" ? `${type} Invoice` : "Payment Pending"}
+      </Text>
+    </TouchableOpacity>
+  ))}
+</View>
 
-      <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.button} onPress={handleViewInvoice}>
-          <Ionicons name="download-outline" size={18} color="#fff" />
-          <Text style={styles.buttonText}>Download Invoice</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.button} onPress={handleDownloadInvoice}>
-          <Ionicons name="share-outline" size={18} color="#fff" />
-          <Text style={styles.buttonText}>Share Invoice</Text>
-        </TouchableOpacity>
-      </View>
 
       {/* Return & Refund Policy */}
 
