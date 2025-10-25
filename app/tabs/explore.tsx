@@ -233,6 +233,7 @@ useFocusEffect(
                 onPress={() => router.push('/tabs/cart')}
               />
             </View>
+            <Text style={styles.companyName}>Aarush MP Dreams (OPC) Pvt Ltd</Text>
 
             {search.length > 0 && (
               <ScrollView style={styles.suggestionBox} keyboardShouldPersistTaps="handled">
@@ -459,4 +460,13 @@ const styles = StyleSheet.create({
     color: '#2563eb',
     marginTop: 4,
   },
+ companyName: {
+  alignSelf: 'flex-start',
+  fontSize: 16,
+  fontWeight: '300',
+  color: '#2563eb',
+  marginTop: 10,
+  marginLeft: 15, 
+},
+
 });

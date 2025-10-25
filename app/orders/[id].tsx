@@ -236,24 +236,37 @@ const OrderDetails = () => {
 
       {/* Download Invoice Button */}
 <View style={styles.buttonRow}>
-  {["Download", "Share"].map((type) => (
-    <TouchableOpacity
-      key={type}
-      style={[styles.button, order.paymentStatus !== "paid" && { backgroundColor: "#9ca3af" }]}
-      onPress={order.paymentStatus === "paid" ? (type === "Download" ? handleViewInvoice : handleDownloadInvoice) : undefined}
-      disabled={order.paymentStatus !== "paid"}
-    >
-      <Ionicons
-        name={type === "Download" ? "download-outline" : "share-outline"}
-        size={18}
-        color="#fff"
-      />
-      <Text style={styles.buttonText}>
-        {order.paymentStatus === "paid" ? `${type} Invoice` : "Payment Pending"}
-      </Text>
-    </TouchableOpacity>
-  ))}
+  {["Download", "Share"].map((type) => {
+    const isPaymentCompleted = order.paymentStatus?.toLowerCase() === "paid";
+    return (
+      <TouchableOpacity
+        key={type}
+        style={[
+          styles.button,
+          !isPaymentCompleted && { backgroundColor: "#9ca3af" }, // gray when disabled
+        ]}
+        onPress={
+          isPaymentCompleted
+            ? type === "Download"
+              ? handleViewInvoice
+              : handleDownloadInvoice
+            : undefined
+        }
+        disabled={!isPaymentCompleted}
+      >
+        <Ionicons
+          name={type === "Download" ? "download-outline" : "share-outline"}
+          size={18}
+          color="#fff"
+        />
+        <Text style={styles.buttonText}>
+          {`${type} Invoice`}
+        </Text>
+      </TouchableOpacity>
+    );
+  })}
 </View>
+
 
 
       {/* Return & Refund Policy */}
