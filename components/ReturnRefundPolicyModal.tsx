@@ -31,9 +31,9 @@ const ReturnRefundPolicyModal = ({ visible, onClose }: Props) => {
           {/* Content */}
           <ScrollView contentContainerStyle={styles.content}>
             <Text style={styles.section}>
-              At DreamMart, we value your trust and aim to provide the best shopping experience possible. 
+              At DreamMart, owned and operated by AARUSH MP DREAMS (OPC) PRIVATE LIMITED, we value your trust and aim to provide the best shopping experience possible.
               If for any reason you are not completely satisfied with your purchase, you may request a return within{" "}
-              <Text style={{ fontWeight: "600", color: "#dc2626" }}>2 days of delivery</Text>.  
+              <Text style={{ fontWeight: "600", color: "#dc2626" }}>2 days of delivery</Text>.
               This policy outlines the eligibility, process, and timeline for returns and refunds to ensure transparency and convenience for our customers.
             </Text>
 
@@ -58,8 +58,8 @@ const ReturnRefundPolicyModal = ({ visible, onClose }: Props) => {
 
             <Text style={styles.sectionTitle}>3. Review & Approval</Text>
             <Text style={styles.section}>
-              Once we receive your request, our support team will review the details within 24–48 hours.  
-              If approved, you will receive instructions for returning the product, including the return address and packaging guidelines.  
+              Once we receive your request, our support team at AARUSH MP DREAMS (OPC) PRIVATE LIMITED will review the details within 24–48 hours.
+              If approved, you will receive instructions for returning the product, including the return address and packaging guidelines.
               Please note that shipping charges for returns may be borne by the customer unless the return is due to a mistake on our part.
             </Text>
 
@@ -73,8 +73,8 @@ const ReturnRefundPolicyModal = ({ visible, onClose }: Props) => {
 
             <Text style={styles.sectionTitle}>5. Exchange Policy</Text>
             <Text style={styles.section}>
-              Currently, we do not support direct product exchanges. If you wish to replace an item with another, please initiate a return for the unwanted item 
-              and place a fresh order for the new item.
+              Currently, DreamMart (operated by AARUSH MP DREAMS (OPC) PRIVATE LIMITED) does not support direct product exchanges.
+              If you wish to replace an item with another, please initiate a return for the unwanted item and place a fresh order for the new item.
             </Text>
 
             <Text style={styles.sectionTitle}>6. Non-Returnable Items</Text>
@@ -89,7 +89,7 @@ const ReturnRefundPolicyModal = ({ visible, onClose }: Props) => {
             <Text style={styles.sectionTitle}>7. Damaged or Defective Items</Text>
             <Text style={styles.section}>
               If you receive a damaged or defective item, please report it within{" "}
-              <Text style={{ fontWeight: "600" }}>24 hours of delivery</Text> with photo/video proof.  
+              <Text style={{ fontWeight: "600" }}>24 hours of delivery</Text> with photo/video proof.
               Our team will verify the issue and arrange for a replacement or full refund at no extra cost.
             </Text>
 
@@ -106,10 +106,13 @@ const ReturnRefundPolicyModal = ({ visible, onClose }: Props) => {
             <Text style={styles.sectionTitle}>9. Contact Us</Text>
             <Text style={styles.section}>
               If you have any questions regarding our Return & Refund Policy, please reach out to our customer support team at{" "}
-              <Text style={styles.email}>ampdreammart@gmail.com</Text>.  
-              We are here to assist you and ensure a smooth and hassle-free shopping experience.
+              <Text style={styles.email}>ampdreammart@gmail.com</Text>.
+              We are here to assist you and ensure a smooth and hassle-free shopping experience.{"\n\n"}
+              AARUSH MP DREAMS (OPC) PRIVATE LIMITED{"\n"}
+              India
             </Text>
           </ScrollView>
+
         </View>
       </SafeAreaView>
     </Modal>

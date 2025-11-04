@@ -87,6 +87,17 @@ const ProfileScreen = () => {
         </TouchableOpacity>
       </View>
 
+      <View style={{ marginBottom: 10, alignItems: 'center' }}>
+        <Text style={{
+          fontSize: 12,
+          color: '#4B5563', // neutral gray tone
+          fontWeight: '500',
+          letterSpacing: 0.5,
+        }}>
+          AARUSH MP DREAMS (OPC) PRIVATE LIMITED
+        </Text>
+      </View>
+
       <PrivacyPolicyModal visible={showPolicy} onClose={() => setShowPolicy(false)} />
       <TermsAndConditionsModal visible={showTerms} onClose={() => setShowTerms(false)} />
       <ReturnRefundPolicyModal visible={showReturnRefund} onClose={() => setReturnRefund(false)} />

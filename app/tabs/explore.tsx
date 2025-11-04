@@ -183,6 +183,17 @@ useFocusEffect(
 
   const ListHeader = () => (
     <>
+      <View style={{ marginVertical: 10, alignItems: 'center' }}>
+        <Text style={{
+          fontSize: 14,
+          color: '#4B5563', // neutral gray tone
+          fontWeight: '500',
+          letterSpacing: 0.5,
+        }}>
+          AARUSH MP DREAMS (OPC) PRIVATE LIMITED
+        </Text>
+      </View>
+    
       <View style={styles.sectionHeader}>
         <Text style={styles.categoryTitle}>Categories</Text>
       </View>
@@ -194,6 +205,7 @@ useFocusEffect(
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 10 }}
       />
+
       <View style={styles.suggestionHeader}>
         <Text style={styles.suggestionTitle}>Today's Suggestions</Text>
       </View>

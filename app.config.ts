@@ -64,6 +64,7 @@ const config: ExpoConfig = {
     EXPO_PUBLIC_BASE_URL: 'https://amp-api.mpdreams.in/api/v1',
     eas: {
       projectId: 'e38c72b1-4f7f-49be-b01f-84687394837f',
+      // projectId: '80d34574-db42-4327-9362-32592954cf16'
     },
   },
 };

@@ -32,26 +32,29 @@ const TermsAndConditionsModal = ({ visible, onClose }: Props) => {
                     <ScrollView contentContainerStyle={styles.content}>
                         <Text style={styles.sectionTitle}>1. Introduction</Text>
                         <Text style={styles.section}>
-                            Welcome to DreamMart! These Terms and Conditions govern your use of our mobile application and services. 
-                            By accessing or using our platform, you agree to comply with these terms. Please read them carefully before making any purchases.
+                            Welcome to DreamMart, owned and operated by AARUSH MP DREAMS (OPC) PRIVATE LIMITED!
+                            These Terms and Conditions govern your use of our mobile application and services.
+                            By accessing or using our platform, you agree to comply with these terms.
+                            Please read them carefully before making any purchases.
                         </Text>
 
                         <Text style={styles.sectionTitle}>2. Account Registration</Text>
                         <Text style={styles.section}>
-                            To place an order, you may be required to register an account by providing accurate details such as your name, 
-                            contact information, and a valid email address. You are responsible for maintaining the confidentiality of your account 
+                            To place an order, you may be required to register an account by providing accurate details such as your name,
+                            contact information, and a valid email address. You are responsible for maintaining the confidentiality of your account
                             and all activities under it.
                         </Text>
 
                         <Text style={styles.sectionTitle}>3. Product Information</Text>
                         <Text style={styles.section}>
-                            We strive to provide accurate descriptions, images, and pricing of products. However, we do not guarantee that all 
-                            information is error-free. In case of discrepancies, we reserve the right to correct errors and update details without prior notice.
+                            We strive to provide accurate descriptions, images, and pricing of products. However, we do not guarantee that all
+                            information is error-free. In case of discrepancies, AARUSH MP DREAMS (OPC) PRIVATE LIMITED reserves the right
+                            to correct errors and update details without prior notice.
                         </Text>
 
                         <Text style={styles.sectionTitle}>4. Pricing & Payments</Text>
                         <Text style={styles.section}>
-                            All prices are displayed in Indian Rupees (₹) unless stated otherwise. Prices may change without notice. 
+                            All prices are displayed in Indian Rupees (₹) unless stated otherwise. Prices may change without notice.
                             Accepted payment methods include UPI, credit/debit cards, net banking, and wallets. Payment must be completed at the time of purchase.
                         </Text>
                         <Text style={styles.bullet}>• All transactions are secure and encrypted.</Text>
@@ -60,8 +63,9 @@ const TermsAndConditionsModal = ({ visible, onClose }: Props) => {
 
                         <Text style={styles.sectionTitle}>5. Shipping & Delivery</Text>
                         <Text style={styles.section}>
-                            Delivery timelines vary depending on your location and product availability. 
-                            While we make every effort to deliver on time, delays may occur due to unforeseen circumstances.
+                            Delivery timelines vary depending on your location and product availability.
+                            While AARUSH MP DREAMS (OPC) PRIVATE LIMITED makes every effort to deliver on time,
+                            delays may occur due to unforeseen circumstances.
                         </Text>
                         <Text style={styles.bullet}>• Estimated delivery times are shown at checkout.</Text>
                         <Text style={styles.bullet}>• We are not liable for delays caused by courier services.</Text>
@@ -70,53 +74,56 @@ const TermsAndConditionsModal = ({ visible, onClose }: Props) => {
                         <Text style={styles.sectionTitle}>6. Returns & Refunds</Text>
                         <Text style={styles.section}>
                             Products are eligible for return within{" "}
-                            <Text style={{ fontWeight: '600', color: '#dc2626' }}>2 days of delivery</Text>.  
-                            Please refer to our Return & Refund Policy for detailed steps. Refunds are processed within 5–7 business days 
-                            after the returned item is received and approved.
+                            <Text style={{ fontWeight: '600', color: '#dc2626' }}>2 days of delivery</Text>.
+                            Please refer to our Return & Refund Policy for detailed steps. Refunds are processed within 5–7 business days
+                            after the returned item is received and approved by AARUSH MP DREAMS (OPC) PRIVATE LIMITED.
                         </Text>
 
                         <Text style={styles.sectionTitle}>7. User Responsibilities</Text>
                         <Text style={styles.section}>
-                            You agree not to misuse the platform for fraudulent activities, illegal purposes, or to harm other users. 
-                            Any violations may lead to suspension or permanent termination of your account.
+                            You agree not to misuse the platform for fraudulent activities, illegal purposes, or to harm other users.
+                            Any violations may lead to suspension or permanent termination of your account by AARUSH MP DREAMS (OPC) PRIVATE LIMITED.
                         </Text>
 
                         <Text style={styles.sectionTitle}>8. Intellectual Property</Text>
                         <Text style={styles.section}>
-                            All logos, content, designs, and software are the intellectual property of DreamMart. 
-                            You may not copy, reproduce, or distribute our content without prior written permission.
+                            All logos, content, designs, and software are the intellectual property of AARUSH MP DREAMS (OPC) PRIVATE LIMITED
+                            and its brand DreamMart. You may not copy, reproduce, or distribute our content without prior written permission.
                         </Text>
 
                         <Text style={styles.sectionTitle}>9. Limitation of Liability</Text>
                         <Text style={styles.section}>
-                            DreamMart will not be held responsible for indirect, incidental, or consequential damages arising from 
-                            the use of our platform, including but not limited to delivery delays, product defects, or technical errors.
+                            AARUSH MP DREAMS (OPC) PRIVATE LIMITED shall not be held responsible for indirect, incidental, or consequential damages
+                            arising from the use of our platform, including but not limited to delivery delays, product defects, or technical errors.
                         </Text>
 
                         <Text style={styles.sectionTitle}>10. Termination</Text>
                         <Text style={styles.section}>
-                            We reserve the right to suspend or terminate your account at our discretion if you breach these Terms 
-                            and Conditions or engage in fraudulent or unlawful activities.
+                            AARUSH MP DREAMS (OPC) PRIVATE LIMITED reserves the right to suspend or terminate your account at its discretion
+                            if you breach these Terms and Conditions or engage in fraudulent or unlawful activities.
                         </Text>
 
                         <Text style={styles.sectionTitle}>11. Governing Law</Text>
                         <Text style={styles.section}>
-                            These Terms & Conditions are governed by the laws of India. Any disputes shall be subject to the jurisdiction 
+                            These Terms & Conditions are governed by the laws of India. Any disputes shall be subject to the jurisdiction
                             of the courts located in your city.
                         </Text>
 
                         <Text style={styles.sectionTitle}>12. Updates to Terms</Text>
                         <Text style={styles.section}>
-                            We may update these Terms & Conditions from time to time. Any changes will be reflected in this section, and 
-                            continued use of our services after changes constitutes acceptance.
+                            AARUSH MP DREAMS (OPC) PRIVATE LIMITED may update these Terms & Conditions from time to time.
+                            Any changes will be reflected in this section, and continued use of our services after changes constitutes acceptance.
                         </Text>
 
                         <Text style={styles.sectionTitle}>13. Contact Us</Text>
                         <Text style={styles.section}>
                             If you have any questions regarding these Terms, please contact us at{" "}
-                            <Text style={styles.email}>ampdreammart@gmail.com</Text>.
+                            <Text style={styles.email}>ampdreammart@gmail.com</Text>.{"\n\n"}
+                            AARUSH MP DREAMS (OPC) PRIVATE LIMITED{"\n"}
+                            India
                         </Text>
                     </ScrollView>
+
                 </View>
             </SafeAreaView>
         </Modal>
