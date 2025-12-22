@@ -31,6 +31,7 @@ type CartItem = {
 interface CartContextType {
   cart: CartItem[];
   totalGstAmount: number;
+  deliveryCharge: number;
   addToCart: (product: Product) => void;
   removeFromCart: (id: string) => void;
   updateQty: (id: string, qty: number) => void;
@@ -45,6 +46,7 @@ const CART_STORAGE_KEY = 'user_cart';
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [totalGstAmount, setTotalGstAmount] = useState<number>(0);
+  const [deliveryCharge, setDeliveryCharge] = useState<number>(0);
   const {isAuthenticated, isAuthLoading} = useAuth();
 
 
@@ -60,6 +62,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (res.data.success) {
         setCart(res.data.data.items);
         setTotalGstAmount(res.data.data.totalGstAmount);
+        setDeliveryCharge(res.data.data.deliveryCharge);
       }
     } catch (err) {
       console.error('Failed to fetch cart:', err);
@@ -182,7 +185,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, removeFromCart, clearCart, updateQty, refreshCart, totalGstAmount }}
+      value={{ cart, addToCart, removeFromCart, clearCart, updateQty, refreshCart, totalGstAmount, deliveryCharge }}
     >
       {children}
     </CartContext.Provider>

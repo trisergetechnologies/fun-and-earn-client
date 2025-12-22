@@ -36,6 +36,7 @@ interface Order {
   finalAmountPaid: number;
   totalAmount: number;
   totalGstAmount: number
+  deliveryCharge: number;
   usedWalletAmount: number;
   usedCouponCode: string | null;
   items: OrderItem[];
