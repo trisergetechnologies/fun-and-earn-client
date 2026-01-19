@@ -73,7 +73,7 @@ const CartScreen = () => {
           </View>
           <TouchableOpacity
             style={styles.checkoutButton}
-            onPress={() => router.push('/private/checkout')}
+            onPress={() => router.push('/private/checkout-orange')}
           >
             <Text style={styles.clearText}>Proceed to pay</Text>
           </TouchableOpacity>
