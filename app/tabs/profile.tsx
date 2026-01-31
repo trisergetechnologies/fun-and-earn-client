@@ -15,6 +15,7 @@ import User from '../../assets/images/user.png';
 import PrivacyPolicyModal from '@/components/PrivacyPolicyModal';
 import TermsAndConditionsModal from '@/components/TermsAndConditionsModal';
 import ReturnRefundPolicyModal from '@/components/ReturnRefundPolicyModal';
+import ShippingPolicyModal from '@/components/ShippingPolicyModal';
 
 
 const ProfileScreen = () => {
@@ -25,6 +26,7 @@ const ProfileScreen = () => {
   const [showPolicy, setShowPolicy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showReturnRefund, setReturnRefund] = useState(false);
+  const [showShipping, setShowShipping] = useState(false);
 
   const handleLogout = async () => {
    
@@ -70,7 +72,7 @@ const ProfileScreen = () => {
       }}>
         <TouchableOpacity onPress={() => setShowTerms(true)}>
           <Text style={{ fontSize: 12, color: "#2563eb", marginHorizontal: 10 }}>
-            Terms & Conditions
+            T. & C.
           </Text>
         </TouchableOpacity>
 
@@ -83,6 +85,12 @@ const ProfileScreen = () => {
         <TouchableOpacity onPress={() => setReturnRefund(true)}>
           <Text style={{ fontSize: 12, color: "#2563eb", marginHorizontal: 10 }}>
             Return & Refund
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => setShowShipping(true)}>
+          <Text style={{ fontSize: 12, color: "#2563eb", marginHorizontal: 10 }}>
+            Shipping Policy
           </Text>
         </TouchableOpacity>
       </View>
@@ -101,6 +109,7 @@ const ProfileScreen = () => {
       <PrivacyPolicyModal visible={showPolicy} onClose={() => setShowPolicy(false)} />
       <TermsAndConditionsModal visible={showTerms} onClose={() => setShowTerms(false)} />
       <ReturnRefundPolicyModal visible={showReturnRefund} onClose={() => setReturnRefund(false)} />
+      <ShippingPolicyModal visible={showShipping} onClose={() => setShowShipping(false)} />
 
 
     </ScrollView>

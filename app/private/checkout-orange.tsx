@@ -1,27 +1,27 @@
+import { useAuth } from '@/components/AuthContext';
+import { getToken } from '@/helpers/authStorage';
+import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
+import { useFocusEffect } from '@react-navigation/native';
+import axios from 'axios';
+import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState, useRef } from 'react';
+import * as WebBrowser from 'expo-web-browser';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
+  AppState,
+  AppStateStatus,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TouchableOpacity,
-  View,
-  ActivityIndicator,
-  AppState,
-  AppStateStatus
+  View
 } from 'react-native';
-import { useCart } from '../../components/CartContext';
-import { getToken } from '@/helpers/authStorage';
-import axios from 'axios';
-import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
 import uuid from 'react-native-uuid';
-import { useAuth } from '@/components/AuthContext';
+import { useCart } from '../../components/CartContext';
 
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
@@ -169,7 +169,7 @@ const CheckoutOrangePG = () => {
           ]);
         } else if (status === 'failed') {
           Alert.alert('❌ Payment Failed', 'Payment was unsuccessful. Please try again.', [
-            { text: 'OK', onPress: () => router.replace('/private/checkout-orange') }
+            { text: 'OK', onPress: () => router.replace('/') }
           ]);
         }
       }
@@ -343,7 +343,7 @@ const CheckoutOrangePG = () => {
       setLoading(false);
       
       Alert.alert('❌ Payment Failed', message || 'Payment was unsuccessful. Please try again.', [
-        { text: 'OK', onPress: () => router.replace('/private/checkout-orange') }
+        { text: 'OK', onPress: () => router.replace('/orders') }
       ]);
     }
     // If WAIT, polling continues

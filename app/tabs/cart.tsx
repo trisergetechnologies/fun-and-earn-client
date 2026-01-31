@@ -9,8 +9,8 @@ import {
 
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCart } from '../../components/CartContext';
 import { useEffect } from 'react';
+import { useCart } from '../../components/CartContext';
 const CartScreen = () => {
   const { cart, removeFromCart, refreshCart, updateQty } = useCart(); // ✅ fixed call
 
@@ -73,7 +73,7 @@ const CartScreen = () => {
           </View>
           <TouchableOpacity
             style={styles.checkoutButton}
-            onPress={() => router.push('/private/checkout-orange')}
+            onPress={() => router.push('/private/checkout')}
           >
             <Text style={styles.clearText}>Proceed to pay</Text>
           </TouchableOpacity>

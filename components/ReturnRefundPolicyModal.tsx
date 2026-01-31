@@ -1,13 +1,13 @@
 import { Colors } from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import {
-    Modal,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 interface Props {
@@ -22,7 +22,7 @@ const ReturnRefundPolicyModal = ({ visible, onClose }: Props) => {
         <View style={styles.modalCard}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>Return & Refund Policy</Text>
+            <Text style={styles.title}>Refund & Cancellation Policy</Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={24} color={Colors.black} />
             </TouchableOpacity>
@@ -71,45 +71,24 @@ const ReturnRefundPolicyModal = ({ visible, onClose }: Props) => {
             <Text style={styles.bullet}>• The refund will be credited to your original payment method (UPI, card, wallet, etc.).</Text>
             <Text style={styles.bullet}>• In case of COD orders, you may be asked to provide bank account details for the refund transfer.</Text>
 
-            <Text style={styles.sectionTitle}>5. Exchange Policy</Text>
-            <Text style={styles.section}>
-              Currently, DreamMart (operated by AARUSH MP DREAMS (OPC) PRIVATE LIMITED) does not support direct product exchanges.
-              If you wish to replace an item with another, please initiate a return for the unwanted item and place a fresh order for the new item.
-            </Text>
 
-            <Text style={styles.sectionTitle}>6. Non-Returnable Items</Text>
-            <Text style={styles.section}>
-              The following items cannot be returned due to hygiene, safety, or customization reasons:
-            </Text>
-            <Text style={styles.bullet}>• Innerwear, lingerie, and personal hygiene items.</Text>
-            <Text style={styles.bullet}>• Customized or personalized products.</Text>
-            <Text style={styles.bullet}>• Gift cards, vouchers, or digital downloads.</Text>
-            <Text style={styles.bullet}>• Products marked as "Final Sale" at the time of purchase.</Text>
-
-            <Text style={styles.sectionTitle}>7. Damaged or Defective Items</Text>
-            <Text style={styles.section}>
-              If you receive a damaged or defective item, please report it within{" "}
-              <Text style={{ fontWeight: "600" }}>24 hours of delivery</Text> with photo/video proof.
-              Our team will verify the issue and arrange for a replacement or full refund at no extra cost.
-            </Text>
-
-            <Text style={styles.sectionTitle}>8. Late or Missing Refunds</Text>
-            <Text style={styles.section}>
-              If you haven’t received your refund after 7 business days:
-            </Text>
-            <Text style={styles.bullet}>• First, check your bank account again.</Text>
-            <Text style={styles.bullet}>• Contact your credit card company or payment provider, as it may take some time before your refund is officially posted.</Text>
-            <Text style={styles.bullet}>• If you have done all of this and still have not received your refund, please contact us at{" "}
-              <Text style={styles.email}>ampdreammart@gmail.com</Text>.
-            </Text>
-
-            <Text style={styles.sectionTitle}>9. Contact Us</Text>
+            <Text style={styles.sectionTitle}>5. Contact Us</Text>
             <Text style={styles.section}>
               If you have any questions regarding our Return & Refund Policy, please reach out to our customer support team at{" "}
               <Text style={styles.email}>ampdreammart@gmail.com</Text>.
               We are here to assist you and ensure a smooth and hassle-free shopping experience.{"\n\n"}
               AARUSH MP DREAMS (OPC) PRIVATE LIMITED{"\n"}
-              India
+            </Text>
+
+            <Text style={styles.title}>Cancellation Policy</Text>
+            <Text style={styles.section}>
+              Timing:
+            </Text>
+            <Text style={styles.section}>
+              Orders can usually be canceled before the{" "}
+              <Text style={{fontWeight: 600}}>"Out for Delivery" or "Shipped"</Text>.
+              status, often within a few minutes to hours of placing the order.{"\n\n"}
+              AARUSH MP DREAMS (OPC) PRIVATE LIMITED{"\n"}
             </Text>
           </ScrollView>
 
