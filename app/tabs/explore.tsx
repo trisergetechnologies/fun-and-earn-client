@@ -2,15 +2,17 @@ import { useAuth } from '@/components/AuthContext';
 import ProductModal from '@/components/ProductModal';
 import SimpleSpinner from '@/components/SimpleSpinner';
 import { useTheme } from '@/components/ThemeContext';
+import { ProductCard } from '@/components/ui';
 import { getToken } from '@/helpers/authStorage';
+import { spacing, borderRadius, typography, shadows } from '@/constants/DesignSystem';
+import { useResponsive } from '@/hooks/useResponsive';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   Animated,
-  Dimensions,
   Easing,
   FlatList,
   Image,
@@ -24,11 +26,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
-const { width } = Dimensions.get('window');
-const CARD_GAP = 10;
-const CARD_WIDTH = (width - 16 * 2 - CARD_GAP) / 2;
+const CARD_GAP = 12;
+const SUGGESTION_CARD_WIDTH = 156;
 
 type Product = {
   __v: number;
@@ -51,6 +53,7 @@ type Product = {
 
 const ExploreScreen = () => {
   const { colors } = useTheme();
+  const { contentPadding, productColumns, width: screenWidth } = useResponsive();
   const { user, isAuthenticated, isAuthLoading } = useAuth();
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -58,6 +61,9 @@ const ExploreScreen = () => {
   const [sampleProducts, setSampleProducts] = useState<Product[]>([]);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [sampleCategories, setSampleCategories] = useState(null);
+
+  const gridCardWidth =
+    (screenWidth - 2 * contentPadding - (productColumns - 1) * CARD_GAP) / productColumns;
 
   const matchedProducts = sampleProducts.filter((item) =>
     item.title.toLowerCase().includes(search.toLowerCase())
@@ -144,59 +150,31 @@ const ExploreScreen = () => {
     );
   };
 
+  const handleWishlistPress = () => {
+    Toast.show({ type: 'info', text1: 'Wishlist', text2: 'Coming soon!', position: 'bottom' });
+  };
+
   const renderProduct = ({ item }: { item: Product }) => (
-    <TouchableOpacity
-      onPress={() => setSelectedProduct(item)}
-      style={styles.productWrapper}
-      activeOpacity={0.9}
-    >
-      <View style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-        <View style={styles.productImageWrap}>
-          <Image source={{ uri: item.images[0] }} style={styles.productImage} />
-          {item.discountPercent > 0 && (
-            <View style={[styles.discountTag, { backgroundColor: colors.discount }]}>
-              <Text style={styles.discountTagText}>{item.discountPercent}% OFF</Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.cardDetails}>
-          <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
-            {item.title}
-          </Text>
-          <View style={styles.priceRow}>
-            <Text style={[styles.productPrice, { color: colors.primary }]}>₹{item.finalPrice}</Text>
-            {item.discountPercent > 0 && (
-              <Text style={[styles.originalPrice, { color: colors.textMuted }]}>₹{item.price}</Text>
-            )}
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
+    <View style={[styles.productWrapper, { width: gridCardWidth }]}>
+      <ProductCard
+        product={item}
+        onPress={() => setSelectedProduct(item)}
+        onWishlistPress={handleWishlistPress}
+        width={gridCardWidth}
+      />
+    </View>
   );
 
   const renderSuggestionCard = ({ item }: { item: Product }) => (
-    <TouchableOpacity
-      onPress={() => setSelectedProduct(item)}
-      style={styles.suggestionCardWrapper}
-      activeOpacity={0.9}
-    >
-      <View style={[styles.suggestionCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-        <View style={styles.suggestionImageWrap}>
-          <Image source={{ uri: item.images[0] }} style={styles.suggestionImage} />
-        </View>
-        <View style={styles.suggestionInfo}>
-          <Text style={[styles.suggestionName, { color: colors.text }]} numberOfLines={1}>
-            {item.title}
-          </Text>
-          <View style={styles.suggestionPriceRow}>
-            <Text style={[styles.suggestionPrice, { color: colors.primary }]}>₹{item.finalPrice}</Text>
-            {item.discountPercent > 0 && (
-              <Text style={[styles.suggestionOriginalPrice, { color: colors.textMuted }]}>₹{item.price}</Text>
-            )}
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
+    <View style={styles.suggestionCardWrapper}>
+      <ProductCard
+        product={item}
+        onPress={() => setSelectedProduct(item)}
+        onWishlistPress={handleWishlistPress}
+        compact
+        width={SUGGESTION_CARD_WIDTH}
+      />
+    </View>
   );
 
   const ListHeader = () => (
@@ -258,8 +236,8 @@ const ExploreScreen = () => {
           <SimpleSpinner />
         ) : (
           <Animated.View style={[styles.flex1, { opacity: fadeAnim }]}>
-            <View style={[styles.container, styles.searchRow, dynamicStyles.searchRowBg]}>
-              <View style={[styles.logoWrap, { backgroundColor: colors.primary }]}>
+            <View style={[styles.container, styles.searchRow, dynamicStyles.searchRowBg, { paddingHorizontal: contentPadding }]}>
+              <View style={[styles.logoWrap, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}>
                 <Text style={styles.logo}>DM</Text>
               </View>
               <TextInput
@@ -276,7 +254,7 @@ const ExploreScreen = () => {
 
             {search.length > 0 && (
               <ScrollView
-                style={[styles.suggestionBox, dynamicStyles.suggestionBox]}
+                style={[styles.suggestionBox, dynamicStyles.suggestionBox, { left: contentPadding, right: contentPadding }]}
                 keyboardShouldPersistTaps="handled"
               >
                 {matchedProducts.map((item) => (
@@ -301,9 +279,9 @@ const ExploreScreen = () => {
               data={sampleProducts}
               renderItem={renderProduct}
               keyExtractor={(item) => item._id}
-              numColumns={2}
-              columnWrapperStyle={styles.columnWrapper}
-              contentContainerStyle={styles.productList}
+              numColumns={productColumns}
+              columnWrapperStyle={[styles.columnWrapper, { paddingHorizontal: contentPadding }]}
+              contentContainerStyle={[styles.productList, { paddingBottom: 100 }]}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               ListHeaderComponent={ListHeader}
@@ -354,92 +332,82 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm + 2,
     height: 42,
-    fontSize: 15,
+    fontSize: typography.fontSize.md,
   },
   cartIconWrap: {
-    padding: 8,
+    padding: spacing.xs,
   },
   suggestionBox: {
     position: 'absolute',
     top: 94,
-    left: 16,
-    right: 16,
     zIndex: 99,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     maxHeight: 220,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    paddingVertical: 8,
+    ...shadows.lg,
+    paddingVertical: spacing.xs,
   },
   searchSuggestionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    gap: 10,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm + 2,
+    gap: spacing.sm,
   },
   brandRow: {
-    marginVertical: 12,
+    marginVertical: spacing.sm,
     alignItems: 'center',
   },
   brandText: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
     letterSpacing: 0.5,
   },
   sectionHeader: {
-    marginTop: 20,
-    paddingHorizontal: 4,
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.xxs,
   },
   suggestionHeader: {
-    marginTop: 28,
-    paddingHorizontal: 4,
+    marginTop: spacing.xl - 4,
+    paddingHorizontal: spacing.xxs,
   },
   productHeader: {
-    marginTop: 28,
-    paddingHorizontal: 4,
+    marginTop: spacing.xl - 4,
+    paddingHorizontal: spacing.xxs,
   },
   categoryTitle: {
-    fontWeight: '700',
-    fontSize: 18,
-    marginBottom: 12,
+    fontWeight: typography.fontWeight.bold,
+    fontSize: typography.fontSize.xl,
+    marginBottom: spacing.sm,
   },
   suggestionTitle: {
-    fontWeight: '700',
-    fontSize: 18,
-    marginBottom: 14,
+    fontWeight: typography.fontWeight.bold,
+    fontSize: typography.fontSize.xl,
+    marginBottom: spacing.sm + 2,
   },
   sectionTitle: {
-    fontWeight: '700',
-    fontSize: 20,
-    marginBottom: 14,
+    fontWeight: typography.fontWeight.bold,
+    fontSize: typography.fontSize.xxl,
+    marginBottom: spacing.sm + 2,
   },
   categoryList: {
-    paddingBottom: 12,
-    paddingRight: 16,
+    paddingBottom: spacing.sm,
+    paddingRight: spacing.md,
   },
   suggestionList: {
-    paddingHorizontal: 4,
-    paddingRight: 16,
+    paddingHorizontal: spacing.xxs,
+    paddingRight: spacing.md,
   },
   categoryItem: {
     alignItems: 'center',
-    marginRight: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 14,
+    marginRight: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm + 2,
+    borderRadius: borderRadius.lg,
     minWidth: 72,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadows.sm,
   },
   categoryIconWrap: {
     width: 52,
@@ -459,116 +427,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   productWrapper: {
-    width: CARD_WIDTH,
-    marginRight: CARD_GAP,
-    marginBottom: 14,
-  },
-  productCard: {
-    borderRadius: 14,
-    overflow: 'hidden',
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  productImageWrap: {
-    position: 'relative',
-    width: '100%',
-    aspectRatio: 0.9,
-  },
-  productImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  discountTag: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    zIndex: 1,
-  },
-  discountTagText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  cardDetails: {
-    padding: 12,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
-  },
-  productPrice: {
-    fontWeight: '700',
-    fontSize: 15,
-  },
-  originalPrice: {
-    fontSize: 12,
-    textDecorationLine: 'line-through',
-  },
-  productName: {
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 18,
+    marginBottom: spacing.md,
   },
   suggestionCardWrapper: {
-    marginRight: 14,
-  },
-  suggestionCard: {
-    width: 148,
-    borderRadius: 14,
-    overflow: 'hidden',
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  suggestionImageWrap: {
-    width: '100%',
-    height: 120,
-    backgroundColor: 'transparent',
-  },
-  suggestionImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  suggestionInfo: {
-    padding: 10,
-  },
-  suggestionName: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  suggestionPriceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
-  },
-  suggestionPrice: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  suggestionOriginalPrice: {
-    fontSize: 11,
-    textDecorationLine: 'line-through',
+    marginRight: spacing.md,
   },
   columnWrapper: {
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
   },
-  productList: {
-    paddingBottom: 100,
-  },
+  productList: {},
 });

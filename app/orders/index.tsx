@@ -1,10 +1,23 @@
 import { getToken } from '@/helpers/authStorage';
+import { useTheme } from '@/components/ThemeContext';
+import { Card } from '@/components/ui';
+import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
+import { useResponsive } from '@/hooks/useResponsive';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Alert, FlatList, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import axios from 'axios';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 interface OrderItem {
@@ -22,8 +35,8 @@ interface Order {
   _id: string;
   buyerId: string;
   cancelRequested: boolean;
-  createdAt: string; // ISO date string
-  updatedAt: string; // ISO date string
+  createdAt: string;
+  updatedAt: string;
   deliveryAddress: {
     addressName: string;
     city: string;
@@ -35,28 +48,27 @@ interface Order {
   };
   finalAmountPaid: number;
   totalAmount: number;
-  totalGstAmount: number
+  totalGstAmount: number;
   deliveryCharge: number;
   usedWalletAmount: number;
   usedCouponCode: string | null;
   items: OrderItem[];
-  paymentInfo: {
-    gateway: string;
-    paymentId: string;
-  };
-  paymentStatus: "paid" | "unpaid" | string;
-  refundStatus: "not_applicable" | "pending" | "refunded" | string;
+  paymentInfo: { gateway: string; paymentId: string };
+  paymentStatus: 'paid' | 'unpaid' | string;
+  refundStatus: string;
   returnReason: string | null;
   returnRequested: boolean;
-  returnStatus: "none" | "requested" | "approved" | "rejected" | string;
-  status: "placed" | "shipped" | "delivered" | "cancelled" | string;
-  trackingUpdates: Array<any>; // You can replace with a proper type if needed
+  returnStatus: string;
+  status: 'placed' | 'shipped' | 'delivered' | 'cancelled' | string;
+  trackingUpdates: Array<any>;
   __v: number;
 }
 
 type Orders = Order[] | null;
 
 export default function OrdersScreen() {
+  const { colors } = useTheme();
+  const { contentPadding } = useResponsive();
   const router = useRouter();
   const [orders, setOrders] = useState<Orders>([]);
 
@@ -65,138 +77,111 @@ export default function OrdersScreen() {
     const getOrdersUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/getorders`;
     try {
       const response = await axios.get(getOrdersUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (response.data.success) {
         setOrders(response.data.data);
-      }
-      else {
+      } else {
         console.log(response.data);
       }
     } catch (error: any) {
-      Alert.alert("Something went wrong ! Please try again.")
+      Alert.alert('Something went wrong! Please try again.');
       console.error('Failed to fetch addresses:', error.response?.data || error.message);
       throw new Error(error.response?.data?.message || 'Failed to fetch addresses');
     }
-  }
+  };
 
-useFocusEffect(
-  useCallback(() => {
-    fetchOrders();
-  }, [])
-);
-
+  useFocusEffect(useCallback(() => { fetchOrders(); }, []));
 
   return (
-    
-    <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>My Orders</Text>
-        <Ionicons name="cart-outline" size={24} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.headerRow, { paddingHorizontal: contentPadding }]}>
+        <Text style={[styles.title, { color: colors.text }]}>My Orders</Text>
+        <TouchableOpacity onPress={() => router.push('/tabs/cart')}>
+          <Ionicons name="cart-outline" size={24} color={colors.text} />
+        </TouchableOpacity>
       </View>
 
-   <FlatList
-      data={orders}
-      keyExtractor={item => item._id}
-      renderItem={({ item }) => {
-        const firstItem = item.items[0];
-        const thumbnail = firstItem?.productThumbnail || 'https://via.placeholder.com/80';
-        const productTitle = firstItem?.productTitle || 'Product';
+      <FlatList
+        data={orders}
+        keyExtractor={(item) => item._id}
+        contentContainerStyle={[styles.listContent, { paddingHorizontal: contentPadding }]}
+        renderItem={({ item }) => {
+          const firstItem = item.items[0];
+          const thumbnail = firstItem?.productThumbnail || 'https://via.placeholder.com/80';
+          const productTitle = firstItem?.productTitle || 'Product';
 
-        return (
-          <TouchableOpacity
-            style={{
-              backgroundColor: '#fff',
-              padding: 14,
-              marginVertical: 8,
-              marginHorizontal: 16,
-              borderRadius: 10,
-              flexDirection: 'row',
-              alignItems: 'center',
-              shadowColor: '#000',
-              shadowOpacity: 0.05,
-              shadowRadius: 5,
-              elevation: 2,
-            }}
-            onPress={() => router.push(`/orders/${item._id}`)}
-          >
-            <Image
-              source={{ uri: thumbnail }}
-              style={{ width: 70, height: 70, borderRadius: 6, backgroundColor: '#eee' }}
-            />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text numberOfLines={1} style={{ fontWeight: 'bold', fontSize: 14 }}>{productTitle}</Text>
-              <Text style={{ color: '#444', marginTop: 4 }}>₹{item.finalAmountPaid.toFixed(2)} • {item.items.length} item(s)</Text>
-              <Text style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
-                {new Date(item.createdAt).toLocaleDateString()}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#888" />
-          </TouchableOpacity>
-        );
-      }}
-      ListEmptyComponent={() => (
-        <View style={{ alignItems: 'center', marginTop: 50 }}>
-          <Text style={{ color: '#888' }}>No orders yet</Text>
-        </View>
-      )}
-    />
-
-      
+          return (
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => router.push(`/orders/${item._id}`)}
+            >
+              <Card padding={spacing.sm + 2} style={styles.orderCard}>
+                <View style={styles.orderRow}>
+                  <View style={[styles.thumbWrap, { backgroundColor: colors.backgroundSecondary }]}>
+                    <Image source={{ uri: thumbnail }} style={styles.thumb} />
+                  </View>
+                  <View style={styles.orderInfo}>
+                    <Text numberOfLines={1} style={[styles.orderTitle, { color: colors.text }]}>
+                      {productTitle}
+                    </Text>
+                    <Text style={[styles.orderMeta, { color: colors.textSecondary }]}>
+                      ₹{item.finalAmountPaid.toFixed(2)} • {item.items.length} item(s)
+                    </Text>
+                    <Text style={[styles.orderDate, { color: colors.textMuted }]}>
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                </View>
+              </Card>
+            </TouchableOpacity>
+          );
+        }}
+        ListEmptyComponent={
+          <View style={styles.emptyWrap}>
+            <Ionicons name="receipt-outline" size={56} color={colors.textMuted} />
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No orders yet</Text>
+          </View>
+        }
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, backgroundColor: '#fff', flex: 1 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  title: { fontSize: 20, fontWeight: 'bold', marginTop: 28, },
-  searchInput: {
-    backgroundColor: '#f1f1f1',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 16,
+  container: { flex: 1, paddingTop: spacing.xl + 4 },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
-   card: {
-    backgroundColor: '#fff',
-    padding: 16,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4,
+  title: {
+    fontSize: typography.fontSize.xxl,
+    fontWeight: typography.fontWeight.bold,
   },
-  statusText: {
-    marginLeft: 8,
-    fontWeight: '600',
-    fontSize: 16,
-    color: '#444',
-  },
-  addressText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  amountText: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  dateText: {
-    marginTop: 6,
-    fontSize: 13,
-    color: '#999',
-  },
-  emptyContainer: {
-    marginTop: 40,
+  listContent: { paddingBottom: spacing.xxl },
+  orderCard: { marginBottom: spacing.sm },
+  orderRow: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  emptyText: {
-    fontSize: 16,
-    color: '#aaa',
+  thumbWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: borderRadius.sm,
+    overflow: 'hidden',
+    marginRight: spacing.sm,
   },
+  thumb: { width: '100%', height: '100%', resizeMode: 'cover' },
+  orderInfo: { flex: 1 },
+  orderTitle: {
+    fontWeight: typography.fontWeight.semibold,
+    fontSize: typography.fontSize.base,
+  },
+  orderMeta: { marginTop: 4, fontSize: typography.fontSize.base },
+  orderDate: { fontSize: typography.fontSize.sm, marginTop: 2 },
+  emptyWrap: { alignItems: 'center', marginTop: 48 },
+  emptyText: { fontSize: typography.fontSize.lg, marginTop: spacing.sm },
 });

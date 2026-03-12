@@ -1,7 +1,8 @@
-// import AddressList from '@/addressComponents/AddressList';
 import React, { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
 import AddressList from '../../addressComponents/AddressList';
+import { useTheme } from '@/components/ThemeContext';
+import { spacing, typography } from '@/constants/DesignSystem';
 import { getToken } from '@/helpers/authStorage';
 import axios from 'axios';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
@@ -19,6 +20,7 @@ interface Address {
 }
 
 const Address: React.FC = () => {
+  const { colors } = useTheme();
   const [addresses, setAddresses] = useState<Address[]>([]);
 
 const fetchAddresses = async () => {
@@ -108,8 +110,8 @@ const fetchAddresses = async () => {
   },[])
 
   return (
-    <View style={{ flex: 1 }}>
-      <Text style={{ fontSize: 22, fontWeight: 'bold', padding: 16, marginTop: 28}}>My Addresses</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>My Addresses</Text>
       <AddressList
         addresses={addresses}
         onUpdate={handleUpdateAddress}
@@ -119,5 +121,15 @@ const fetchAddresses = async () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  title: {
+    fontSize: typography.fontSize.xxl,
+    fontWeight: typography.fontWeight.bold,
+    padding: spacing.md,
+    marginTop: spacing.xl + 4,
+  },
+});
 
 export default Address;
