@@ -5,6 +5,16 @@ import { createContext, ReactNode, useContext, useEffect, useState } from 'react
 import { useAuth } from './AuthContext';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
+export type ProductVariation = {
+  name: string;
+  options: string[];
+};
+
+export type SelectedVariation = {
+  name: string;
+  value: string;
+};
+
 export type Product = {
   __v: number;
   _id: string;
@@ -21,18 +31,20 @@ export type Product = {
   stock: number;
   title: string;
   updatedAt: string;
+  variations?: ProductVariation[];
 };
 
 type CartItem = {
   productId: Product;
   quantity: number;
+  selectedVariation?: SelectedVariation[];
 };
 
 interface CartContextType {
   cart: CartItem[];
   totalGstAmount: number;
   deliveryCharge: number;
-  addToCart: (product: Product) => void;
+  addToCart: (product: Product, selectedVariation?: SelectedVariation[]) => void;
   removeFromCart: (id: string) => void;
   updateQty: (id: string, qty: number) => void;
   clearCart: () => void;
@@ -81,41 +93,37 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     );
   }, [cart]);
 
-  const addToCart = async (product: Product) => {
+  const addToCart = async (product: Product, selectedVariation?: SelectedVariation[]) => {
 
     const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/getcart`
     const addUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/addcart`
     const token = await getToken();
     
       try {
-    // Fetch existing cart
     const cartRes = await axios.get(url, {headers: {Authorization: `Bearer ${token}`}});
     const currentCart = cartRes.data.cart || [];
 
-    
-    // Check if this product already exists in the cart
     const existingItem = currentCart.find(
       (item: any) => item.productId === product._id || item.product._id === product._id
     );
 
     const newQuantity = existingItem ? existingItem.quantity + 1 : 1;
 
-    // Send API call to /cart/add
     const res = await axios.post(addUrl, {
       productId: product._id,
       quantity: newQuantity,
+      selectedVariation: selectedVariation || [],
     },{
       headers: {Authorization: `Bearer ${token}`}
     });
 
     if (res.data.success) {
-      console.log('✅ Product added/updated in cart');
       fetchCart();
     } else {
-      console.warn('⚠️ Failed to add to cart:', res.data.message);
+      console.warn('Failed to add to cart:', res.data.message);
     }
   } catch (err) {
-    console.error('❌ Error adding to cart:', err);
+    console.error('Error adding to cart:', err);
   }
   };
 

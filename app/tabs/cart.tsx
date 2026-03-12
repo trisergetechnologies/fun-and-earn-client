@@ -48,6 +48,11 @@ const CartScreen = () => {
                 <Image source={{ uri: item.productId.images[0] }} style={styles.image} />
                 <View style={styles.details}>
                   <Text style={styles.name} numberOfLines={2}>{item.productId.title}</Text>
+                  {item.selectedVariation && item.selectedVariation.length > 0 && (
+                    <Text style={styles.variationText}>
+                      {item.selectedVariation.map((v: any) => `${v.name}: ${v.value}`).join(' | ')}
+                    </Text>
+                  )}
                   <Text style={styles.price}>₹{(item.productId.finalPrice * item.quantity).toFixed(2)}</Text>
                   <View style={styles.qtyRow}>
                     <TouchableOpacity onPress={() => decreaseQty(item)} style={styles.qtyBtn}>
@@ -124,6 +129,11 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 15,
     fontWeight: '600',
+  },
+  variationText: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
   },
   price: {
     fontSize: 14,

@@ -318,6 +318,7 @@ const CheckoutScreen = () => {
 
       if (!paymentResult.success) {
         Alert.alert('Payment Info', paymentResult.message || 'Payment cancelled or timed out.');
+        refreshCart();
         return;
       }
 
@@ -392,9 +393,16 @@ const CheckoutScreen = () => {
 
       <View style={styles.summary}>
         <Text style={styles.sectionLabel}>Order Summary</Text>
-        {cart?.map(item => (
-          <View key={item.productId._id} style={styles.row}>
-            <Text style={styles.name}>{item.productId.title} × {item.quantity}</Text>
+        {cart?.map((item, idx) => (
+          <View key={`${item.productId._id}-${idx}`} style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.name}>{item.productId.title} × {item.quantity}</Text>
+              {item.selectedVariation && item.selectedVariation.length > 0 && (
+                <Text style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
+                  {item.selectedVariation.map((v: any) => `${v.name}: ${v.value}`).join(' | ')}
+                </Text>
+              )}
+            </View>
           </View>
         ))}
 

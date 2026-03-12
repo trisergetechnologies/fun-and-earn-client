@@ -48,6 +48,7 @@ type Product = {
   stock: number;
   title: string;
   updatedAt: string;
+  variations?: { name: string; options: string[] }[];
 };
 
 const ExploreScreen = () => {
@@ -159,10 +160,19 @@ useFocusEffect(
   const renderProduct = ({ item }: { item: Product }) => (
     <TouchableOpacity onPress={() => setSelectedProduct(item)} style={styles.productWrapper}>
       <View style={styles.productCard}>
+        {item.discountPercent > 0 && (
+          <View style={styles.discountTag}>
+            <Text style={styles.discountTagText}>{item.discountPercent}% OFF</Text>
+          </View>
+        )}
         <Image source={{ uri: item.images[0] }} style={styles.productImage} />
-        
         <View style={styles.cardDetails}>
-          <Text style={styles.productPrice}> ₹{item.finalPrice}</Text>
+          <View style={styles.priceRow}>
+            <Text style={styles.productPrice}>₹{item.finalPrice}</Text>
+            {item.discountPercent > 0 && (
+              <Text style={styles.originalPrice}>₹{item.price}</Text>
+            )}
+          </View>
           <Text style={styles.productName} numberOfLines={2}>{item.title}</Text>
         </View>
       </View>
@@ -175,7 +185,12 @@ useFocusEffect(
         <Image source={{ uri: item.images[0] }} style={styles.suggestionImage} />
         <View style={styles.suggestionInfo}>
           <Text style={styles.suggestionName} numberOfLines={1}>{item.title}</Text>
-          <Text style={styles.suggestionPrice}>₹{item.finalPrice}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+            <Text style={styles.suggestionPrice}>₹{item.finalPrice}</Text>
+            {item.discountPercent > 0 && (
+              <Text style={styles.suggestionOriginalPrice}>₹{item.price}</Text>
+            )}
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -410,11 +425,36 @@ const styles = StyleSheet.create({
   cardDetails: {
     padding: 10,
   },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
   productPrice: {
     fontWeight: 'bold',
     color: '#2563eb',
     fontSize: 14,
-    marginBottom: 2,
+  },
+  originalPrice: {
+    fontSize: 12,
+    color: '#9ca3af',
+    textDecorationLine: 'line-through',
+  },
+  discountTag: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    backgroundColor: '#16a34a',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    zIndex: 1,
+  },
+  discountTagText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
   },
   ratingRow: {
     flexDirection: 'row',
@@ -469,6 +509,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: 'bold',
     color: '#2563eb',
-    marginTop: 4,
+  },
+  suggestionOriginalPrice: {
+    fontSize: 11,
+    color: '#9ca3af',
+    textDecorationLine: 'line-through',
   },
 });

@@ -66,10 +66,10 @@ const WalletScreen = () => {
       if (res.data.success) {
         showMessage(res?.data?.message || "Coupon redeemed successfully", 'success');
         setCouponCode('');
-        fetchWallet(); // refresh balance
+        fetchWallet();
+      } else {
+        showMessage(res?.data?.message || "Coupon redemption failed", 'error');
       }
-
-      showMessage(res?.data?.message, 'error');
 
     } catch (err: any) {
       showMessage(err?.response?.data?.message || "Invalid coupon", 'error');
@@ -98,7 +98,7 @@ const WalletScreen = () => {
 
   useEffect(() => {
     fetchWallet();
-  })
+  }, [])
 
   const handleWithdraw = async () => {
     const amount = parseFloat(withdrawAmount);
