@@ -16,6 +16,7 @@ import {
 import { useCart } from '@/components/CartContext';
 import ProductModal from '@/components/ProductModal';
 import { useTheme } from '@/components/ThemeContext';
+import { EmptyState } from '@/components/ui';
 import { getToken } from '@/helpers/authStorage';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
@@ -114,10 +115,11 @@ export default function CategoryScreen() {
   );
 
   const ListEmpty = () => (
-    <View style={styles.emptyWrap}>
-      <Ionicons name="search-outline" size={48} color={colors.textMuted} />
-      <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No products found</Text>
-    </View>
+    <EmptyState
+      icon="search-outline"
+      title="No products found"
+      subtitle={`No products in ${slug} match your search.`}
+    />
   );
 
   return (
@@ -241,13 +243,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   listContent: { paddingBottom: 24 },
-  emptyWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 80,
-  },
-  emptyText: {
-    fontSize: 16,
-    marginTop: 12,
-  },
 });

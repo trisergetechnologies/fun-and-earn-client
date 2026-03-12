@@ -11,6 +11,7 @@ import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { useCart } from '../../components/CartContext';
 import { useTheme } from '@/components/ThemeContext';
+import { EmptyState, Button } from '@/components/ui';
 
 const CartScreen = () => {
   const { colors } = useTheme();
@@ -46,15 +47,18 @@ const CartScreen = () => {
       </View>
 
       {cart.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <View style={[styles.emptyIconWrap, { backgroundColor: colors.card }]}>
-            <Ionicons name="cart-outline" size={56} color={colors.textMuted} />
-          </View>
-          <Text style={[styles.emptyText, { color: colors.text }]}>Cart's feeling empty!</Text>
-          <Text style={[styles.emptyHint, { color: colors.textMuted }]}>
-            Add items from Explore to get started
-          </Text>
-        </View>
+        <EmptyState
+          icon="cart-outline"
+          title="Cart's feeling empty!"
+          subtitle="Add items from Explore to get started"
+          action={
+            <Button
+              variant="primary"
+              title="Browse products"
+              onPress={() => router.push('/(tabs)/explore')}
+            />
+          }
+        />
       ) : (
         <>
           <FlatList
@@ -147,30 +151,6 @@ const styles = StyleSheet.create({
   },
   itemCount: {
     fontSize: 14,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  emptyIconWrap: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptyHint: {
-    fontSize: 14,
-    textAlign: 'center',
   },
   cartItem: {
     flexDirection: 'row',

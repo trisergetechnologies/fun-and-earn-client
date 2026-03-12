@@ -2,7 +2,7 @@ import { useAuth } from '@/components/AuthContext';
 import ProductModal from '@/components/ProductModal';
 import SimpleSpinner from '@/components/SimpleSpinner';
 import { useTheme } from '@/components/ThemeContext';
-import { ProductCard } from '@/components/ui';
+import { ProductCard, ProductGridSkeleton } from '@/components/ui';
 import { getToken } from '@/helpers/authStorage';
 import { spacing, borderRadius, typography, shadows } from '@/constants/DesignSystem';
 import { useResponsive } from '@/hooks/useResponsive';
@@ -232,11 +232,7 @@ const ExploreScreen = () => {
   return (
     <SafeAreaView style={[styles.safeArea, dynamicStyles.safeArea]}>
       <KeyboardAvoidingView style={styles.flex1} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        {loading ? (
-          <SimpleSpinner />
-        ) : (
-          <Animated.View style={[styles.flex1, { opacity: fadeAnim }]}>
-            <View style={[styles.container, styles.searchRow, dynamicStyles.searchRowBg, { paddingHorizontal: contentPadding }]}>
+        <View style={[styles.container, styles.searchRow, dynamicStyles.searchRowBg, { paddingHorizontal: contentPadding }]}>
               <View style={[styles.logoWrap, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}>
                 <Text style={styles.logo}>DM</Text>
               </View>
@@ -252,6 +248,10 @@ const ExploreScreen = () => {
               </TouchableOpacity>
             </View>
 
+        {loading ? (
+          <ProductGridSkeleton />
+        ) : (
+          <Animated.View style={[styles.flex1, { opacity: fadeAnim }]}>
             {search.length > 0 && (
               <ScrollView
                 style={[styles.suggestionBox, dynamicStyles.suggestionBox, { left: contentPadding, right: contentPadding }]}

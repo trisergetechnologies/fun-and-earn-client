@@ -7,6 +7,7 @@ import ProfileProvider from '@/components/ProfileContext';
 import { CartProvider } from '@/components/CartContext';
 import { ThemeProvider } from '@/components/ThemeContext';
 import Toast from 'react-native-toast-message';
+import { toastConfig } from '@/components/ToastConfig';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,7 +33,7 @@ export default function RootLayout() {
               <Stack.Screen name="private" options={{ headerShown: false }} />
               <Stack.Screen name="tabs" options={{ headerShown: false }} />
             </Stack>
-            <Toast />
+            <Toast config={toastConfig} />
           </CartProvider>
         </ProfileProvider>
       </AuthProvider>

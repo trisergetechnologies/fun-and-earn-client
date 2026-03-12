@@ -1,6 +1,6 @@
 import { getToken } from '@/helpers/authStorage';
 import { useTheme } from '@/components/ThemeContext';
-import { Card } from '@/components/ui';
+import { Card, EmptyState } from '@/components/ui';
 import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
 import { useResponsive } from '@/hooks/useResponsive';
 import { Ionicons } from '@expo/vector-icons';
@@ -139,10 +139,11 @@ export default function OrdersScreen() {
           );
         }}
         ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <Ionicons name="receipt-outline" size={56} color={colors.textMuted} />
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No orders yet</Text>
-          </View>
+          <EmptyState
+            icon="receipt-outline"
+            title="No orders yet"
+            subtitle="Your orders will appear here once you place them."
+          />
         }
       />
     </View>
@@ -182,6 +183,4 @@ const styles = StyleSheet.create({
   },
   orderMeta: { marginTop: 4, fontSize: typography.fontSize.base },
   orderDate: { fontSize: typography.fontSize.sm, marginTop: 2 },
-  emptyWrap: { alignItems: 'center', marginTop: 48 },
-  emptyText: { fontSize: typography.fontSize.lg, marginTop: spacing.sm },
 });

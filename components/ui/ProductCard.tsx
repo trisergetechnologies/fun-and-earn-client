@@ -1,5 +1,10 @@
 import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { useTheme } from '@/components/ThemeContext';
 import { borderRadius, shadows, typography } from '@/constants/DesignSystem';
 import { Badge } from './Badge';
@@ -18,9 +23,7 @@ interface ProductCardProps {
   product: ProductCardData;
   onPress: () => void;
   onWishlistPress?: () => void;
-  /** Compact horizontal layout (e.g. for "Today's Picks") */
   compact?: boolean;
-  /** Card width (for grid); if not set, uses flex. */
   width?: number;
 }
 
@@ -32,9 +35,36 @@ export function ProductCard({
   width,
 }: ProductCardProps) {
   const { colors } = useTheme();
+  const scale = useSharedValue(1);
+  const wishlistScale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const wishlistAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: wishlistScale.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.97, { damping: 15, stiffness: 400 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+  };
+
+  const handleWishlistPressIn = () => {
+    wishlistScale.value = withSpring(0.9);
+  };
+
+  const handleWishlistPressOut = () => {
+    wishlistScale.value = withSpring(1);
+  };
+
   const hasDiscount = (product.discountPercent ?? 0) > 0;
 
-  const content = (
+  const cardContent = (
     <View
       style={[
         styles.card,
@@ -57,13 +87,16 @@ export function ProductCard({
           </View>
         )}
         {onWishlistPress && (
-          <TouchableOpacity
+          <Pressable
             onPress={onWishlistPress}
-            style={[styles.wishlistBtn, { backgroundColor: colors.card }]}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPressIn={handleWishlistPressIn}
+            onPressOut={handleWishlistPressOut}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="heart-outline" size={20} color={colors.textMuted} />
-          </TouchableOpacity>
+            <Animated.View style={[styles.wishlistBtn, wishlistAnimatedStyle, { backgroundColor: colors.card }]}>
+              <Ionicons name="heart-outline" size={20} color={colors.textMuted} />
+            </Animated.View>
+          </Pressable>
         )}
       </View>
       <View style={styles.details}>
@@ -84,13 +117,16 @@ export function ProductCard({
   );
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      activeOpacity={0.92}
-      style={width ? { width } : styles.wrapper}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={[width ? { width } : styles.wrapper]}
     >
-      {content}
-    </TouchableOpacity>
+      <Animated.View style={animatedStyle}>
+        {cardContent}
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -124,9 +160,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.sm,
@@ -137,7 +173,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
-    lineHeight: 18,
+    lineHeight: 20,
   },
   titleCompact: {
     fontSize: typography.fontSize.sm,
@@ -147,7 +183,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: 4,
+    marginTop: 6,
   },
   price: {
     fontSize: typography.fontSize.md,

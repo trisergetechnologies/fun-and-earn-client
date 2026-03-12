@@ -1,12 +1,14 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
+  View,
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useTheme } from '@/components/ThemeContext';
 import { borderRadius, shadows, spacing, typography } from '@/constants/DesignSystem';
 
@@ -38,6 +40,7 @@ export function Button({
   textStyle,
 }: ButtonProps) {
   const { colors } = useTheme();
+  const scale = useSharedValue(1);
 
   const variantStyles: Record<ButtonVariant, { bg: string; text: string; border?: string }> = {
     primary: { bg: colors.primary, text: colors.primaryContrast },
@@ -54,26 +57,35 @@ export function Button({
   const v = variantStyles[variant];
   const isDisabled = disabled || loading;
 
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
       disabled={isDisabled}
-      activeOpacity={0.82}
-      style={[
-        styles.base,
-        {
-          backgroundColor: v.bg,
-          borderWidth: v.border ? 1.5 : 0,
-          borderColor: v.border,
-          paddingVertical: sizePadding,
-          paddingHorizontal: size === 'sm' ? spacing.md : spacing.xl,
-          opacity: isDisabled ? 0.6 : 1,
-          width: fullWidth ? '100%' : undefined,
-        },
-        variant !== 'ghost' && shadows.sm,
-        style,
-      ]}
+      onPressIn={() => { if (!isDisabled) scale.value = withSpring(0.97, { damping: 15, stiffness: 400 }); }}
+      onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 400 }); }}
+      style={[styles.pressable, fullWidth && { width: '100%' }]}
     >
+      <Animated.View
+        style={[
+          styles.base,
+          animatedStyle,
+          {
+            backgroundColor: v.bg,
+            borderWidth: v.border ? 1.5 : 0,
+            borderColor: v.border,
+            paddingVertical: sizePadding,
+            paddingHorizontal: size === 'sm' ? spacing.md : spacing.xl,
+            opacity: isDisabled ? 0.6 : 1,
+          alignSelf: fullWidth ? 'stretch' : undefined,
+          },
+          variant !== 'ghost' && shadows.sm,
+          style,
+        ]}
+      >
       {loading ? (
         <ActivityIndicator size="small" color={v.text} />
       ) : (
@@ -94,11 +106,13 @@ export function Button({
           </Text>
         </>
       )}
-    </TouchableOpacity>
+      </Animated.View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  pressable: {},
   base: {
     flexDirection: 'row',
     alignItems: 'center',

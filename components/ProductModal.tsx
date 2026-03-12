@@ -6,18 +6,21 @@ import {
   Alert,
   Dimensions,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { Button } from '@/components/ui';
 
 const { height } = Dimensions.get('window');
 
@@ -50,7 +53,7 @@ interface ProductModalProps {
 }
 
 const ProductModal: React.FC<ProductModalProps> = ({ visible, onClose, product }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const translateY = useSharedValue(height);
   const { addToCart } = useCart();
   const [selectedVariations, setSelectedVariations] = useState<Record<string, string>>({});
@@ -92,8 +95,18 @@ const ProductModal: React.FC<ProductModalProps> = ({ visible, onClose, product }
   };
 
   return (
-    <Animated.View style={[styles.modalContainer, animatedStyle, { backgroundColor: colors.card }]}>
-      <View style={styles.modalContent}>
+    <>
+      {visible && (
+        <Pressable style={styles.backdrop} onPress={onClose}>
+          <BlurView
+            style={StyleSheet.absoluteFill}
+            intensity={40}
+            tint={isDark ? 'dark' : 'light'}
+          />
+        </Pressable>
+      )}
+      <Animated.View style={[styles.modalContainer, animatedStyle, { backgroundColor: colors.card }]}>
+        <View style={styles.modalContent}>
         <TouchableOpacity
           style={[styles.closeIcon, { backgroundColor: colors.errorMuted }]}
           onPress={onClose}
@@ -179,30 +192,29 @@ const ProductModal: React.FC<ProductModalProps> = ({ visible, onClose, product }
           </Text>
 
           <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={[
-                styles.cartButton,
-                { backgroundColor: colors.primary },
-                !allVariationsSelected && styles.cartButtonDisabled,
-              ]}
+            <Button
+              variant="primary"
+              title="Add to Cart"
               onPress={handleAddToCart}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="cart" size={20} color={colors.primaryContrast} style={{ marginRight: 8 }} />
-              <Text style={[styles.cartButtonText, { color: colors.primaryContrast }]}>
-                Add to Cart
-              </Text>
-            </TouchableOpacity>
+              disabled={!allVariationsSelected}
+              leftIcon={<Ionicons name="cart" size={20} color={colors.primaryContrast} />}
+              style={styles.cartButton}
+            />
           </View>
         </ScrollView>
-      </View>
-    </Animated.View>
+        </View>
+      </Animated.View>
+    </>
   );
 };
 
 export default ProductModal;
 
 const styles = StyleSheet.create({
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 99,
+  },
   modalContainer: {
     position: 'absolute',
     bottom: 0,
@@ -239,10 +251,10 @@ const styles = StyleSheet.create({
   },
   imageWrap: {
     width: '100%',
-    height: 220,
-    borderRadius: 14,
+    height: 280,
+    borderRadius: 16,
     overflow: 'hidden',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   productImage: {
     width: '100%',
@@ -250,24 +262,24 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   productName: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    marginBottom: 8,
-    lineHeight: 26,
+    marginBottom: 10,
+    lineHeight: 28,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
+    gap: 10,
+    marginBottom: 20,
   },
   originalPrice: {
     fontSize: 16,
     textDecorationLine: 'line-through',
   },
   productPrice: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
   },
   discountBadge: {
@@ -320,24 +332,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cartButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    minWidth: 200,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  cartButtonDisabled: {
-    opacity: 0.5,
-  },
-  cartButtonText: {
-    fontWeight: '700',
-    fontSize: 16,
+    minWidth: 220,
   },
 });

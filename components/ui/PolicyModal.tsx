@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '@/components/ThemeContext';
 import { borderRadius, shadows, spacing } from '@/constants/DesignSystem';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,10 +13,16 @@ interface PolicyModalProps {
 }
 
 export function PolicyModal({ visible, onClose, title, children }: PolicyModalProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <Pressable style={[styles.overlay, { backgroundColor: colors.overlay }]} onPress={onClose}>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <BlurView
+          style={StyleSheet.absoluteFill}
+          intensity={48}
+          tint={isDark ? 'dark' : 'light'}
+        />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <Pressable style={[styles.modalCard, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
             <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
@@ -27,7 +34,7 @@ export function PolicyModal({ visible, onClose, title, children }: PolicyModalPr
             {children}
           </ScrollView>
         </Pressable>
-      </Pressable>
+      </View>
     </Modal>
   );
 }
