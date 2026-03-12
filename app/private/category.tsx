@@ -11,16 +11,18 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
-
-import { useCart } from '@/components/CartContext'; // ✅ Important: import CartContext
+import { useCart } from '@/components/CartContext';
 import ProductModal from '@/components/ProductModal';
+import { useTheme } from '@/components/ThemeContext';
 import { getToken } from '@/helpers/authStorage';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
+
 const { width } = Dimensions.get('window');
-const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
+const CARD_GAP = 10;
+const CARD_WIDTH = (width - 16 * 2 - CARD_GAP) / 2;
 
 type Product = {
   __v: number;
@@ -41,36 +43,30 @@ type Product = {
   variations?: { name: string; options: string[] }[];
 };
 
-
 export default function CategoryScreen() {
-
+  const { colors } = useTheme();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[] | null>(null);
-  const fadeAnim = useRef(new Animated.Value(0)).current; // ✅ FADE-IN animation
+  const fadeAnim = useRef(new Animated.Value(0)).current;
   const [loading, setLoading] = useState<boolean>(false);
 
-
-    const fetchProducts = async () => {
+  const fetchProducts = async () => {
     setLoading(true);
-    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/product/products/slug/${slug}`;
+    const url = `${process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1'}/ecart/user/product/products/slug/${slug}`;
     const token = await getToken();
-
     try {
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       setProducts(response.data.data);
-
-      // ✅ Start fade-in animation
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 700, // smoother than 500ms
-        easing: Easing.inOut(Easing.ease), // ease-in-out effect
+        duration: 700,
+        easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
-      }).start()
+      }).start();
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -78,161 +74,180 @@ export default function CategoryScreen() {
     }
   };
 
+  useEffect(() => {
+    fetchProducts();
+  }, [slug]);
 
-  // const renderProduct = ({ item }) => (
-  //   <TouchableOpacity style={styles.productWrapper} onPress={() => setSelectedProduct(item)}>
-  //     <View style={styles.productCard}>
-  //       <Image source={{ uri: item.image[0] }} style={styles.productImage} />
-  //       <View style={styles.cardDetails}>
-  //         <Text style={styles.productPrice}> ₹{item.price}</Text>
-  //         <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
-  //       </View>
-  //     </View>
-  //   </TouchableOpacity>
-  // );
+  const filteredProducts =
+    products?.filter((p) =>
+      p.title.toLowerCase().includes(search.toLowerCase())
+    ) ?? [];
 
-    const renderProduct = ({ item }: { item: Product }) => (
-    <TouchableOpacity onPress={() => setSelectedProduct(item)} style={styles.productWrapper}>
-      <View style={styles.productCard}>
-        {item.discountPercent > 0 && (
-          <View style={styles.discountTag}>
-            <Text style={styles.discountTagText}>{item.discountPercent}% OFF</Text>
-          </View>
-        )}
-        <Image source={{ uri: item.images[0] }} style={styles.productImage} />
+  const renderProduct = ({ item }: { item: Product }) => (
+    <TouchableOpacity
+      onPress={() => setSelectedProduct(item)}
+      style={styles.productWrapper}
+      activeOpacity={0.9}
+    >
+      <View style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+        <View style={styles.productImageWrap}>
+          <Image source={{ uri: item.images[0] }} style={styles.productImage} />
+          {item.discountPercent > 0 && (
+            <View style={[styles.discountTag, { backgroundColor: colors.discount }]}>
+              <Text style={styles.discountTagText}>{item.discountPercent}% OFF</Text>
+            </View>
+          )}
+        </View>
         <View style={styles.cardDetails}>
+          <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
+            {item.title}
+          </Text>
           <View style={styles.priceRow}>
-            <Text style={styles.productPrice}>₹{item.finalPrice}</Text>
+            <Text style={[styles.productPrice, { color: colors.primary }]}>₹{item.finalPrice}</Text>
             {item.discountPercent > 0 && (
-              <Text style={styles.originalPrice}>₹{item.price}</Text>
+              <Text style={[styles.originalPrice, { color: colors.textMuted }]}>₹{item.price}</Text>
             )}
           </View>
-          <Text style={styles.productName} numberOfLines={2}>{item.title}</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
-  
-      useEffect(() => {
-          fetchProducts()
-      }, []);
+
+  const ListEmpty = () => (
+    <View style={styles.emptyWrap}>
+      <Ionicons name="search-outline" size={48} color={colors.textMuted} />
+      <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No products found</Text>
+    </View>
+  );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f9f9f9' }}>
-      <View style={styles.searchRow}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <View style={[styles.searchRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, { color: colors.text }]}
           placeholder={`Search in ${slug}`}
+          placeholderTextColor={colors.textMuted}
           value={search}
           onChangeText={setSearch}
         />
       </View>
-      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
 
-      <FlatList
-        data={products}
-        renderItem={renderProduct}
-        keyExtractor={(item) => item._id.toString()}
-        numColumns={2}
-        columnWrapperStyle={{ justifyContent: 'space-between' }}
-        contentContainerStyle={{ padding: 12 }}
-        ListEmptyComponent={<Text style={{ textAlign: 'center', marginTop: 300 }}>No products found</Text>}
-      />
-
-      {selectedProduct && (
-        <ProductModal
-          visible={!!selectedProduct}
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
+      <Animated.View style={[styles.flex1, { opacity: fadeAnim }]}>
+        <FlatList
+          data={filteredProducts}
+          renderItem={renderProduct}
+          keyExtractor={(item) => item._id}
+          numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={ListEmpty}
+          showsVerticalScrollIndicator={false}
         />
-      )}
+
+        {selectedProduct && (
+          <ProductModal
+            visible={!!selectedProduct}
+            product={selectedProduct}
+            onClose={() => setSelectedProduct(null)}
+          />
+        )}
       </Animated.View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  flex1: { flex: 1 },
+  safeArea: { flex: 1 },
   searchRow: {
     flexDirection: 'row',
-    padding: 12,
-    backgroundColor: '#fff',
     alignItems: 'center',
-    marginTop: 39,
+    marginHorizontal: 16,
+    marginTop: 40,
+    marginBottom: 16,
+    paddingHorizontal: 14,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
   },
+  searchIcon: { marginRight: 10 },
   searchInput: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 40,
-    backgroundColor: '#fff',
-    fontSize: 14,
+    fontSize: 15,
+    paddingVertical: 0,
   },
   productWrapper: {
-    flex: 0.5,
-    padding: 8,
+    width: CARD_WIDTH,
+    marginRight: CARD_GAP,
+    marginBottom: 14,
   },
   productCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: 'hidden',
-    borderWidth: 0.4,
-    borderColor: '#ddd',
-    marginBottom: 12,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  productImageWrap: {
+    position: 'relative',
+    width: '100%',
+    aspectRatio: 0.9,
   },
   productImage: {
     width: '100%',
-    height: width * 0.38,
-    resizeMode: 'contain'
-  },
-  cardDetails: {
-    padding: 10,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 2,
-  },
-  productPrice: {
-    fontWeight: 'bold',
-    color: '#2563eb',
-    fontSize: 14,
-  },
-  originalPrice: {
-    fontSize: 12,
-    color: '#9ca3af',
-    textDecorationLine: 'line-through',
+    height: '100%',
+    resizeMode: 'cover',
   },
   discountTag: {
     position: 'absolute',
-    top: 6,
-    left: 6,
-    backgroundColor: '#16a34a',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    top: 8,
+    left: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
     zIndex: 1,
   },
   discountTagText: {
-    color: '#fff',
-    fontSize: 10,
+    color: '#FFFFFF',
+    fontSize: 11,
     fontWeight: '700',
   },
-  ratingRow: {
+  cardDetails: { padding: 12 },
+  priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    gap: 6,
+    marginTop: 4,
   },
-  productRating: {
+  productPrice: {
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  originalPrice: {
     fontSize: 12,
-    marginLeft: 4,
-    color: '#666',
+    textDecorationLine: 'line-through',
   },
   productName: {
     fontSize: 13,
-    fontWeight: '500',
-    color: '#222',
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  listContent: { paddingBottom: 24 },
+  emptyWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 80,
+  },
+  emptyText: {
+    fontSize: 16,
+    marginTop: 12,
   },
 });

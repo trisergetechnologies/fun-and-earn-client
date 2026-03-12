@@ -10,7 +10,7 @@ import {
   Text,
   TouchableOpacity,
   View,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
 import { useCart } from '../../components/CartContext';
 import { getToken } from '@/helpers/authStorage';
@@ -21,6 +21,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import uuid from 'react-native-uuid';
 import { useProfile } from '@/components/ProfileContext';
+import { useTheme } from '@/components/ThemeContext';
 
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1'; // public backend
 
@@ -56,8 +57,8 @@ interface CreateIntentResult {
 }
 
 const CheckoutScreen = () => {
+  const { colors } = useTheme();
   const { cart, refreshCart, totalGstAmount, deliveryCharge } = useCart();
-
   const router = useRouter();
 
   const [addresses, setAddresses] = useState<Address[] | null>([]);
@@ -367,39 +368,59 @@ const CheckoutScreen = () => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>Checkout</Text>
+    <ScrollView
+      contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}
+      showsVerticalScrollIndicator={false}
+    >
+      <Text style={[styles.heading, { color: colors.text }]}>Checkout</Text>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Shipping Address</Text>
-        <Picker selectedValue={selectedSlug} onValueChange={setSelectedSlug} style={styles.input}>
+        <Text style={[styles.sectionLabel, { color: colors.text }]}>Shipping Address</Text>
+        <Picker
+          selectedValue={selectedSlug}
+          onValueChange={setSelectedSlug}
+          style={[styles.input, { color: colors.text, backgroundColor: colors.card, borderColor: colors.border }]}
+        >
           <Picker.Item label="Select Address" value="" />
-          {addresses?.map(a => (
-            <Picker.Item key={a.slugName} label={`${a.addressName}: ${a.street}, ${a.city} - ${a.pincode}`} value={a.slugName} />
+          {addresses?.map((a) => (
+            <Picker.Item
+              key={a.slugName}
+              label={`${a.addressName}: ${a.street}, ${a.city} - ${a.pincode}`}
+              value={a.slugName}
+            />
           ))}
         </Picker>
-        {addressText ? <Text style={{ marginTop: 8, color: '#444' }}>{addressText}</Text> : null}
+        {addressText ? (
+          <Text style={[styles.addressText, { color: colors.textSecondary }]}>{addressText}</Text>
+        ) : null}
       </View>
 
-      <View style={useWalletStyles.wrapper}>
+      <View style={[useWalletStyles.wrapper, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
         <View style={useWalletStyles.container}>
-          <Text style={useWalletStyles.label}>Use Wallet Balance</Text>
-          <Switch trackColor={{ false: '#ccc', true: '#10b981' }} thumbColor={useWallet ? '#fff' : '#f4f3f4'} onValueChange={toggleUseWallet} value={useWallet} />
+          <Text style={[useWalletStyles.label, { color: colors.text }]}>Use Wallet Balance</Text>
+          <Switch
+            trackColor={{ false: colors.border, true: colors.success }}
+            thumbColor={useWallet ? '#fff' : colors.card}
+            onValueChange={toggleUseWallet}
+            value={useWallet}
+          />
         </View>
-        <Text style={useWalletStyles.description}>
-          Available Balance: <Ionicons name="ribbon" size={16} color="#10b981" /> {currBal.toFixed(2)}
+        <Text style={[useWalletStyles.description, { color: colors.textSecondary }]}>
+          Available: <Ionicons name="wallet" size={16} color={colors.success} /> ₹{currBal.toFixed(2)}
         </Text>
       </View>
 
-      <View style={styles.summary}>
-        <Text style={styles.sectionLabel}>Order Summary</Text>
+      <View style={[styles.summary, { borderColor: colors.border }]}>
+        <Text style={[styles.sectionLabel, { color: colors.text }]}>Order Summary</Text>
         {cart?.map((item, idx) => (
           <View key={`${item.productId._id}-${idx}`} style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.name}>{item.productId.title} × {item.quantity}</Text>
+              <Text style={[styles.name, { color: colors.text }]}>
+                {item.productId.title} × {item.quantity}
+              </Text>
               {item.selectedVariation && item.selectedVariation.length > 0 && (
-                <Text style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
-                  {item.selectedVariation.map((v: any) => `${v.name}: ${v.value}`).join(' | ')}
+                <Text style={[styles.variationText, { color: colors.textMuted }]}>
+                  {item.selectedVariation.map((v: any) => `${v.name}: ${v.value}`).join(' · ')}
                 </Text>
               )}
             </View>
@@ -407,31 +428,37 @@ const CheckoutScreen = () => {
         ))}
 
         <View style={styles.row}>
-          <Text style={styles.totalLabel}>Amount:</Text>
-          <Text style={styles.totalValue}>₹{total.toFixed(2)}</Text>
+          <Text style={[styles.totalLabel, { color: colors.text }]}>Amount:</Text>
+          <Text style={[styles.totalValue, { color: colors.primary }]}>₹{total.toFixed(2)}</Text>
         </View>
-
         <View style={styles.row}>
-          <Text style={styles.totalLabel}>GST {total ? Math.round((totalGstAmount / total) * 100) : 0}%:</Text>
-          <Text style={styles.totalValue}>₹{(totalGstAmount || 0).toFixed(2)}</Text>
+          <Text style={[styles.totalLabel, { color: colors.text }]}>
+            GST {total ? Math.round((totalGstAmount / total) * 100) : 0}%:
+          </Text>
+          <Text style={[styles.totalValue, { color: colors.primary }]}>₹{(totalGstAmount || 0).toFixed(2)}</Text>
         </View>
-
         <View style={styles.row}>
-          <Text style={styles.totalLabel}>Delivery Charge:</Text>
-          <Text style={styles.totalValue}>₹{(deliveryCharge || 0).toFixed(2)}</Text>
+          <Text style={[styles.totalLabel, { color: colors.text }]}>Delivery:</Text>
+          <Text style={[styles.totalValue, { color: colors.primary }]}>₹{(deliveryCharge || 0).toFixed(2)}</Text>
         </View>
-
         <View style={styles.row}>
-          <Text style={styles.totalLabel}>Total:</Text>
-          <Text style={styles.totalValue}>₹{(total + (totalGstAmount || 0) + (deliveryCharge || 0)).toFixed(2)}</Text>
+          <Text style={[styles.totalLabel, { color: colors.text }]}>Total:</Text>
+          <Text style={[styles.totalValue, { color: colors.primary }]}>
+            ₹{(total + (totalGstAmount || 0) + (deliveryCharge || 0)).toFixed(2)}
+          </Text>
         </View>
       </View>
 
-      <TouchableOpacity style={[styles.placeButton, loading && { opacity: 0.7 }]} onPress={handlePlaceOrder} disabled={loading}>
+      <TouchableOpacity
+        style={[styles.placeButton, { backgroundColor: colors.success }, loading && { opacity: 0.7 }]}
+        onPress={handlePlaceOrder}
+        disabled={loading}
+        activeOpacity={0.9}
+      >
         {loading ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
             <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
-            <Text style={styles.placeText}>Processing Payment... Please wait</Text>
+            <Text style={styles.placeText}>Processing Payment...</Text>
           </View>
         ) : (
           <Text style={styles.placeText}>Place Order</Text>
@@ -443,25 +470,35 @@ const CheckoutScreen = () => {
 
 export default CheckoutScreen;
 
-// keep your styles same as before (slightly improved)
 const styles = StyleSheet.create({
-  container: { padding: 16, backgroundColor: '#fff', flexGrow: 1 },
-  heading: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, marginTop: 30 },
+  container: { padding: 16, flexGrow: 1, paddingBottom: 40 },
+  heading: { fontSize: 24, fontWeight: '700', marginBottom: 20, marginTop: 30 },
   section: { marginBottom: 20 },
-  sectionLabel: { fontSize: 15, fontWeight: '600', marginBottom: 8 },
-  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 6, padding: 12, backgroundColor: '#f9f9f9' },
-  summary: { borderTopWidth: 1, borderColor: '#ddd', paddingTop: 16, marginTop: 10 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  sectionLabel: { fontSize: 16, fontWeight: '600', marginBottom: 10 },
+  input: { borderWidth: 1, borderRadius: 12, padding: 14 },
+  summary: { borderTopWidth: 1, paddingTop: 20, marginTop: 16 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   name: { fontSize: 14 },
-  totalLabel: { fontSize: 15, fontWeight: 'bold' },
-  totalValue: { fontSize: 15, fontWeight: 'bold', color: '#3b82f6' },
-  placeButton: { marginTop: 24, backgroundColor: '#10b981', paddingVertical: 14, borderRadius: 6 },
-  placeText: { color: '#fff', fontWeight: 'bold', fontSize: 16, textAlign: 'center' },
+  variationText: { fontSize: 11, marginTop: 2 },
+  addressText: { marginTop: 10 },
+  totalLabel: { fontSize: 15, fontWeight: '600' },
+  totalValue: { fontSize: 15, fontWeight: '700' },
+  placeButton: {
+    marginTop: 28,
+    paddingVertical: 16,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  placeText: { color: '#fff', fontWeight: '700', fontSize: 16, textAlign: 'center' },
 });
 
 const useWalletStyles = StyleSheet.create({
-  wrapper: { margin: 20, backgroundColor: '#f9f9f9', borderRadius: 12, padding: 16, elevation: 3 },
+  wrapper: { marginHorizontal: 16, marginBottom: 20, borderRadius: 14, padding: 18, borderWidth: 1 },
   container: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  label: { fontSize: 18, fontWeight: '600', color: '#333' },
-  description: { marginTop: 8, fontSize: 14, color: '#666' },
+  label: { fontSize: 16, fontWeight: '600' },
+  description: { marginTop: 10, fontSize: 14 },
 });

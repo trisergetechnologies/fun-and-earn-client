@@ -12,6 +12,8 @@ import axios from 'axios';
 import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/components/ThemeContext';
+
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 interface Coupon {
@@ -29,7 +31,7 @@ interface Coupon {
 }
 
 const RewardScreen = () => {
-
+  const { colors } = useTheme();
   const [coupons, setCoupons] = useState<Coupon[] | null>(null);
   const [copied, setCopied] = useState<string>('');
 
@@ -38,9 +40,7 @@ const RewardScreen = () => {
     const getCouponsUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/general/getrewards`;
     try {
       const response = await axios.get(getCouponsUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (response.data.success) {
         setCoupons(response.data.data);
@@ -49,74 +49,83 @@ const RewardScreen = () => {
       console.error('Failed to fetch Wallet:', error.response?.data || error.message);
       throw new Error(error.response?.data?.message || 'Failed to fetch Wallet');
     }
-  }
+  };
 
-useFocusEffect(
-  useCallback(() => {
-    fetchCoupons();
-  }, [])
-);
+  useFocusEffect(
+    useCallback(() => {
+      fetchCoupons();
+    }, [])
+  );
 
-
-  const copyToClipboard = async(code: string) => {
+  const copyToClipboard = async (code: string) => {
     try {
       await Clipboard.setStringAsync(code);
-      setCopied("Copied");
-      setTimeout(()=>{
-        setCopied('');
-      }, 4000)
+      setCopied('Copied');
+      setTimeout(() => setCopied(''), 4000);
     } catch (error) {
       console.log(error);
     }
   };
 
   const renderHeader = () => (
-    <View>
-      <Text style={styles.header}>🎁 Your Rewards & Offers</Text>
-      <Text style={styles.sectionTitle}>Available Coupons</Text>
+    <View style={styles.headerWrap}>
+      <View style={styles.headerIconWrap}>
+        <Ionicons name="gift" size={28} color={colors.primary} />
+      </View>
+      <Text style={[styles.header, { color: colors.text }]}>Your Rewards & Offers</Text>
+      <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Available Coupons</Text>
     </View>
   );
 
   const renderItem = ({ item }: { item: Coupon }) => (
-    <View style={styles.couponCard}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.couponTitle}>{item.title}</Text>
-        <Text style={styles.couponCode}>
-          Use Code: <Text style={styles.codeText}>{item.code}</Text>
+    <View
+      style={[
+        styles.couponCard,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.borderLight,
+        },
+      ]}
+    >
+      <View style={styles.couponContent}>
+        <Text style={[styles.couponTitle, { color: colors.text }]}>{item.title}</Text>
+        <Text style={[styles.couponCode, { color: colors.textSecondary }]}>
+          Use Code: <Text style={[styles.codeText, { color: colors.primary }]}>{item.code}</Text>
         </Text>
-        <Text style={styles.couponDesc}>{item.description}</Text>
-        <Text style={styles.metaText}>Value: <Ionicons name="ribbon" size={16} color="#10b981" /> {item.value}</Text>
+        <Text style={[styles.couponDesc, { color: colors.textMuted }]}>{item.description}</Text>
+        <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+          <Ionicons name="pricetag" size={14} color={colors.success} /> Value: ₹{item.value}
+        </Text>
         {item.expiresAt && (
-          <Text style={styles.metaText}>
-            Expires on: {new Date(item.expiresAt).toLocaleDateString()}
+          <Text style={[styles.metaText, { color: colors.textMuted }]}>
+            Expires: {new Date(item.expiresAt).toLocaleDateString()}
           </Text>
         )}
         {item.isRedeemed ? (
-          <Text style={styles.redeemed}>✅ Already Redeemed</Text>
+          <Text style={[styles.redeemed, { color: colors.success }]}>Already Redeemed</Text>
         ) : (
           <Text
             style={[
               styles.activeLabel,
-              { color: item.isActive ? 'green' : 'red' },
+              { color: item.isActive ? colors.success : colors.error },
             ]}
           >
-            {item.isActive ? 'Active' : 'Not Active'}
+            {item.isActive ? 'Active' : 'Inactive'}
           </Text>
         )}
       </View>
-
       {!item.isRedeemed && (
         <TouchableOpacity
           disabled={!item.isActive}
           style={[
             styles.applyButton,
-            { opacity: item.isActive ? 1 : 0.5 },
+            { backgroundColor: colors.primary, opacity: item.isActive ? 1 : 0.5 },
           ]}
-          onPress={() => {
-            copyToClipboard(item.code);
-          }}
+          onPress={() => copyToClipboard(item.code)}
+          activeOpacity={0.85}
         >
-          <Text style={styles.applyText}>{copied ? copied : "Copy Code"}</Text>
+          <Ionicons name="copy-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
+          <Text style={styles.applyText}>{copied ? copied : 'Copy Code'}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -129,10 +138,13 @@ useFocusEffect(
         keyExtractor={(item) => item._id || item.code}
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyText}>No Coupons Available</Text>
+            <Ionicons name="gift-outline" size={48} color={colors.textMuted} />
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              No Coupons Available
+            </Text>
           </View>
         }
         showsVerticalScrollIndicator={false}
@@ -143,67 +155,70 @@ useFocusEffect(
 
 export default RewardScreen;
 
-
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    backgroundColor: '#f9f9f9',
+    paddingTop: 40,
     paddingBottom: 100,
   },
+  headerWrap: {
+    marginBottom: 20,
+  },
+  headerIconWrap: {
+    marginBottom: 8,
+  },
   header: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    marginBottom: 16,
-    color: '#111',
-    marginTop: 30,
+    marginBottom: 6,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    marginBottom: 10,
-    color: '#333',
   },
   couponCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#ddd',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    gap: 8,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  couponContent: {
+    flex: 1,
   },
   couponTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#222',
     marginBottom: 4,
   },
   couponCode: {
     fontSize: 13,
-    color: '#555',
   },
   codeText: {
-    fontWeight: 'bold',
-    color: '#3b82f6',
+    fontWeight: '700',
   },
   couponDesc: {
     fontSize: 12,
-    color: '#888',
-    marginTop: 2,
+    marginTop: 4,
   },
   metaText: {
     fontSize: 12,
-    color: '#555',
-    marginTop: 2,
+    marginTop: 4,
   },
   applyButton: {
-    backgroundColor: '#3b82f6',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
     alignSelf: 'flex-start',
   },
   applyText: {
@@ -214,22 +229,21 @@ const styles = StyleSheet.create({
   activeLabel: {
     fontSize: 13,
     fontWeight: '600',
-    marginTop: 4,
+    marginTop: 6,
   },
   redeemed: {
     marginTop: 6,
-    color: 'green',
     fontWeight: '600',
     fontSize: 13,
   },
   emptyBox: {
-    marginTop: 40,
+    marginTop: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
   emptyText: {
     fontSize: 16,
-    color: '#777',
     fontWeight: '500',
+    marginTop: 12,
   },
 });

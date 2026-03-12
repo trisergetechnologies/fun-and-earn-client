@@ -1,14 +1,11 @@
 import { useAuth } from '@/components/AuthContext';
 import ProductModal from '@/components/ProductModal';
 import SimpleSpinner from '@/components/SimpleSpinner';
-import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/components/ThemeContext';
 import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
-// import Constants from 'expo-constants';
-
-
 import { router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -28,9 +25,10 @@ import {
   View,
 } from 'react-native';
 
-// const { EXPO_PUBLIC_BASE_URL } = Constants.expoConfig?.extra || {};
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 const { width } = Dimensions.get('window');
+const CARD_GAP = 10;
+const CARD_WIDTH = (width - 16 * 2 - CARD_GAP) / 2;
 
 type Product = {
   __v: number;
@@ -52,14 +50,13 @@ type Product = {
 };
 
 const ExploreScreen = () => {
-
+  const { colors } = useTheme();
   const { user, isAuthenticated, isAuthLoading } = useAuth();
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [sampleProducts, setSampleProducts] = useState<Product[]>([]);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-
   const [sampleCategories, setSampleCategories] = useState(null);
 
   const matchedProducts = sampleProducts.filter((item) =>
@@ -70,21 +67,17 @@ const ExploreScreen = () => {
     setLoading(true);
     const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/product/products`;
     const token = await getToken();
-
     try {
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       setSampleProducts(response.data.data);
-
-      // ✅ Start fade-in animation
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 700, // smoother than 500ms
-        easing: Easing.inOut(Easing.ease), // ease-in-out effect
+        duration: 700,
+        easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
-      }).start()
+      }).start();
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -94,26 +87,20 @@ const ExploreScreen = () => {
 
   const fetchCategories = async () => {
     setLoading(true);
-    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/categories`; // ✅ Corrected route
+    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/categories`;
     const token = await getToken();
-
     try {
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const formattedCategories = response.data.data.map((item: any) => ({
         id: item._id,
         name: item.title,
         slug: item.slug,
-        image: 'https://via.placeholder.com/150', // fallback since schema has no image
+        image: 'https://via.placeholder.com/150',
         ownerId: item.ownerId || 'unknown',
       }));
-
-      setSampleCategories(formattedCategories); // ✅ Setting category state
-      console.log("sample categories", formattedCategories)
-
-      // Optional: start animation if needed
+      setSampleCategories(formattedCategories);
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 700,
@@ -127,68 +114,84 @@ const ExploreScreen = () => {
     }
   };
 
-useFocusEffect(
-  useCallback(() => {
-    fetchCategories();
-    fetchProducts();
-  }, [])
-);
+  useFocusEffect(
+    useCallback(() => {
+      fetchCategories();
+      fetchProducts();
+    }, [])
+  );
 
-  if(isAuthLoading) return <SimpleSpinner/>
+  if (isAuthLoading) return <SimpleSpinner />;
 
-
-  const renderCategory = ({ item }: {item:any}) => {
+  const renderCategory = ({ item }: { item: any }) => {
     const iconUri = item.icon?.trim()
       ? item.icon
-      : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name.charAt(0))}&background=3b82f6&color=fff&size=128&font-size=0.5`;
+      : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name.charAt(0))}&background=572fff&color=fff&size=128&font-size=0.5`;
 
     return (
       <TouchableOpacity
-        style={styles.categoryItem}
-        onPress={() => {
-         
-          router.push(`/private/category?slug=${item.slug}`)
-        }}
+        style={[styles.categoryItem, { backgroundColor: colors.card }]}
+        onPress={() => router.push(`/private/category?slug=${item.slug}`)}
+        activeOpacity={0.8}
       >
-        <Image source={{ uri: iconUri }} style={styles.categoryIcon} />
-        <Text style={styles.categoryText}>{item.name}</Text>
+        <View style={[styles.categoryIconWrap, { backgroundColor: colors.backgroundSecondary }]}>
+          <Image source={{ uri: iconUri }} style={styles.categoryIcon} />
+        </View>
+        <Text style={[styles.categoryText, { color: colors.text }]} numberOfLines={1}>
+          {item.name}
+        </Text>
       </TouchableOpacity>
     );
   };
 
-
   const renderProduct = ({ item }: { item: Product }) => (
-    <TouchableOpacity onPress={() => setSelectedProduct(item)} style={styles.productWrapper}>
-      <View style={styles.productCard}>
-        {item.discountPercent > 0 && (
-          <View style={styles.discountTag}>
-            <Text style={styles.discountTagText}>{item.discountPercent}% OFF</Text>
-          </View>
-        )}
-        <Image source={{ uri: item.images[0] }} style={styles.productImage} />
+    <TouchableOpacity
+      onPress={() => setSelectedProduct(item)}
+      style={styles.productWrapper}
+      activeOpacity={0.9}
+    >
+      <View style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+        <View style={styles.productImageWrap}>
+          <Image source={{ uri: item.images[0] }} style={styles.productImage} />
+          {item.discountPercent > 0 && (
+            <View style={[styles.discountTag, { backgroundColor: colors.discount }]}>
+              <Text style={styles.discountTagText}>{item.discountPercent}% OFF</Text>
+            </View>
+          )}
+        </View>
         <View style={styles.cardDetails}>
+          <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
+            {item.title}
+          </Text>
           <View style={styles.priceRow}>
-            <Text style={styles.productPrice}>₹{item.finalPrice}</Text>
+            <Text style={[styles.productPrice, { color: colors.primary }]}>₹{item.finalPrice}</Text>
             {item.discountPercent > 0 && (
-              <Text style={styles.originalPrice}>₹{item.price}</Text>
+              <Text style={[styles.originalPrice, { color: colors.textMuted }]}>₹{item.price}</Text>
             )}
           </View>
-          <Text style={styles.productName} numberOfLines={2}>{item.title}</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
 
   const renderSuggestionCard = ({ item }: { item: Product }) => (
-    <TouchableOpacity onPress={() => setSelectedProduct(item)} style={styles.suggestionCardWrapper}>
-      <View style={styles.suggestionCard}>
-        <Image source={{ uri: item.images[0] }} style={styles.suggestionImage} />
+    <TouchableOpacity
+      onPress={() => setSelectedProduct(item)}
+      style={styles.suggestionCardWrapper}
+      activeOpacity={0.9}
+    >
+      <View style={[styles.suggestionCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+        <View style={styles.suggestionImageWrap}>
+          <Image source={{ uri: item.images[0] }} style={styles.suggestionImage} />
+        </View>
         <View style={styles.suggestionInfo}>
-          <Text style={styles.suggestionName} numberOfLines={1}>{item.title}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
-            <Text style={styles.suggestionPrice}>₹{item.finalPrice}</Text>
+          <Text style={[styles.suggestionName, { color: colors.text }]} numberOfLines={1}>
+            {item.title}
+          </Text>
+          <View style={styles.suggestionPriceRow}>
+            <Text style={[styles.suggestionPrice, { color: colors.primary }]}>₹{item.finalPrice}</Text>
             {item.discountPercent > 0 && (
-              <Text style={styles.suggestionOriginalPrice}>₹{item.price}</Text>
+              <Text style={[styles.suggestionOriginalPrice, { color: colors.textMuted }]}>₹{item.price}</Text>
             )}
           </View>
         </View>
@@ -198,19 +201,14 @@ useFocusEffect(
 
   const ListHeader = () => (
     <>
-      <View style={{ marginVertical: 10, alignItems: 'center' }}>
-        <Text style={{
-          fontSize: 14,
-          color: '#4B5563', // neutral gray tone
-          fontWeight: '500',
-          letterSpacing: 0.5,
-        }}>
+      <View style={styles.brandRow}>
+        <Text style={[styles.brandText, { color: colors.textMuted }]}>
           AARUSH MP DREAMS (OPC) PRIVATE LIMITED
         </Text>
       </View>
-    
+
       <View style={styles.sectionHeader}>
-        <Text style={styles.categoryTitle}>Categories</Text>
+        <Text style={[styles.categoryTitle, { color: colors.text }]}>Categories</Text>
       </View>
       <FlatList
         horizontal
@@ -218,11 +216,11 @@ useFocusEffect(
         renderItem={renderCategory}
         keyExtractor={(item) => item.id.toString()}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 10 }}
+        contentContainerStyle={styles.categoryList}
       />
 
       <View style={styles.suggestionHeader}>
-        <Text style={styles.suggestionTitle}>Today's Suggestions</Text>
+        <Text style={[styles.suggestionTitle, { color: colors.text }]}>Today's Picks</Text>
       </View>
       <FlatList
         horizontal
@@ -230,39 +228,57 @@ useFocusEffect(
         renderItem={renderSuggestionCard}
         keyExtractor={(item) => item._id}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 8 }}
+        contentContainerStyle={styles.suggestionList}
       />
       <View style={styles.productHeader}>
-        <Text style={styles.sectionTitle}>Explore Our Products</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Explore Products</Text>
       </View>
     </>
   );
 
+  const dynamicStyles = {
+    safeArea: { backgroundColor: colors.background },
+    searchRowBg: { backgroundColor: colors.background },
+    searchInput: {
+      backgroundColor: colors.card,
+      borderColor: colors.border,
+      color: colors.text,
+    },
+    suggestionBox: {
+      backgroundColor: colors.card,
+      borderColor: colors.borderLight,
+    },
+    searchSuggestionText: { color: colors.text },
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f9f9f9' }}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        {/* ✅ Wrap full content in fade-in animation */}
-        {loading ? <SimpleSpinner /> :
-          <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-            <View style={[styles.container, styles.searchRow]}>
-              <Text style={styles.logo}>D M</Text>
+    <SafeAreaView style={[styles.safeArea, dynamicStyles.safeArea]}>
+      <KeyboardAvoidingView style={styles.flex1} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {loading ? (
+          <SimpleSpinner />
+        ) : (
+          <Animated.View style={[styles.flex1, { opacity: fadeAnim }]}>
+            <View style={[styles.container, styles.searchRow, dynamicStyles.searchRowBg]}>
+              <View style={[styles.logoWrap, { backgroundColor: colors.primary }]}>
+                <Text style={styles.logo}>DM</Text>
+              </View>
               <TextInput
-                style={styles.searchInput}
-                placeholder="Search"
+                style={[styles.searchInput, dynamicStyles.searchInput]}
+                placeholder="Search products..."
+                placeholderTextColor={colors.textMuted}
                 value={search}
                 onChangeText={setSearch}
               />
-              <Ionicons
-                style={styles.cartIcon}
-                name="cart-outline"
-                size={30}
-                color={Colors.gray}
-                onPress={() => router.push('/tabs/cart')}
-              />
+              <TouchableOpacity onPress={() => router.push('/tabs/cart')} style={styles.cartIconWrap}>
+                <Ionicons name="cart-outline" size={24} color={colors.text} />
+              </TouchableOpacity>
             </View>
 
             {search.length > 0 && (
-              <ScrollView style={styles.suggestionBox} keyboardShouldPersistTaps="handled">
+              <ScrollView
+                style={[styles.suggestionBox, dynamicStyles.suggestionBox]}
+                keyboardShouldPersistTaps="handled"
+              >
                 {matchedProducts.map((item) => (
                   <TouchableOpacity
                     key={item._id}
@@ -270,8 +286,12 @@ useFocusEffect(
                       setSelectedProduct(item);
                       setSearch('');
                     }}
+                    style={styles.searchSuggestionItem}
                   >
-                    <Text style={{ paddingVertical: 8, fontSize: 14 }}>{item.title}</Text>
+                    <Ionicons name="search-outline" size={18} color={colors.textMuted} />
+                    <Text style={[styles.searchSuggestionText, dynamicStyles.searchSuggestionText]}>
+                      {item.title}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -282,8 +302,8 @@ useFocusEffect(
               renderItem={renderProduct}
               keyExtractor={(item) => item._id}
               numColumns={2}
-              columnWrapperStyle={{ justifyContent: 'space-between' }}
-              contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 100 }}
+              columnWrapperStyle={styles.columnWrapper}
+              contentContainerStyle={styles.productList}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               ListHeaderComponent={ListHeader}
@@ -296,7 +316,8 @@ useFocusEffect(
                 onClose={() => setSelectedProduct(null)}
               />
             )}
-          </Animated.View>}
+          </Animated.View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -304,215 +325,250 @@ useFocusEffect(
 
 export default ExploreScreen;
 
-
-
 const styles = StyleSheet.create({
+  flex1: { flex: 1 },
+  safeArea: { flex: 1 },
   container: {
     paddingHorizontal: 16,
-    backgroundColor: '#f6f6f6',
-
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 40,
     zIndex: 100,
+    gap: 10,
+  },
+  logoWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   logo: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginRight: 8,
-    color: '#2563eb',
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
   },
   searchInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 38,
-    backgroundColor: '#fff',
-    fontSize: 14,
-    marginRight: 12,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 42,
+    fontSize: 15,
   },
-  cartIcon: {
-    paddingTop: 2,
+  cartIconWrap: {
+    padding: 8,
   },
   suggestionBox: {
     position: 'absolute',
-    top: 70,
-    left: 20,
-    right: 20,
-    backgroundColor: '#fff',
+    top: 94,
+    left: 16,
+    right: 16,
     zIndex: 99,
-    borderRadius: 10,
-    maxHeight: 200,
-    elevation: 10,
+    borderRadius: 12,
+    maxHeight: 220,
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    paddingVertical: 8,
+  },
+  searchSuggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  brandRow: {
+    marginVertical: 12,
+    alignItems: 'center',
+  },
+  brandText: {
+    fontSize: 12,
+    fontWeight: '500',
+    letterSpacing: 0.5,
   },
   sectionHeader: {
     marginTop: 20,
     paddingHorizontal: 4,
   },
   suggestionHeader: {
-    marginTop: 30,
+    marginTop: 28,
     paddingHorizontal: 4,
   },
   productHeader: {
-    marginTop: 30,
+    marginTop: 28,
     paddingHorizontal: 4,
   },
   categoryTitle: {
-    fontWeight: '600',
-    fontSize: 16,
-    marginBottom: 10,
-    color: '#111',
+    fontWeight: '700',
+    fontSize: 18,
+    marginBottom: 12,
   },
   suggestionTitle: {
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 18,
-    marginBottom: 15,
-    color: '#111',
+    marginBottom: 14,
   },
   sectionTitle: {
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 20,
-    marginBottom: 15,
-    color: '#111',
+    marginBottom: 14,
+  },
+  categoryList: {
+    paddingBottom: 12,
+    paddingRight: 16,
+  },
+  suggestionList: {
+    paddingHorizontal: 4,
+    paddingRight: 16,
   },
   categoryItem: {
     alignItems: 'center',
-    marginRight: 14,
+    marginRight: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    minWidth: 72,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  categoryIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    marginBottom: 8,
+    overflow: 'hidden',
   },
   categoryIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginBottom: 4,
-    backgroundColor: '#e5e5e5',
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   categoryText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
+    textAlign: 'center',
   },
   productWrapper: {
-    flex: 0.5,
-    padding: 8,
+    width: CARD_WIDTH,
+    marginRight: CARD_GAP,
+    marginBottom: 14,
   },
   productCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: 'hidden',
-    borderWidth: 0.4,
-    borderColor: '#ddd',
-    elevation: 2,
+    borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    marginBottom: 12,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  productImageWrap: {
+    position: 'relative',
+    width: '100%',
+    aspectRatio: 0.9,
   },
   productImage: {
     width: '100%',
-    height: width * 0.38,
-    resizeMode: 'contain',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  discountTag: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    zIndex: 1,
+  },
+  discountTagText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
   },
   cardDetails: {
-    padding: 10,
+    padding: 12,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginBottom: 2,
+    gap: 6,
+    marginTop: 4,
   },
   productPrice: {
-    fontWeight: 'bold',
-    color: '#2563eb',
-    fontSize: 14,
+    fontWeight: '700',
+    fontSize: 15,
   },
   originalPrice: {
     fontSize: 12,
-    color: '#9ca3af',
     textDecorationLine: 'line-through',
-  },
-  discountTag: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
-    backgroundColor: '#16a34a',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    zIndex: 1,
-  },
-  discountTagText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  productRating: {
-    fontSize: 12,
-    marginLeft: 4,
-    color: '#666',
   },
   productName: {
     fontSize: 13,
-    fontWeight: '500',
-    color: '#222',
-  },
-  favoriteIcon: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
+    fontWeight: '600',
+    lineHeight: 18,
   },
   suggestionCardWrapper: {
-    marginRight: 12,
+    marginRight: 14,
   },
   suggestionCard: {
-    width: 140,
-    borderRadius: 10,
-    backgroundColor: '#fff',
+    width: 148,
+    borderRadius: 14,
     overflow: 'hidden',
-    borderWidth: 0.5,
-    borderColor: '#ddd',
-    elevation: 2,
+    borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  suggestionImageWrap: {
+    width: '100%',
+    height: 120,
+    backgroundColor: 'transparent',
   },
   suggestionImage: {
     width: '100%',
-    height: 100,
-    resizeMode: 'contain',
+    height: '100%',
+    resizeMode: 'cover',
   },
   suggestionInfo: {
-    padding: 8,
+    padding: 10,
   },
   suggestionName: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#333',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  suggestionPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
   },
   suggestionPrice: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#2563eb',
+    fontSize: 14,
+    fontWeight: '700',
   },
   suggestionOriginalPrice: {
     fontSize: 11,
-    color: '#9ca3af',
     textDecorationLine: 'line-through',
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  productList: {
+    paddingBottom: 100,
   },
 });

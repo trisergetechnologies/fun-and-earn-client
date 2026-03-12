@@ -1,6 +1,6 @@
 import { useAuth } from '@/components/AuthContext';
 import Spinner from '@/components/Spinner';
-import { Colors } from '@/constants/Colors';
+import { useTheme } from '@/components/ThemeContext';
 import axios from 'axios';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -21,6 +21,7 @@ import Toast from 'react-native-toast-message';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 const SignInScreen = () => {
+  const { colors } = useTheme();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -100,8 +101,10 @@ const SignInScreen = () => {
   return (
     <>
       <Stack.Screen options={{ headerTitle: 'Sign In' }} />
-      {loading ? <Spinner/> : 
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+      {loading ? (
+        <Spinner />
+      ) : (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.container}
@@ -110,60 +113,60 @@ const SignInScreen = () => {
             contentContainerStyle={styles.scrollWrapper}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.title}>Welcome Back!</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.title, { color: colors.text }]}>Welcome Back!</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               Sign in to continue exploring and earning with Dream Mart
             </Text>
 
             <View style={styles.inputWrapper}>
               <TextInput
                 placeholder="Email"
-                placeholderTextColor="#666"
-                style={styles.input}
+                placeholderTextColor={colors.textMuted}
+                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
                 keyboardType="email-address"
                 value={email}
                 onChangeText={(e)=> setEmail(e.toLowerCase())}
               />
               <TextInput
                 placeholder="Password"
-                placeholderTextColor="#666"
+                placeholderTextColor={colors.textMuted}
                 secureTextEntry
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
                 value={password}
                 onChangeText={setPassword}
               />
             </View>
 
             <TouchableOpacity
-              style={styles.button}
+              style={[styles.button, { backgroundColor: colors.primary }]}
               onPress={handleSignIn}
               disabled={loading}
             >
               <Text style={styles.btnTxt}>Sign In</Text>
             </TouchableOpacity>
 
-            <Text style={styles.signupPrompt}>
+            <Text style={[styles.signupPrompt, { color: colors.textSecondary }]}>
               Don’t have an account?{' '}
               <Text
                 onPress={() => router.push('/signup')}
-                style={styles.signupLink}
+                style={[styles.signupLink, { color: colors.primary }]}
               >
                 Sign Up
               </Text>
             </Text>
-              <Text style={styles.signupPrompt}>
-                Forgot Password?{' '}
-                <Text
-                  onPress={() => router.push('/(public)/reset')}
-                  style={styles.signupLink}
-                >
-                  Reset Password
-                </Text>
+            <Text style={[styles.signupPrompt, { color: colors.textSecondary }]}>
+              Forgot Password?{' '}
+              <Text
+                onPress={() => router.push('/(public)/reset')}
+                style={[styles.signupLink, { color: colors.primary }]}
+              >
+                Reset Password
               </Text>
+            </Text>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-}
+      )}
       <Toast />
     </>
   );
@@ -172,10 +175,8 @@ const SignInScreen = () => {
 export default SignInScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
+  safeArea: { flex: 1 },
+  container: { flex: 1 },
   scrollWrapper: {
     paddingHorizontal: 24,
     paddingTop: 60,
@@ -186,14 +187,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: Colors.black,
     textAlign: 'center',
     marginBottom: 9,
   },
   subtitle: {
     fontSize: 14,
     textAlign: 'center',
-    color: '#6b7280',
     marginBottom: 24,
     lineHeight: 22,
   },
@@ -202,21 +201,21 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   input: {
-    backgroundColor: '#fff',
     paddingVertical: 14,
     paddingHorizontal: 18,
     borderRadius: 14,
     fontSize: 15,
-    color: Colors.black,
-    borderColor: '#ddd',
     borderWidth: 1,
   },
   button: {
-    backgroundColor: Colors.primary,
     paddingVertical: 16,
-    borderRadius: 30,
+    borderRadius: 14,
     alignItems: 'center',
     elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
   btnTxt: {
     color: '#fff',
@@ -226,24 +225,10 @@ const styles = StyleSheet.create({
   signupPrompt: {
     marginTop: 20,
     textAlign: 'center',
-    color: '#6b7280',
     fontSize: 14,
   },
   signupLink: {
-    color: Colors.black,
     fontWeight: '600',
     textDecorationLine: 'underline',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 9999,
-  },
-  spinner3d: {
-    width: 80,
-    height: 80,
-    backfaceVisibility: 'hidden',
   },
 });

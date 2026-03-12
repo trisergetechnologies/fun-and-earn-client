@@ -6,9 +6,12 @@ import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import DreamPointsInfo from '@/components/DreamPointMessage';
+import { useTheme } from '@/components/ThemeContext';
+
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 const WalletScreen = () => {
+  const { colors } = useTheme();
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [couponCode, setCouponCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -145,61 +148,60 @@ const WalletScreen = () => {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       {message && (
         <Animated.View
           style={[
             styles.toast,
             {
               transform: [{ translateY: toastAnim }],
-              backgroundColor: messageType === 'success' ? '#10b981' : '#dc2626',
+              backgroundColor: messageType === 'success' ? colors.success : colors.error,
             },
           ]}
         >
           <Text style={styles.toastText}>{message}</Text>
         </Animated.View>
       )}
-      <Text style={styles.title}>Your Wallet</Text>
+      <Text style={[styles.title, { color: colors.text }]}>Your Wallet</Text>
 
-      <View style={styles.balanceCard}>
-        {/* <Ionicons name="wallet-outline" size={32} color="#10b981" /> */}
-        <Ionicons name="ribbon" size={24} color="#10b981" />
+      <View style={[styles.balanceCard, { backgroundColor: colors.successMuted }]}>
+        <Ionicons name="wallet" size={28} color={colors.success} />
         <View style={styles.balanceTextGroup}>
-          <Text style={styles.label}>Total Dream Cash</Text>
-          <Text style={styles.amount}>{walletBalance.toFixed(2)}</Text>
+          <Text style={[styles.label, { color: colors.textSecondary }]}>Total Dream Cash</Text>
+          <Text style={[styles.amount, { color: colors.success }]}>{walletBalance.toFixed(2)}</Text>
         </View>
       </View>
 
       <View style={styles.actionCard}>
         <TouchableOpacity
           onPress={() => router.push('/private/transactions')}
-          style={[styles.pillButtonSecondary]}
+          style={[styles.pillButtonSecondary, { backgroundColor: colors.primaryTint }]}
         >
-          <Ionicons name="list-outline" size={18} color="#3b82f6" style={{ marginRight: 6 }} />
-          <Text style={styles.buttonTextBlue}>Wallet Summary</Text>
+          <Ionicons name="list-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+          <Text style={[styles.buttonTextBlue, { color: colors.primary }]}>Wallet Summary</Text>
         </TouchableOpacity>
       </View>
 
-
-
-      <View style={styles.withdrawCard}>
-        <Text style={styles.withdrawTitle}>Withdraw Amount</Text>
-
-        <View style={styles.inputWrapper}>
-          <Ionicons name="cash-outline" size={20} color="#3b82f6" />
+      <View style={[styles.withdrawCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+        <Text style={[styles.withdrawTitle, { color: colors.text }]}>Withdraw Amount</Text>
+        <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+          <Ionicons name="cash-outline" size={20} color={colors.primary} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.text }]}
             placeholder="Enter amount to withdraw"
-            placeholderTextColor="#aaa"
+            placeholderTextColor={colors.textMuted}
             keyboardType="numeric"
             value={withdrawAmount}
             onChangeText={setWithdrawAmount}
             editable={!loading}
           />
         </View>
-
         <TouchableOpacity
-          style={[styles.withdrawButton]}
+          style={[styles.withdrawButton, { backgroundColor: colors.primary }]}
           onPress={handleWithdraw}
           disabled={loading}
         >
@@ -209,27 +211,21 @@ const WalletScreen = () => {
         </TouchableOpacity>
       </View>
 
-
-
-      <View style={styles.redeemCard}>
-        <Text style={styles.redeemTitle}>Have a Coupon Code?</Text>
-
-        <View style={styles.inputWrapper}>
-          <Ionicons name="ticket-outline" size={20} color="#10b981" />
+      <View style={[styles.redeemCard, { backgroundColor: colors.successMuted, borderColor: colors.borderLight }]}>
+        <Text style={[styles.redeemTitle, { color: colors.text }]}>Have a Coupon Code?</Text>
+        <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Ionicons name="pricetag-outline" size={20} color={colors.success} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.text }]}
             placeholder="Enter coupon code"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.textMuted}
             value={couponCode}
             onChangeText={setCouponCode}
             editable={!loading}
           />
         </View>
-
-        {/* {message && <Text style={styles.messageText}>{message}</Text>} */}
-
         <TouchableOpacity
-          style={[styles.redeemButton]}
+          style={[styles.redeemButton, { backgroundColor: colors.success }]}
           onPress={handleRedeem}
           disabled={loading}
         >
@@ -249,68 +245,59 @@ export default WalletScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9f9f9',
   },
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '700',
     marginBottom: 20,
-    color: '#111',
     marginTop: 30,
   },
   balanceCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#e6fff2',
-    padding: 16,
-    borderRadius: 10,
+    padding: 18,
+    borderRadius: 16,
     marginBottom: 24,
+    borderWidth: 1,
   },
   balanceTextGroup: {
     marginLeft: 16,
   },
   label: {
     fontSize: 14,
-    color: '#666',
   },
   amount: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#10b981',
+    fontSize: 26,
+    fontWeight: '700',
   },
 
-  // NEW: Grouped action buttons
   actionCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 24,
     gap: 12,
   },
-
-  // Premium pill-style primary button
   pillButton: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#047857',
-    paddingVertical: 12,
-    borderRadius: 100,
+    paddingVertical: 14,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
     elevation: 2,
   },
-
   redeemCard: {
-    backgroundColor: '#ecfdf5',
-    padding: 16,
+    padding: 18,
     borderRadius: 16,
+    borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -318,14 +305,10 @@ const styles = StyleSheet.create({
     elevation: 3,
     marginTop: 20,
   },
-
-  // Pill secondary (blue accent) button
   pillButtonSecondary: {
-    flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#e0ecff',
-    paddingVertical: 12,
-    borderRadius: 100,
+    paddingVertical: 14,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -366,39 +349,29 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  // Redeem section styles
   redeemContainer: {
-    backgroundColor: '#ecfdf5',
     padding: 16,
     borderRadius: 12,
     marginTop: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 3,
   },
   redeemTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#047857',
     marginBottom: 12,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ccc',
+    marginBottom: 16,
   },
   input: {
     flex: 1,
-    marginLeft: 8,
+    marginLeft: 10,
     fontSize: 15,
-    color: '#111',
   },
   messageText: {
     color: '#92400e',
@@ -417,11 +390,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 15,
   },
-  //withdrawal design
   withdrawCard: {
-    backgroundColor: '#eef2ff', // soft blue
-    padding: 16,
+    padding: 18,
     borderRadius: 16,
+    borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -430,19 +402,15 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 10,
   },
-
   withdrawTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1e3a8a', // deep blue
     marginBottom: 12,
   },
-
   withdrawButton: {
-    marginTop: 16,
-    backgroundColor: '#3b82f6', // vibrant blue
-    paddingVertical: 12,
-    borderRadius: 8,
+    marginTop: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
   },
 
