@@ -25,6 +25,7 @@ interface OrderItem {
 
 interface Order {
   _id: string;
+  publicOrderId?: string | null;
   buyerId: string;
   cancelRequested: boolean;
   createdAt: string;

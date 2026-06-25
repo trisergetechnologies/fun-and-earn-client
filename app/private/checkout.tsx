@@ -1,9 +1,11 @@
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import RazorpayCheckout from 'react-native-razorpay';
 import {
   Alert,
+  AppState,
+  AppStateStatus,
   ScrollView,
   StyleSheet,
   Switch,
@@ -18,12 +20,17 @@ import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
 import uuid from 'react-native-uuid';
 import { useProfile } from '@/components/ProfileContext';
 import { useTheme } from '@/components/ThemeContext';
 
-const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1'; // public backend
+const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
+const PAYMENT_GATEWAY = (process.env.EXPO_PUBLIC_PAYMENT_GATEWAY || 'razorpay').toLowerCase();
+
+function logCcavenue(step: string, payload?: Record<string, unknown>) {
+  const msg = payload ? `${step} ${JSON.stringify(payload)}` : step;
+  console.log(`[CCAvenue Checkout] ${msg}`);
+}
 
 interface Address {
   addressName: string;
@@ -44,6 +51,16 @@ interface VerifyStatusResponse {
   decision: VerifyStatusDecision;
   reason?: string;
   orderStatus?: string;
+}
+
+type PaymentDecision = 'WAIT' | 'SUCCESS' | 'FAIL';
+
+interface CcavenueVerifyResponse {
+  success: boolean;
+  decision: PaymentDecision;
+  status?: string;
+  orderId?: string;
+  message?: string;
 }
 
 interface CreateIntentResult {
@@ -67,7 +84,13 @@ const CheckoutScreen = () => {
   const [currBal, setCurrBal] = useState(0);
   const [useWallet, setUseWallet] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState('');
   const {userProfile} = useProfile();
+
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollingAttemptsRef = useRef(0);
+  const activePaymentIntentIdRef = useRef<string | null>(null);
+  const appState = useRef<AppStateStatus>(AppState.currentState);
 
   // fetch helpers
   const fetchAddresses = async () => {
@@ -110,7 +133,20 @@ const CheckoutScreen = () => {
     fetchAddresses();
     getWallet();
     fetchCart();
+    return () => stopPolling();
   }, []));
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        if (activePaymentIntentIdRef.current) {
+          checkCcavenuePaymentStatus(activePaymentIntentIdRef.current);
+        }
+      }
+      appState.current = nextAppState;
+    });
+    return () => subscription.remove();
+  }, []);
 
   // show address snapshot
   useEffect(() => {
@@ -124,12 +160,207 @@ const CheckoutScreen = () => {
 
   const total = cart.reduce((sum, item) => sum + item.productId.finalPrice * item.quantity, 0);
 
+  function stopPolling() {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+    pollingAttemptsRef.current = 0;
+  }
+
+  async function verifyCcavenuePayment(paymentIntentId: string): Promise<CcavenueVerifyResponse | null> {
+    const token = await getToken();
+    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/payment/ccavenue/verify/${paymentIntentId}`;
+    logCcavenue('verify_request', { paymentIntentId, url });
+    try {
+      const res = await axios.get<CcavenueVerifyResponse>(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      logCcavenue('verify_response', {
+        paymentIntentId,
+        decision: res.data?.decision,
+        status: res.data?.status,
+        message: res.data?.message,
+      });
+      return res.data;
+    } catch (err: any) {
+      logCcavenue('verify_error', {
+        paymentIntentId,
+        error: err?.response?.data || err?.message,
+      });
+      return null;
+    }
+  }
+
+  function handleCcavenueVerifyResult(result: CcavenueVerifyResponse) {
+    logCcavenue('verify_handle', { decision: result.decision, message: result.message });
+
+    if (result.decision === 'SUCCESS') {
+      stopPolling();
+      activePaymentIntentIdRef.current = null;
+      setPaymentStatus('');
+      setLoading(false);
+      Alert.alert('Payment Successful', 'Your order has been placed!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            refreshCart();
+            router.replace('/private/success');
+          },
+        },
+      ]);
+      return;
+    }
+
+    if (result.decision === 'FAIL') {
+      stopPolling();
+      activePaymentIntentIdRef.current = null;
+      setPaymentStatus('');
+      setLoading(false);
+      Alert.alert('Payment Failed', result.message || 'Payment was unsuccessful. Please try again.', [
+        { text: 'OK', onPress: () => router.replace('/orders') },
+      ]);
+    }
+  }
+
+  async function checkCcavenuePaymentStatus(paymentIntentId: string) {
+    setPaymentStatus('Checking payment status...');
+    logCcavenue('check_status_start', { paymentIntentId });
+
+    const result = await verifyCcavenuePayment(paymentIntentId);
+
+    if (!result) {
+      logCcavenue('check_status_null_response', { paymentIntentId });
+      startCcavenuePolling(paymentIntentId);
+      return;
+    }
+
+    if (result.decision === 'WAIT') {
+      logCcavenue('check_status_wait_start_polling', {
+        paymentIntentId,
+        hint: 'Callback not processed yet — CCAvenue should POST to /public/ccavenue/callback',
+      });
+      startCcavenuePolling(paymentIntentId);
+      return;
+    }
+
+    handleCcavenueVerifyResult(result);
+  }
+
+  function startCcavenuePolling(paymentIntentId: string) {
+    stopPolling();
+    pollingAttemptsRef.current = 0;
+    activePaymentIntentIdRef.current = paymentIntentId;
+    setPaymentStatus('Verifying payment...');
+    logCcavenue('polling_start', { paymentIntentId, intervalSec: 6, maxAttempts: 20 });
+
+    pollingIntervalRef.current = setInterval(async () => {
+      pollingAttemptsRef.current += 1;
+      logCcavenue('polling_tick', {
+        paymentIntentId,
+        attempt: pollingAttemptsRef.current,
+      });
+      const result = await verifyCcavenuePayment(paymentIntentId);
+
+      if (!result) {
+        if (pollingAttemptsRef.current >= 20) {
+          stopPolling();
+          activePaymentIntentIdRef.current = null;
+          setPaymentStatus('');
+          setLoading(false);
+          Alert.alert('Verification Timeout', 'Unable to verify payment. Please check your orders.', [
+            { text: 'OK', onPress: () => router.replace('/orders') },
+          ]);
+        }
+        return;
+      }
+
+      if (result.decision === 'SUCCESS' || result.decision === 'FAIL') {
+        handleCcavenueVerifyResult(result);
+        return;
+      }
+
+      setPaymentStatus(`Verifying payment... (${pollingAttemptsRef.current}/20)`);
+      if (pollingAttemptsRef.current >= 20) {
+        stopPolling();
+        activePaymentIntentIdRef.current = null;
+        setPaymentStatus('');
+        setLoading(false);
+        Alert.alert(
+          'Payment Pending',
+          'Payment verification timed out. Please check your order status in Orders.',
+          [{ text: 'View Orders', onPress: () => router.replace('/orders') }]
+        );
+      }
+    }, 6000);
+  }
+
+  async function createIntentAndPayCcavenue(deliverySlug: string) {
+    logCcavenue('flow_start', {
+      apiBase: EXPO_PUBLIC_BASE_URL,
+      gateway: PAYMENT_GATEWAY,
+      deliverySlug,
+    });
+
+    const token = await getToken();
+    const idempotencyKey = `${Date.now()}-${uuid.v4()}`;
+    const res = await axios.post(
+      `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/createorderintent`,
+      { deliverySlug, useWallet, idempotencyKey, paymentGateway: PAYMENT_GATEWAY },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || 'Failed to create payment intent');
+    }
+
+    const { paymentIntentId, paymentPageUrl, amount, ccavenueOrderId } = res.data.data as {
+      paymentIntentId: string;
+      paymentPageUrl?: string;
+      amount?: number;
+      ccavenueOrderId?: string;
+    };
+
+    logCcavenue('intent_created', {
+      paymentIntentId,
+      ccavenueOrderId,
+      amount,
+      paymentPageHost: paymentPageUrl?.split('/')[2],
+    });
+
+    if (!amount || amount <= 0) {
+      Alert.alert('Order placed', 'Order placed successfully using wallet only.');
+      refreshCart();
+      router.replace('/private/success');
+      return;
+    }
+
+    if (!paymentPageUrl) {
+      throw new Error('Payment page URL missing from server');
+    }
+
+    setPaymentStatus('Opening payment page...');
+    activePaymentIntentIdRef.current = paymentIntentId;
+
+    const browserResult = await WebBrowser.openBrowserAsync(paymentPageUrl, {
+      presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+      controlsColor: '#10b981',
+    });
+
+    logCcavenue('browser_closed', {
+      paymentIntentId,
+      browserType: browserResult.type,
+      hint: 'If type is dismiss/cancel, user may have closed before CCAvenue POSTed to callback URL',
+    });
+
+    await checkCcavenuePaymentStatus(paymentIntentId);
+  }
 
   async function createIntentAndPay(deliverySlug: string): Promise<CreateIntentResult> {
     const token = await getToken();
     const idempotencyKey = `${Date.now()}-${uuid.v4()}`;
     const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/createorderintent`;
-    const payload = { deliverySlug, useWallet, idempotencyKey };
+    const payload = { deliverySlug, useWallet, idempotencyKey, paymentGateway: PAYMENT_GATEWAY };
 
     const res = await axios.post(url, payload, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.data?.success) throw new Error(res.data?.message || 'Failed to create payment intent');
@@ -307,7 +538,14 @@ const CheckoutScreen = () => {
         }
       }
 
-      // 🧾 Razorpay payment
+      // Gateway payment
+      if (PAYMENT_GATEWAY === 'ccavenue') {
+        setPaymentStatus('Creating order...');
+        await createIntentAndPayCcavenue(selectedSlug);
+        return;
+      }
+
+      // Razorpay payment
       const paymentResult = await createIntentAndPay(selectedSlug);
 
       if (paymentResult.walletOnly) {
@@ -347,6 +585,9 @@ const CheckoutScreen = () => {
         );
       }
     } catch (err: any) {
+      stopPolling();
+      activePaymentIntentIdRef.current = null;
+      setPaymentStatus('');
       console.error('Checkout error:', err?.response?.data || err?.message || err);
       Alert.alert('Payment Error', err?.response?.data?.message || err?.message || 'Something went wrong');
     } finally {
@@ -449,6 +690,13 @@ const CheckoutScreen = () => {
         </View>
       </View>
 
+      {paymentStatus ? (
+        <View style={[styles.statusContainer, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+          <ActivityIndicator size="small" color={colors.success} />
+          <Text style={[styles.statusText, { color: colors.success }]}>{paymentStatus}</Text>
+        </View>
+      ) : null}
+
       <TouchableOpacity
         style={[styles.placeButton, { backgroundColor: colors.success }, loading && { opacity: 0.7 }]}
         onPress={handlePlaceOrder}
@@ -464,6 +712,13 @@ const CheckoutScreen = () => {
           <Text style={styles.placeText}>Place Order</Text>
         )}
       </TouchableOpacity>
+
+      {PAYMENT_GATEWAY === 'ccavenue' ? (
+        <View style={styles.infoContainer}>
+          <Ionicons name="shield-checkmark" size={16} color={colors.success} />
+          <Text style={[styles.infoText, { color: colors.textSecondary }]}>Secured by CCAvenue</Text>
+        </View>
+      ) : null}
     </ScrollView>
   );
 };
@@ -494,6 +749,31 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   placeText: { color: '#fff', fontWeight: '700', fontSize: 16, textAlign: 'center' },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  statusText: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  infoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    padding: 8,
+  },
+  infoText: {
+    marginLeft: 6,
+    fontSize: 12,
+  },
 });
 
 const useWalletStyles = StyleSheet.create({
