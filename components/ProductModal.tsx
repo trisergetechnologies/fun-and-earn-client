@@ -21,6 +21,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui';
+import { ProductImageCarousel } from '@/components/ui/ProductImageCarousel';
+import { getProductSellerName } from '@/utils/productSeller';
 
 const { height } = Dimensions.get('window');
 
@@ -44,7 +46,7 @@ interface ProductModalProps {
     images: string[];
     isActive: boolean;
     price: number;
-    sellerId: string;
+    sellerId: string | { _id?: string; name?: string; email?: string };
     stock: number;
     title: string;
     updatedAt: string;
@@ -74,6 +76,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ visible, onClose, product }
 
   if (!product) return null;
 
+  const sellerName = getProductSellerName(product.sellerId);
   const hasVariations = product.variations && product.variations.length > 0;
   const allVariationsSelected = hasVariations
     ? product.variations!.every((v) => selectedVariations[v.name])
@@ -121,10 +124,16 @@ const ProductModal: React.FC<ProductModalProps> = ({ visible, onClose, product }
           showsVerticalScrollIndicator={false}
         >
           <View style={[styles.imageWrap, { backgroundColor: colors.backgroundSecondary }]}>
-            <Image source={{ uri: product.images[0] }} style={styles.productImage} />
+            <ProductImageCarousel images={product.images} height={220} />
           </View>
 
           <Text style={[styles.productName, { color: colors.text }]}>{product.title}</Text>
+
+          {sellerName ? (
+            <Text style={[styles.sellerName, { color: colors.textSecondary }]}>
+              Sold by <Text style={styles.sellerNameBold}>{sellerName}</Text>
+            </Text>
+          ) : null}
 
           <View style={styles.priceRow}>
             {product.discountPercent > 0 && (
@@ -266,6 +275,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 10,
     lineHeight: 28,
+  },
+  sellerName: {
+    fontSize: 14,
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  sellerNameBold: {
+    fontWeight: '600',
   },
   priceRow: {
     flexDirection: 'row',

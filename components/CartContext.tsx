@@ -27,7 +27,7 @@ export type Product = {
   images: string[];
   isActive: boolean;
   price: number;
-  sellerId: string;
+  sellerId: string | { _id?: string; name?: string; email?: string };
   stock: number;
   title: string;
   updatedAt: string;

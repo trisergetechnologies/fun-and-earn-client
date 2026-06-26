@@ -9,6 +9,7 @@ import { useTheme } from '@/components/ThemeContext';
 import { borderRadius, shadows, typography } from '@/constants/DesignSystem';
 import { Badge } from './Badge';
 import { Ionicons } from '@expo/vector-icons';
+import { ProductImageCarousel } from './ProductImageCarousel';
 
 export interface ProductCardData {
   _id: string;
@@ -76,10 +77,9 @@ export function ProductCard({
       ]}
     >
       <View style={[styles.imageWrap, { backgroundColor: colors.backgroundSecondary }]}>
-        <Image
-          source={{ uri: product.images[0] }}
-          style={compact ? styles.imageCompact : styles.image}
-          resizeMode="cover"
+        <ProductImageCarousel
+          images={product.images}
+          height={compact ? 140 : 180}
         />
         {hasDiscount && (
           <View style={styles.badgeWrap}>
