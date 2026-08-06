@@ -1,20 +1,9 @@
-import { Ionicons } from '@expo/vector-icons'; // Fixed import
-import React from 'react';
-import { Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-interface Address {
-  addressName: string;
-  slugName: string;
-  fullName: string;
-  street: string;
-  city: string;
-  state: string;
-  pincode: string;
-  phone: string;
-  isDefault: boolean;
-  landmark?: string;
-  country?: string;
-}
+import { Card } from '@/components/ui';
+import { useTheme } from '@/components/ThemeContext';
+import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
+import { Address } from '@/types/address';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface AddressCardProps {
   address: Address;
@@ -24,178 +13,164 @@ interface AddressCardProps {
   showActions?: boolean;
 }
 
-const AddressCard: React.FC<AddressCardProps> = ({ 
-  address, 
-  onEdit, 
-  onDelete, 
+export default function AddressCard({
+  address,
+  onEdit,
+  onDelete,
   onSetDefault,
-  showActions = true 
-}) => {
-  const handleCall = () => {
-    if (address.phone) {
-      Linking.openURL(`tel:${address.phone}`);
-    }
-  };
+  showActions = true,
+}: AddressCardProps) {
+  const { colors } = useTheme();
 
   return (
-    <View style={[styles.card, address.isDefault && styles.defaultCard]}>
+    <Card
+      padding={spacing.md}
+      style={[
+        styles.card,
+        address.isDefault && {
+          borderWidth: 1,
+          borderColor: colors.primary + '55',
+        },
+      ]}
+    >
       <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <Ionicons name="location-outline" size={20} color="#10b981" />
-          <Text style={styles.title}>{address.addressName}</Text>
-          {address.isDefault && (
-            <View style={styles.defaultBadge}>
-              <Text style={styles.defaultBadgeText}>Default</Text>
-            </View>
-          )}
+        <View style={[styles.iconWrap, { backgroundColor: colors.backgroundSecondary }]}>
+          <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
+        </View>
+        <View style={styles.headerText}>
+          <View style={styles.titleRow}>
+            <Text style={[styles.title, { color: colors.text }]}>{address.addressName}</Text>
+            {address.isDefault ? (
+              <View style={[styles.defaultBadge, { backgroundColor: colors.success + '18' }]}>
+                <Text style={[styles.defaultBadgeText, { color: colors.success }]}>Default</Text>
+              </View>
+            ) : null}
+          </View>
         </View>
       </View>
 
       <View style={styles.details}>
-        <Text style={styles.name}>{address.fullName}</Text>
-        <Text style={styles.addressLine}>{address.street}</Text>
-        {address.landmark && (
-          <Text style={styles.landmark}>Landmark: {address.landmark}</Text>
-        )}
-        <Text style={styles.addressLine}>
-          {address.city}, {address.state} - {address.pincode}
+        <Text style={[styles.name, { color: colors.text }]}>{address.fullName}</Text>
+        <Text style={[styles.line, { color: colors.textSecondary }]}>{address.street}</Text>
+        {address.landmark ? (
+          <Text style={[styles.line, { color: colors.textMuted }]}>Landmark: {address.landmark}</Text>
+        ) : null}
+        <Text style={[styles.line, { color: colors.textSecondary }]}>
+          {address.city}, {address.state} – {address.pincode}
         </Text>
-        {address.country && (
-          <Text style={styles.country}>{address.country}</Text>
-        )}
-        <Text style={styles.phone}>Phone: {address.phone}</Text>
+        {address.country ? (
+          <Text style={[styles.line, { color: colors.textMuted }]}>{address.country}</Text>
+        ) : null}
+        <Text style={[styles.phone, { color: colors.textMuted }]}>{address.phone}</Text>
       </View>
 
-      {showActions && (
-        <View style={styles.footer}>
-          <TouchableOpacity 
-            onPress={handleCall} 
-            style={styles.callButton}
-            disabled={!address.phone}
-          >
-            <Ionicons name="call-outline" size={16} color="#10b981" />
-            <Text style={styles.callText}>Call</Text>
-          </TouchableOpacity>
-
-          <View style={styles.actionContainer}>
-            <TouchableOpacity onPress={onEdit} style={styles.actionButton}>
-              <Ionicons name="pencil-outline" size={18} color="#3b82f6" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={onDelete} style={styles.actionButton}>
-              <Ionicons name="trash-outline" size={18} color="#ef4444" />
-            </TouchableOpacity>
-            
+      {showActions ? (
+        <View style={[styles.footer, { borderTopColor: colors.borderLight }]}>
+          <View style={styles.actions}>
+            {!address.isDefault ? (
+              <Pressable
+                onPress={onSetDefault}
+                style={({ pressed }) => [styles.actionBtn, { opacity: pressed ? 0.75 : 1 }]}
+              >
+                <Text style={[styles.actionText, { color: colors.primary }]}>Make default</Text>
+              </Pressable>
+            ) : null}
+            <Pressable
+              onPress={onEdit}
+              style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.75 : 1 }]}
+            >
+              <Ionicons name="pencil-outline" size={18} color={colors.primary} />
+            </Pressable>
+            <Pressable
+              onPress={onDelete}
+              style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.75 : 1 }]}
+            >
+              <Ionicons name="trash-outline" size={18} color={colors.error} />
+            </Pressable>
           </View>
         </View>
-      )}
-    </View>
+      ) : null}
+    </Card>
   );
-};
+}
 
-export default AddressCard;
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  defaultCard: {
-    borderWidth: 1,
-    borderColor: '#10b981',
-    backgroundColor: '#f0fdf4',
+    marginBottom: spacing.sm,
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
-  titleContainer: {
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerText: {
+    flex: 1,
+  },
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.xxs,
   },
   title: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-    color: '#1e293b',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
   },
   defaultBadge: {
-    backgroundColor: '#10b98120',
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    borderRadius: 4,
-    marginLeft: 8,
+    borderRadius: borderRadius.full,
   },
   defaultBadgeText: {
-    color: '#10b981',
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
   },
   details: {
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
   name: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
-    color: '#334155',
-  },
-  addressLine: {
-    fontSize: 13,
-    color: '#64748b',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
     marginBottom: 2,
   },
-  landmark: {
-    fontSize: 13,
-    color: '#64748b',
-    fontStyle: 'italic',
-    marginBottom: 2,
-  },
-  country: {
-    fontSize: 13,
-    color: '#64748b',
-    marginBottom: 2,
+  line: {
+    fontSize: typography.fontSize.sm,
+    lineHeight: 20,
   },
   phone: {
-    fontSize: 13,
-    color: '#64748b',
-    marginTop: 6,
+    fontSize: typography.fontSize.sm,
+    marginTop: spacing.xxs,
   },
   footer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  callButton: {
+  actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: '#ecfdf5',
+    gap: spacing.sm,
   },
-  callText: {
-    color: '#10b981',
-    marginLeft: 4,
-    fontWeight: '500',
+  actionBtn: {
+    paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing.xxs,
   },
-  actionContainer: {
-    flexDirection: 'row',
+  actionText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
   },
-  actionButton: {
-    marginLeft: 12,
-    padding: 4,
+  iconBtn: {
+    padding: spacing.xxs,
   },
 });
 

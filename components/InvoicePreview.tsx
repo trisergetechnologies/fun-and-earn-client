@@ -1,8 +1,7 @@
-import React from "react";
-import { Modal, View, TouchableOpacity, Text, StyleSheet, Dimensions } from "react-native";
-import { WebView } from "react-native-webview";
+import { Modal, View, TouchableOpacity, Text, StyleSheet, Dimensions } from 'react-native';
+import { WebView } from 'react-native-webview';
 
-const { width, height } = Dimensions.get("window");
+const { width, height } = Dimensions.get('window');
 
 export default function InvoicePreview({
   visible,
@@ -14,7 +13,7 @@ export default function InvoicePreview({
   uri: string;
 }) {
   return (
-    <Modal visible={visible} animationType="fade" transparent>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.modalContainer}>
           <View style={styles.header}>
@@ -24,7 +23,7 @@ export default function InvoicePreview({
             <Text style={styles.title}>Invoice</Text>
           </View>
 
-          <WebView source={{ uri }} style={styles.webview} />
+          {uri ? <WebView source={{ uri }} style={styles.webview} /> : null}
         </View>
       </View>
     </Modal>
@@ -34,30 +33,30 @@ export default function InvoicePreview({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContainer: {
     width: width * 0.85,
     height: height * 0.6,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 12,
-    overflow: "hidden",
+    overflow: 'hidden',
     elevation: 5,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 10,
-    backgroundColor: "#3b82f6",
+    backgroundColor: '#3b82f6',
   },
   title: {
     flex: 1,
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#fff",
-    textAlign: "center",
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
   },
   closeButton: {
     paddingHorizontal: 10,
@@ -65,8 +64,8 @@ const styles = StyleSheet.create({
   },
   closeText: {
     fontSize: 14,
-    fontWeight: "bold",
-    color: "#fff",
+    fontWeight: 'bold',
+    color: '#fff',
   },
   webview: {
     flex: 1,

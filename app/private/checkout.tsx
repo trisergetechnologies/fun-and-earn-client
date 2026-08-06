@@ -1,4 +1,3 @@
-import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import RazorpayCheckout from 'react-native-razorpay';
@@ -8,11 +7,10 @@ import {
   AppStateStatus,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
-  TouchableOpacity,
   View,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useCart } from '../../components/CartContext';
 import { getToken } from '@/helpers/authStorage';
@@ -23,6 +21,16 @@ import * as WebBrowser from 'expo-web-browser';
 import uuid from 'react-native-uuid';
 import { useProfile } from '@/components/ProfileContext';
 import { useTheme } from '@/components/ThemeContext';
+import { Screen } from '@/components/Screen';
+import { Button, EmptyState } from '@/components/ui';
+import { CheckoutAddressPicker } from '@/components/checkout/CheckoutAddressPicker';
+import { CheckoutOrderSummary } from '@/components/checkout/CheckoutOrderSummary';
+import { CheckoutWalletToggle } from '@/components/checkout/CheckoutWalletToggle';
+import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
+import { Address } from '@/types/address';
+import { getCartSubtotal, getEstimatedTotal } from '@/utils/cartLabels';
+import { formatDreamCash } from '@/utils/walletFormat';
+import Toast from 'react-native-toast-message';
 
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 const PAYMENT_GATEWAY = (process.env.EXPO_PUBLIC_PAYMENT_GATEWAY || 'razorpay').toLowerCase();
@@ -30,18 +38,6 @@ const PAYMENT_GATEWAY = (process.env.EXPO_PUBLIC_PAYMENT_GATEWAY || 'razorpay').
 function logCcavenue(step: string, payload?: Record<string, unknown>) {
   const msg = payload ? `${step} ${JSON.stringify(payload)}` : step;
   console.log(`[CCAvenue Checkout] ${msg}`);
-}
-
-interface Address {
-  addressName: string;
-  slugName: string;
-  fullName: string;
-  street: string;
-  city: string;
-  state: string;
-  pincode: string;
-  phone: string;
-  isDefault: boolean;
 }
 
 type VerifyStatusDecision = 'WAIT' | 'SUCCESS' | 'FAIL';
@@ -78,63 +74,99 @@ const CheckoutScreen = () => {
   const { cart, refreshCart, totalGstAmount, deliveryCharge } = useCart();
   const router = useRouter();
 
-  const [addresses, setAddresses] = useState<Address[] | null>([]);
+  const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedSlug, setSelectedSlug] = useState('');
-  const [addressText, setAddressText] = useState('');
   const [currBal, setCurrBal] = useState(0);
   const [useWallet, setUseWallet] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [walletToggling, setWalletToggling] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('');
-  const {userProfile} = useProfile();
+  const { userProfile } = useProfile();
 
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollingAttemptsRef = useRef(0);
   const activePaymentIntentIdRef = useRef<string | null>(null);
   const appState = useRef<AppStateStatus>(AppState.currentState);
+  const hasLoadedOnceRef = useRef(false);
 
-  // fetch helpers
-  const fetchAddresses = async () => {
+  const fetchAddresses = useCallback(async () => {
     const token = await getToken();
-    try {
-      const res = await axios.get(`${EXPO_PUBLIC_BASE_URL}/ecart/user/address/addresses`, {
-        headers: { Authorization: `Bearer ${token}` }
+    const res = await axios.get(`${EXPO_PUBLIC_BASE_URL}/ecart/user/address/addresses`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.data.success) {
+      const data: Address[] = res.data.data ?? [];
+      setAddresses(data);
+      setSelectedSlug((prev) => {
+        if (prev && data.some((a) => a.slugName === prev)) return prev;
+        const defaultAddress = data.find((a) => a.isDefault) ?? data[0];
+        return defaultAddress?.slugName ?? '';
       });
-      if (res.data.success) setAddresses(res.data.data);
-    } catch (err: any) {
-      console.error('Failed to fetch addresses', err?.message || err);
+    }
+  }, []);
+
+  const getWallet = useCallback(async () => {
+    const token = await getToken();
+    const res = await axios.get(`${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/getwallet`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.data.success) setCurrBal(res.data.data.eCartWallet);
+  }, []);
+
+  const fetchCartPrefs = useCallback(async () => {
+    const token = await getToken();
+    const res = await axios.get(`${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/getcart`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.data.success) setUseWallet(res.data.data.useWallet);
+  }, []);
+
+  const loadCheckoutData = useCallback(async () => {
+    await Promise.all([fetchAddresses(), getWallet(), fetchCartPrefs(), refreshCart()]);
+  }, [fetchAddresses, getWallet, fetchCartPrefs, refreshCart]);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      const showInitialLoader = !hasLoadedOnceRef.current && cart.length === 0;
+
+      (async () => {
+        if (showInitialLoader) setPageLoading(true);
+        try {
+          await loadCheckoutData();
+          if (active) {
+            hasLoadedOnceRef.current = true;
+            setInitialLoadDone(true);
+          }
+        } catch {
+          if (active && showInitialLoader) {
+            Toast.show({ type: 'error', text1: 'Could not load checkout', text2: 'Please try again.' });
+          }
+        } finally {
+          if (active && showInitialLoader) setPageLoading(false);
+        }
+      })();
+
+      return () => {
+        active = false;
+        stopPolling();
+      };
+    }, [loadCheckoutData])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadCheckoutData();
+    } catch {
+      Toast.show({ type: 'error', text1: 'Could not refresh checkout' });
+    } finally {
+      setRefreshing(false);
     }
   };
-
-  const getWallet = async () => {
-    const token = await getToken();
-    try {
-      const res = await axios.get(`${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/getwallet`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.data.success) setCurrBal(res.data.data.eCartWallet);
-    } catch (err: any) {
-      console.error('Failed to fetch wallet', err?.message || err);
-    }
-  };
-
-  const fetchCart = async () => {
-    const token = await getToken();
-    try {
-      const res = await axios.get(`${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/getcart`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.data.success) setUseWallet(res.data.data.useWallet);
-    } catch (err: any) {
-      console.error('Failed to fetch cart', err?.message || err);
-    }
-  };
-
-  useFocusEffect(useCallback(() => {
-    fetchAddresses();
-    getWallet();
-    fetchCart();
-    return () => stopPolling();
-  }, []));
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
@@ -148,17 +180,9 @@ const CheckoutScreen = () => {
     return () => subscription.remove();
   }, []);
 
-  // show address snapshot
-  useEffect(() => {
-    const sel = addresses?.find(a => a.slugName === selectedSlug);
-    if (sel) {
-      setAddressText(`${sel.fullName}, ${sel.street}, ${sel.city}, ${sel.state} - ${sel.pincode}, Phone: ${sel.phone}`);
-    } else {
-      setAddressText('');
-    }
-  }, [selectedSlug, addresses]);
-
-  const total = cart.reduce((sum, item) => sum + item.productId.finalPrice * item.quantity, 0);
+  const subtotal = getCartSubtotal(cart);
+  const estimatedTotal = getEstimatedTotal(subtotal, totalGstAmount, deliveryCharge);
+  const total = subtotal;
 
   function stopPolling() {
     if (pollingIntervalRef.current) {
@@ -223,6 +247,60 @@ const CheckoutScreen = () => {
     }
   }
 
+  async function markCcavenuePaymentFailed(paymentIntentId: string, reason: string) {
+    const token = await getToken();
+    logCcavenue('markfailed_request', { paymentIntentId, reason });
+    try {
+      const res = await axios.post(
+        `${EXPO_PUBLIC_BASE_URL}/ecart/user/payment/markfailed`,
+        { paymentIntentId, reason },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      logCcavenue('markfailed_response', {
+        paymentIntentId,
+        success: res.data?.success,
+        status: res.data?.status,
+        message: res.data?.message,
+      });
+      return res.data;
+    } catch (err: any) {
+      logCcavenue('markfailed_error', {
+        paymentIntentId,
+        error: err?.response?.data || err?.message,
+      });
+      return null;
+    }
+  }
+
+  function sleep(ms: number) {
+    return new Promise<void>((resolve) => setTimeout(resolve, ms));
+  }
+
+  async function abandonCcavenueIfStillPending(paymentIntentId: string, reason: string) {
+    setPaymentStatus('Cancelling unpaid order...');
+    // Short grace so a late CCAvenue callback can land before we refund
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      setPaymentStatus(`Confirming payment status… (${attempt}/3)`);
+      await sleep(4000);
+      const result = await verifyCcavenuePayment(paymentIntentId);
+      if (result?.decision === 'SUCCESS' || result?.decision === 'FAIL') {
+        handleCcavenueVerifyResult(result);
+        return;
+      }
+    }
+
+    await markCcavenuePaymentFailed(paymentIntentId, reason);
+    stopPolling();
+    activePaymentIntentIdRef.current = null;
+    setPaymentStatus('');
+    setLoading(false);
+    Alert.alert(
+      'Payment Cancelled',
+      'Payment was not completed. Any wallet amount used for this order has been refunded.',
+      [{ text: 'OK' }]
+    );
+  }
+
   async function checkCcavenuePaymentStatus(paymentIntentId: string) {
     setPaymentStatus('Checking payment status...');
     logCcavenue('check_status_start', { paymentIntentId });
@@ -265,12 +343,7 @@ const CheckoutScreen = () => {
       if (!result) {
         if (pollingAttemptsRef.current >= 20) {
           stopPolling();
-          activePaymentIntentIdRef.current = null;
-          setPaymentStatus('');
-          setLoading(false);
-          Alert.alert('Verification Timeout', 'Unable to verify payment. Please check your orders.', [
-            { text: 'OK', onPress: () => router.replace('/orders') },
-          ]);
+          await abandonCcavenueIfStillPending(paymentIntentId, 'verification_timeout');
         }
         return;
       }
@@ -283,14 +356,7 @@ const CheckoutScreen = () => {
       setPaymentStatus(`Verifying payment... (${pollingAttemptsRef.current}/20)`);
       if (pollingAttemptsRef.current >= 20) {
         stopPolling();
-        activePaymentIntentIdRef.current = null;
-        setPaymentStatus('');
-        setLoading(false);
-        Alert.alert(
-          'Payment Pending',
-          'Payment verification timed out. Please check your order status in Orders.',
-          [{ text: 'View Orders', onPress: () => router.replace('/orders') }]
-        );
+        await abandonCcavenueIfStillPending(paymentIntentId, 'verification_timeout');
       }
     }, 6000);
   }
@@ -347,11 +413,25 @@ const CheckoutScreen = () => {
       controlsColor: '#10b981',
     });
 
+    const userDismissed = browserResult.type === 'cancel' || browserResult.type === 'dismiss';
+
     logCcavenue('browser_closed', {
       paymentIntentId,
       browserType: browserResult.type,
-      hint: 'If type is dismiss/cancel, user may have closed before CCAvenue POSTed to callback URL',
+      userDismissed,
+      hint: 'If dismissed while still pending, markfailed will refund wallet holds',
     });
+
+    const immediate = await verifyCcavenuePayment(paymentIntentId);
+    if (immediate?.decision === 'SUCCESS' || immediate?.decision === 'FAIL') {
+      handleCcavenueVerifyResult(immediate);
+      return;
+    }
+
+    if (userDismissed) {
+      await abandonCcavenueIfStillPending(paymentIntentId, 'cancelled_by_user');
+      return;
+    }
 
     await checkCcavenuePaymentStatus(paymentIntentId);
   }
@@ -597,188 +677,223 @@ const CheckoutScreen = () => {
 
 
   const toggleUseWallet = async () => {
+    setWalletToggling(true);
     try {
       const token = await getToken();
-      const res = await axios.patch(`${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/usewallet`, { useWallet: !useWallet }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.data.success) setUseWallet(res.data.data.useWallet);
+      const res = await axios.patch(
+        `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/usewallet`,
+        { useWallet: !useWallet },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        setUseWallet(res.data.data.useWallet);
+      } else {
+        Toast.show({ type: 'error', text1: 'Could not update wallet', text2: res.data.message });
+      }
     } catch (err: any) {
       console.error('toggleUseWallet error', err?.message || err);
+      Toast.show({ type: 'error', text1: 'Could not update wallet', text2: 'Please try again.' });
+    } finally {
+      setWalletToggling(false);
     }
   };
 
+  if (pageLoading && cart.length === 0) {
+    return (
+      <Screen>
+        <View style={styles.centerLoader}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (cart.length === 0 && initialLoadDone) {
+    return (
+      <Screen>
+        <EmptyState
+          icon="cart-outline"
+          title="Your cart is empty"
+          subtitle="Add items before checking out."
+          action={
+            <Button title="Back to cart" onPress={() => router.replace('/tabs/cart')} variant="primary" />
+          }
+        />
+      </Screen>
+    );
+  }
+
+  const canPlaceOrder = Boolean(selectedSlug) && !loading;
+
   return (
-    <ScrollView
-      contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text style={[styles.heading, { color: colors.text }]}>Checkout</Text>
-
-      <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.text }]}>Shipping Address</Text>
-        <Picker
-          selectedValue={selectedSlug}
-          onValueChange={setSelectedSlug}
-          style={[styles.input, { color: colors.text, backgroundColor: colors.card, borderColor: colors.border }]}
-        >
-          <Picker.Item label="Select Address" value="" />
-          {addresses?.map((a) => (
-            <Picker.Item
-              key={a.slugName}
-              label={`${a.addressName}: ${a.street}, ${a.city} - ${a.pincode}`}
-              value={a.slugName}
-            />
-          ))}
-        </Picker>
-        {addressText ? (
-          <Text style={[styles.addressText, { color: colors.textSecondary }]}>{addressText}</Text>
-        ) : null}
-      </View>
-
-      <View style={[useWalletStyles.wrapper, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-        <View style={useWalletStyles.container}>
-          <Text style={[useWalletStyles.label, { color: colors.text }]}>Use Wallet Balance</Text>
-          <Switch
-            trackColor={{ false: colors.border, true: colors.success }}
-            thumbColor={useWallet ? '#fff' : colors.card}
-            onValueChange={toggleUseWallet}
-            value={useWallet}
+    <Screen style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
-        </View>
-        <Text style={[useWalletStyles.description, { color: colors.textSecondary }]}>
-          Available: <Ionicons name="wallet" size={16} color={colors.success} /> ₹{currBal.toFixed(2)}
-        </Text>
-      </View>
-
-      <View style={[styles.summary, { borderColor: colors.border }]}>
-        <Text style={[styles.sectionLabel, { color: colors.text }]}>Order Summary</Text>
-        {cart?.map((item, idx) => (
-          <View key={`${item.productId._id}-${idx}`} style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.name, { color: colors.text }]}>
-                {item.productId.title} × {item.quantity}
-              </Text>
-              {item.selectedVariation && item.selectedVariation.length > 0 && (
-                <Text style={[styles.variationText, { color: colors.textMuted }]}>
-                  {item.selectedVariation.map((v: any) => `${v.name}: ${v.value}`).join(' · ')}
-                </Text>
-              )}
-            </View>
-          </View>
-        ))}
-
-        <View style={styles.row}>
-          <Text style={[styles.totalLabel, { color: colors.text }]}>Amount:</Text>
-          <Text style={[styles.totalValue, { color: colors.primary }]}>₹{total.toFixed(2)}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={[styles.totalLabel, { color: colors.text }]}>
-            GST {total ? Math.round((totalGstAmount / total) * 100) : 0}%:
-          </Text>
-          <Text style={[styles.totalValue, { color: colors.primary }]}>₹{(totalGstAmount || 0).toFixed(2)}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={[styles.totalLabel, { color: colors.text }]}>Delivery:</Text>
-          <Text style={[styles.totalValue, { color: colors.primary }]}>₹{(deliveryCharge || 0).toFixed(2)}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={[styles.totalLabel, { color: colors.text }]}>Total:</Text>
-          <Text style={[styles.totalValue, { color: colors.primary }]}>
-            ₹{(total + (totalGstAmount || 0) + (deliveryCharge || 0)).toFixed(2)}
-          </Text>
-        </View>
-      </View>
-
-      {paymentStatus ? (
-        <View style={[styles.statusContainer, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-          <ActivityIndicator size="small" color={colors.success} />
-          <Text style={[styles.statusText, { color: colors.success }]}>{paymentStatus}</Text>
-        </View>
-      ) : null}
-
-      <TouchableOpacity
-        style={[styles.placeButton, { backgroundColor: colors.success }, loading && { opacity: 0.7 }]}
-        onPress={handlePlaceOrder}
-        disabled={loading}
-        activeOpacity={0.9}
+        }
       >
-        {loading ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-            <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
-            <Text style={styles.placeText}>Processing Payment...</Text>
-          </View>
-        ) : (
-          <Text style={styles.placeText}>Place Order</Text>
-        )}
-      </TouchableOpacity>
-
-      {PAYMENT_GATEWAY === 'ccavenue' ? (
-        <View style={styles.infoContainer}>
-          <Ionicons name="shield-checkmark" size={16} color={colors.success} />
-          <Text style={[styles.infoText, { color: colors.textSecondary }]}>Secured by CCAvenue</Text>
+        <View style={styles.headerBlock}>
+          <Text style={[styles.pageTitle, { color: colors.text }]}>Checkout</Text>
+          <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
+            Confirm address and payment
+          </Text>
         </View>
-      ) : null}
-    </ScrollView>
+
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>DELIVERY ADDRESS</Text>
+        <CheckoutAddressPicker
+          addresses={addresses}
+          selectedSlug={selectedSlug}
+          onSelect={setSelectedSlug}
+          onManagePress={() => router.push('/private/Address')}
+        />
+
+        <Text style={[styles.sectionLabel, { color: colors.textMuted, marginTop: spacing.md }]}>
+          WALLET
+        </Text>
+        <CheckoutWalletToggle
+          balance={currBal}
+          useWallet={useWallet}
+          toggling={walletToggling}
+          onToggle={toggleUseWallet}
+          estimatedTotal={estimatedTotal}
+        />
+
+        <Text style={[styles.sectionLabel, { color: colors.textMuted, marginTop: spacing.md }]}>
+          ORDER SUMMARY
+        </Text>
+        <CheckoutOrderSummary
+          cart={cart}
+          gstAmount={totalGstAmount}
+          deliveryCharge={deliveryCharge}
+        />
+
+        {paymentStatus ? (
+          <View
+            style={[
+              styles.statusContainer,
+              { backgroundColor: colors.primaryTint, borderColor: colors.borderLight },
+            ]}
+          >
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={[styles.statusText, { color: colors.primary }]}>{paymentStatus}</Text>
+          </View>
+        ) : null}
+
+        {PAYMENT_GATEWAY === 'ccavenue' ? (
+          <View style={styles.infoContainer}>
+            <Ionicons name="shield-checkmark" size={16} color={colors.primary} />
+            <Text style={[styles.infoText, { color: colors.textSecondary }]}>Secured by CCAvenue</Text>
+          </View>
+        ) : null}
+      </ScrollView>
+
+      <View style={[styles.footer, { borderTopColor: colors.borderLight, backgroundColor: colors.background }]}>
+        <View style={styles.footerTotalRow}>
+          <Text style={[styles.footerTotalLabel, { color: colors.textSecondary }]}>Estimated total</Text>
+          <Text style={[styles.footerTotalValue, { color: colors.primary }]}>
+            {formatDreamCash(estimatedTotal)}
+          </Text>
+        </View>
+        <Button
+          title={loading ? 'Processing payment…' : 'Place order'}
+          onPress={handlePlaceOrder}
+          variant="primary"
+          fullWidth
+          loading={loading}
+          disabled={!canPlaceOrder}
+          leftIcon={!loading ? <Ionicons name="lock-closed" size={18} /> : undefined}
+        />
+      </View>
+    </Screen>
   );
 };
 
 export default CheckoutScreen;
 
 const styles = StyleSheet.create({
-  container: { padding: 16, flexGrow: 1, paddingBottom: 40 },
-  heading: { fontSize: 24, fontWeight: '700', marginBottom: 20, marginTop: 30 },
-  section: { marginBottom: 20 },
-  sectionLabel: { fontSize: 16, fontWeight: '600', marginBottom: 10 },
-  input: { borderWidth: 1, borderRadius: 12, padding: 14 },
-  summary: { borderTopWidth: 1, paddingTop: 20, marginTop: 16 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  name: { fontSize: 14 },
-  variationText: { fontSize: 11, marginTop: 2 },
-  addressText: { marginTop: 10 },
-  totalLabel: { fontSize: 15, fontWeight: '600' },
-  totalValue: { fontSize: 15, fontWeight: '700' },
-  placeButton: {
-    marginTop: 28,
-    paddingVertical: 16,
-    borderRadius: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  screen: {
+    flex: 1,
   },
-  placeText: { color: '#fff', fontWeight: '700', fontSize: 16, textAlign: 'center' },
+  centerLoader: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  container: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xl,
+    flexGrow: 1,
+  },
+  headerBlock: {
+    marginBottom: spacing.lg,
+  },
+  pageTitle: {
+    fontSize: typography.fontSize.xxxl,
+    fontWeight: typography.fontWeight.extrabold,
+    letterSpacing: -0.5,
+    marginBottom: spacing.xxs,
+  },
+  pageSubtitle: {
+    fontSize: typography.fontSize.base,
+  },
+  sectionLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 0.6,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xxs,
+  },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 12,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
   },
   statusText: {
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: '600',
+    marginLeft: spacing.sm,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+    flex: 1,
   },
   infoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
-    padding: 8,
+    marginTop: spacing.md,
+    padding: spacing.sm,
   },
   infoText: {
-    marginLeft: 6,
-    fontSize: 12,
+    marginLeft: spacing.xxs,
+    fontSize: typography.fontSize.sm,
   },
-});
-
-const useWalletStyles = StyleSheet.create({
-  wrapper: { marginHorizontal: 16, marginBottom: 20, borderRadius: 14, padding: 18, borderWidth: 1 },
-  container: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  label: { fontSize: 16, fontWeight: '600' },
-  description: { marginTop: 10, fontSize: 14 },
+  footer: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xl,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  footerTotalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  footerTotalLabel: {
+    fontSize: typography.fontSize.sm,
+  },
+  footerTotalValue: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+  },
 });

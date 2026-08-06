@@ -9,13 +9,14 @@ interface InputProps extends TextInputProps {
   error?: boolean;
 }
 
-export function Input({ leftIcon, error, style, placeholderTextColor, ...props }: InputProps) {
+export function Input({ leftIcon, error, style, placeholderTextColor, editable = true, ...props }: InputProps) {
   const { colors } = useTheme();
   const color = error ? colors.error : colors.text;
   const borderColor = error ? colors.error : colors.border;
+  const backgroundColor = editable ? colors.card : colors.backgroundSecondary;
 
   return (
-    <View style={[styles.wrap, { borderColor, backgroundColor: colors.card }]}>
+    <View style={[styles.wrap, { borderColor, backgroundColor }, style]}>
       {leftIcon ? (
         <Ionicons
           name={leftIcon}

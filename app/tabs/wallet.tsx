@@ -1,94 +1,48 @@
 import { getToken } from '@/helpers/authStorage';
-import { Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import DreamPointsInfo from '@/components/DreamPointMessage';
+import { Screen } from '@/components/Screen';
+import { WalletBalanceHero } from '@/components/WalletBalanceHero';
 import { useTheme } from '@/components/ThemeContext';
+import { Button, Card } from '@/components/ui';
+import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
+import Toast from 'react-native-toast-message';
 
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 const WalletScreen = () => {
   const { colors } = useTheme();
-  const [walletBalance, setWalletBalance] = useState<number>(0);
-  const [couponCode, setCouponCode] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
-  const toastAnim = useState(new Animated.Value(-100))[0]; // off-screen at start
-
-  const [withdrawAmount, setWithdrawAmount] = useState<string>(''); // using string for TextInput
-
   const router = useRouter();
 
-  const showMessage = (msg: string, type: 'success' | 'error' = 'success') => {
-    setMessage(msg);
-    setMessageType(type);
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [couponCode, setCouponCode] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [redeeming, setRedeeming] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-    Animated.timing(toastAnim, {
-      toValue: 0,
-      duration: 300,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
-    }).start();
-
-    setTimeout(() => {
-      Animated.timing(toastAnim, {
-        toValue: -100,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => {
-        setMessage(null);
-      });
-    }, 3000);
+  const showToast = (type: 'success' | 'error', text1: string, text2?: string) => {
+    Toast.show({ type, text1, text2, position: 'top' });
   };
 
-
-  const handleRedeem = async () => {
-    if (!couponCode.trim()) {
-      showMessage("Enter a valid coupon code", 'error');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const token = await getToken();
-      const redeemUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/redeemcoupon`;
-
-      const res = await axios.post(
-        redeemUrl,
-        { code: couponCode },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (res.data.success) {
-        showMessage(res?.data?.message || "Coupon redeemed successfully", 'success');
-        setCouponCode('');
-        fetchWallet();
-      } else {
-        showMessage(res?.data?.message || "Coupon redemption failed", 'error');
-      }
-
-    } catch (err: any) {
-      showMessage(err?.response?.data?.message || "Invalid coupon", 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchWallet = async () => {
+  const fetchWallet = useCallback(async () => {
     const token = await getToken();
     const getWalletUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/getwallet`;
     try {
       const response = await axios.get(getWalletUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (response.data.success) {
         setWalletBalance(response.data.data.eCartWallet);
@@ -97,27 +51,69 @@ const WalletScreen = () => {
       console.error('Failed to fetch Wallet:', error.response?.data || error.message);
       throw new Error(error.response?.data?.message || 'Failed to fetch Wallet');
     }
-  }
+  }, []);
 
   useEffect(() => {
     fetchWallet();
-  }, [])
+  }, [fetchWallet]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchWallet();
+    } catch {
+      showToast('error', 'Could not refresh balance');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleRedeem = async () => {
+    if (!couponCode.trim()) {
+      showToast('error', 'Invalid coupon', 'Enter a valid coupon code.');
+      return;
+    }
+
+    try {
+      setRedeeming(true);
+      const token = await getToken();
+      const redeemUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/redeemcoupon`;
+
+      const res = await axios.post(
+        redeemUrl,
+        { code: couponCode },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data.success) {
+        showToast('success', 'Coupon redeemed', res?.data?.message || 'Added to your wallet.');
+        setCouponCode('');
+        await fetchWallet();
+      } else {
+        showToast('error', 'Redemption failed', res?.data?.message || 'Please try again.');
+      }
+    } catch (err: any) {
+      showToast('error', 'Invalid coupon', err?.response?.data?.message || 'Please check the code.');
+    } finally {
+      setRedeeming(false);
+    }
+  };
 
   const handleWithdraw = async () => {
     const amount = parseFloat(withdrawAmount);
 
     if (!amount || amount <= 0) {
-      showMessage("Enter a valid amount to withdraw.", 'error');
+      showToast('error', 'Invalid amount', 'Enter a valid amount to withdraw.');
       return;
     }
 
     if (amount > walletBalance) {
-      showMessage("Withdrawal amount exceeds available balance.", 'error');
+      showToast('error', 'Insufficient balance', 'Withdrawal amount exceeds available balance.');
       return;
     }
 
     try {
-      setLoading(true);
+      setWithdrawing(true);
       const token = await getToken();
       const withdrawUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/wallet/requestwithdrawal`;
 
@@ -133,110 +129,145 @@ const WalletScreen = () => {
       );
 
       if (response.data.success) {
-        showMessage(response.data.message || 'Withdrawal request submitted.', 'success');
+        showToast('success', 'Request submitted', response.data.message || 'Withdrawal is being processed.');
         setWithdrawAmount('');
-        fetchWallet();
+        await fetchWallet();
       } else {
-        showMessage(response.data.message || 'Withdrawal failed.', 'error');
+        showToast('error', 'Withdrawal failed', response.data.message || 'Please try again.');
       }
     } catch (error: any) {
       console.error('Withdraw Error:', error.response?.data || error.message);
-      showMessage(error.response?.data?.message || 'Failed to withdraw.', 'error');
+      showToast('error', 'Withdrawal failed', error?.response?.data?.message || 'Something went wrong.');
     } finally {
-      setLoading(false);
+      setWithdrawing(false);
+    }
+  };
+
+  const handleMaxWithdraw = () => {
+    if (walletBalance > 0) {
+      setWithdrawAmount(walletBalance.toFixed(2));
     }
   };
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
-    >
-      {message && (
-        <Animated.View
-          style={[
-            styles.toast,
-            {
-              transform: [{ translateY: toastAnim }],
-              backgroundColor: messageType === 'success' ? colors.success : colors.error,
-            },
-          ]}
-        >
-          <Text style={styles.toastText}>{message}</Text>
-        </Animated.View>
-      )}
-      <Text style={[styles.title, { color: colors.text }]}>Your Wallet</Text>
-
-      <View style={[styles.balanceCard, { backgroundColor: colors.successMuted }]}>
-        <Ionicons name="wallet" size={28} color={colors.success} />
-        <View style={styles.balanceTextGroup}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>Total Dream Cash</Text>
-          <Text style={[styles.amount, { color: colors.success }]}>{walletBalance.toFixed(2)}</Text>
-        </View>
-      </View>
-
-      <View style={styles.actionCard}>
-        <TouchableOpacity
-          onPress={() => router.push('/private/transactions')}
-          style={[styles.pillButtonSecondary, { backgroundColor: colors.primaryTint }]}
-        >
-          <Ionicons name="list-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
-          <Text style={[styles.buttonTextBlue, { color: colors.primary }]}>Wallet Summary</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={[styles.withdrawCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-        <Text style={[styles.withdrawTitle, { color: colors.text }]}>Withdraw Amount</Text>
-        <View style={[styles.inputWrapper, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-          <Ionicons name="cash-outline" size={20} color={colors.primary} />
-          <TextInput
-            style={[styles.input, { color: colors.text }]}
-            placeholder="Enter amount to withdraw"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="numeric"
-            value={withdrawAmount}
-            onChangeText={setWithdrawAmount}
-            editable={!loading}
+    <Screen>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
           />
-        </View>
-        <TouchableOpacity
-          style={[styles.withdrawButton, { backgroundColor: colors.primary }]}
-          onPress={handleWithdraw}
-          disabled={loading}
-        >
-          <Text style={styles.withdrawButtonText}>
-            {loading ? 'Processing...' : 'Request Withdrawal'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        }
+      >
+        <Text style={[styles.pageTitle, { color: colors.text }]}>Wallet</Text>
+        <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
+          Manage your Dream Cash balance
+        </Text>
 
-      <View style={[styles.redeemCard, { backgroundColor: colors.successMuted, borderColor: colors.borderLight }]}>
-        <Text style={[styles.redeemTitle, { color: colors.text }]}>Have a Coupon Code?</Text>
-        <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Ionicons name="pricetag-outline" size={20} color={colors.success} />
-          <TextInput
-            style={[styles.input, { color: colors.text }]}
-            placeholder="Enter coupon code"
-            placeholderTextColor={colors.textMuted}
-            value={couponCode}
-            onChangeText={setCouponCode}
-            editable={!loading}
+        <WalletBalanceHero
+          balance={walletBalance}
+          showHistoryLink
+          onHistoryPress={() => router.push('/private/transactions')}
+        />
+
+        {/* Withdraw */}
+        <Card padding="lg" style={styles.sectionCard}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIcon, { backgroundColor: colors.backgroundSecondary }]}>
+              <Ionicons name="arrow-up-circle-outline" size={20} color={colors.textSecondary} />
+            </View>
+            <View style={styles.sectionHeaderText}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Withdraw</Text>
+              <Text style={[styles.sectionDesc, { color: colors.textMuted }]}>
+                Transfer to your linked bank account
+              </Text>
+            </View>
+          </View>
+
+          <View style={[styles.amountRow, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}>
+            <Text style={[styles.currencyPrefix, { color: colors.textMuted }]}>₹</Text>
+            <TextInput
+              style={[styles.amountInput, { color: colors.text }]}
+              placeholder="0.00"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="decimal-pad"
+              value={withdrawAmount}
+              onChangeText={setWithdrawAmount}
+              editable={!withdrawing && !redeeming}
+            />
+            <Pressable
+              onPress={handleMaxWithdraw}
+              disabled={walletBalance <= 0 || withdrawing || redeeming}
+              style={({ pressed }) => [
+                styles.maxChip,
+                {
+                  backgroundColor: colors.primaryTint,
+                  opacity: walletBalance <= 0 || withdrawing || redeeming ? 0.4 : pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <Text style={[styles.maxChipText, { color: colors.primary }]}>MAX</Text>
+            </Pressable>
+          </View>
+
+          <Button
+            title={withdrawing ? 'Processing…' : 'Request withdrawal'}
+            onPress={handleWithdraw}
+            loading={withdrawing}
+            disabled={redeeming}
+            fullWidth
+            size="lg"
+            leftIcon={<Ionicons name="send-outline" size={18} />}
           />
-        </View>
-        <TouchableOpacity
-          style={[styles.redeemButton, { backgroundColor: colors.success }]}
-          onPress={handleRedeem}
-          disabled={loading}
-        >
-          <Text style={styles.redeemButtonText}>
-            {loading ? 'Redeeming...' : 'Redeem Coupon'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        </Card>
 
-      <DreamPointsInfo />
-    </ScrollView>
+        {/* Redeem coupon */}
+        <Card padding="lg" style={styles.sectionCard}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIcon, { backgroundColor: colors.backgroundSecondary }]}>
+              <Ionicons name="pricetag-outline" size={20} color={colors.textSecondary} />
+            </View>
+            <View style={styles.sectionHeaderText}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Redeem coupon</Text>
+              <Text style={[styles.sectionDesc, { color: colors.textMuted }]}>
+                Apply a reward code to add balance
+              </Text>
+            </View>
+          </View>
+
+          <View style={[styles.couponRow, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}>
+            <Ionicons name="ticket-outline" size={18} color={colors.textMuted} style={styles.couponIcon} />
+            <TextInput
+              style={[styles.couponInput, { color: colors.text }]}
+              placeholder="Enter coupon code"
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              value={couponCode}
+              onChangeText={setCouponCode}
+              editable={!withdrawing && !redeeming}
+            />
+          </View>
+
+          <Button
+            title={redeeming ? 'Redeeming…' : 'Redeem coupon'}
+            onPress={handleRedeem}
+            variant="outline"
+            loading={redeeming}
+            disabled={withdrawing}
+            fullWidth
+            size="lg"
+          />
+        </Card>
+
+        <DreamPointsInfo />
+      </ScrollView>
+    </Screen>
   );
 };
 
@@ -247,201 +278,92 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxxl,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 20,
-    marginTop: 30,
+  pageTitle: {
+    fontSize: typography.fontSize.xxxl,
+    fontWeight: typography.fontWeight.extrabold,
+    letterSpacing: -0.5,
+    marginBottom: spacing.xxs,
   },
-  balanceCard: {
+  pageSubtitle: {
+    fontSize: typography.fontSize.base,
+    marginBottom: spacing.xl,
+  },
+  sectionCard: {
+    marginBottom: spacing.md,
+  },
+  sectionHeader: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  sectionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
-    padding: 18,
-    borderRadius: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-  },
-  balanceTextGroup: {
-    marginLeft: 16,
-  },
-  label: {
-    fontSize: 14,
-  },
-  amount: {
-    fontSize: 26,
-    fontWeight: '700',
-  },
-
-  actionCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-    gap: 12,
-  },
-  pillButton: {
-    flex: 1,
-    flexDirection: 'row',
-    paddingVertical: 14,
-    borderRadius: 14,
     justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  redeemCard: {
-    padding: 18,
-    borderRadius: 16,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 3,
-    marginTop: 20,
-  },
-  pillButtonSecondary: {
-    flexDirection: 'row',
-    paddingVertical: 14,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Primary button text
-  buttonTextWhite: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-
-  // Blue button text
-  buttonTextBlue: {
-    color: '#3b82f6',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-
-  // Disabled button and text
-  buttonDisabled: {
-    backgroundColor: '#f0f0f0',
-  },
-  buttonTextDisabled: {
-    color: '#aaa',
-  },
-
-  // Old single-action buttons (still used for fallback or other screens)
-  actionButton: {
-    backgroundColor: '#10b981',
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 22,
-  },
-  buttonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-
-  redeemContainer: {
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 30,
-  },
-  redeemTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  input: {
+  sectionHeaderText: {
     flex: 1,
-    marginLeft: 10,
-    fontSize: 15,
+    paddingTop: 2,
   },
-  messageText: {
-    color: '#92400e',
-    marginTop: 8,
-    fontSize: 13,
+  sectionTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: 2,
   },
-  redeemButton: {
-    marginTop: 16,
-    backgroundColor: '#10b981',
-    paddingVertical: 12,
-    borderRadius: 8,
+  sectionDesc: {
+    fontSize: typography.fontSize.sm,
+    lineHeight: 18,
+  },
+  amountRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  redeemButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  withdrawCard: {
-    padding: 18,
-    borderRadius: 16,
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 3,
-    marginTop: 20,
-    marginBottom: 10,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
   },
-  withdrawTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
+  currencyPrefix: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.medium,
+    marginRight: spacing.xxs,
   },
-  withdrawButton: {
-    marginTop: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
+  amountInput: {
+    flex: 1,
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.semibold,
+    paddingVertical: spacing.md,
+  },
+  maxChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs + 2,
+    borderRadius: borderRadius.sm,
+  },
+  maxChipText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.bold,
+    letterSpacing: 0.8,
+  },
+  couponRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
   },
-
-  withdrawButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
+  couponIcon: {
+    marginRight: spacing.sm,
   },
-
-  toast: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    right: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    zIndex: 9999,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+  couponInput: {
+    flex: 1,
+    fontSize: typography.fontSize.md,
+    paddingVertical: spacing.md,
+    letterSpacing: 1,
   },
-
-  toastText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-
 });
-

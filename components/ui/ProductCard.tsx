@@ -1,5 +1,5 @@
-import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -38,6 +38,11 @@ export function ProductCard({
   const { colors } = useTheme();
   const scale = useSharedValue(1);
   const wishlistScale = useSharedValue(1);
+  const [imageWidth, setImageWidth] = useState(width);
+
+  useEffect(() => {
+    if (width) setImageWidth(width);
+  }, [width]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -64,6 +69,7 @@ export function ProductCard({
   };
 
   const hasDiscount = (product.discountPercent ?? 0) > 0;
+  const resolvedImageWidth = imageWidth ?? width;
 
   const cardContent = (
     <View
@@ -76,11 +82,23 @@ export function ProductCard({
         },
       ]}
     >
-      <View style={[styles.imageWrap, { backgroundColor: colors.backgroundSecondary }]}>
-        <ProductImageCarousel
-          images={product.images}
-          height={compact ? 140 : 180}
-        />
+      <View
+        style={[styles.imageWrap, { backgroundColor: colors.backgroundSecondary }]}
+        onLayout={(event) => {
+          const measured = event.nativeEvent.layout.width;
+          if (measured > 0) setImageWidth(measured);
+        }}
+      >
+        {resolvedImageWidth ? (
+          <ProductImageCarousel
+            images={product.images}
+            containerWidth={resolvedImageWidth}
+            height={resolvedImageWidth}
+            borderRadius={0}
+            resizeMode="contain"
+            enableCarousel={false}
+          />
+        ) : null}
         {hasDiscount && (
           <View style={styles.badgeWrap}>
             <Badge label={`${product.discountPercent}% OFF`} variant="discount" />
@@ -93,7 +111,9 @@ export function ProductCard({
             onPressOut={handleWishlistPressOut}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Animated.View style={[styles.wishlistBtn, wishlistAnimatedStyle, { backgroundColor: colors.card }]}>
+            <Animated.View
+              style={[styles.wishlistBtn, wishlistAnimatedStyle, { backgroundColor: colors.card }]}
+            >
               <Ionicons name="heart-outline" size={20} color={colors.textMuted} />
             </Animated.View>
           </Pressable>
@@ -121,17 +141,15 @@ export function ProductCard({
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={[width ? { width } : styles.wrapper]}
+      style={[width ? { width, maxWidth: width } : styles.wrapper]}
     >
-      <Animated.View style={animatedStyle}>
-        {cardContent}
-      </Animated.View>
+      <Animated.View style={animatedStyle}>{cardContent}</Animated.View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: { flex: 1 },
+  wrapper: { flex: 1, minWidth: 0 },
   card: {
     borderRadius: borderRadius.lg,
     overflow: 'hidden',
@@ -141,15 +159,8 @@ const styles = StyleSheet.create({
   imageWrap: {
     position: 'relative',
     width: '100%',
-    aspectRatio: 0.92,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  imageCompact: {
-    width: '100%',
-    height: '100%',
+    aspectRatio: 1,
+    overflow: 'hidden',
   },
   badgeWrap: {
     position: 'absolute',
@@ -184,6 +195,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     marginTop: 6,
+    flexWrap: 'wrap',
   },
   price: {
     fontSize: typography.fontSize.md,

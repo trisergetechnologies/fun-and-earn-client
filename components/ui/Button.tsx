@@ -4,7 +4,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  View,
   ViewStyle,
   TextStyle,
 } from 'react-native';
@@ -12,7 +11,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-na
 import { useTheme } from '@/components/ThemeContext';
 import { borderRadius, shadows, spacing, typography } from '@/constants/DesignSystem';
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'success' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'success' | 'danger' | 'dangerSoft';
 
 interface ButtonProps {
   title: string;
@@ -42,13 +41,14 @@ export function Button({
   const { colors } = useTheme();
   const scale = useSharedValue(1);
 
-  const variantStyles: Record<ButtonVariant, { bg: string; text: string; border?: string }> = {
-    primary: { bg: colors.primary, text: colors.primaryContrast },
-    secondary: { bg: colors.primaryTint, text: colors.primary },
-    outline: { bg: 'transparent', text: colors.primary, border: colors.primary },
-    ghost: { bg: 'transparent', text: colors.text },
-    success: { bg: colors.success, text: colors.primaryContrast },
-    danger: { bg: colors.error, text: colors.primaryContrast },
+  const variantStyles: Record<ButtonVariant, { bg: string; text: string; border?: string; shadow?: boolean }> = {
+    primary: { bg: colors.primary, text: colors.primaryContrast, shadow: true },
+    secondary: { bg: colors.primaryTint, text: colors.primary, shadow: false },
+    outline: { bg: colors.primaryTint, text: colors.primary, border: colors.primary, shadow: false },
+    ghost: { bg: 'transparent', text: colors.text, shadow: false },
+    success: { bg: colors.success, text: colors.primaryContrast, shadow: true },
+    danger: { bg: colors.error, text: colors.primaryContrast, shadow: true },
+    dangerSoft: { bg: colors.errorMuted, text: colors.error, border: colors.border, shadow: false },
   };
 
   const sizePadding = { sm: spacing.sm, md: spacing.md, lg: spacing.lg }[size];
@@ -56,6 +56,13 @@ export function Button({
 
   const v = variantStyles[variant];
   const isDisabled = disabled || loading;
+
+  const renderLeftIcon = () => {
+    if (!leftIcon || !React.isValidElement(leftIcon)) return leftIcon ?? null;
+    return React.cloneElement(leftIcon as React.ReactElement<{ color?: string }>, {
+      color: v.text,
+    });
+  };
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -82,7 +89,7 @@ export function Button({
             opacity: isDisabled ? 0.6 : 1,
           alignSelf: fullWidth ? 'stretch' : undefined,
           },
-          variant !== 'ghost' && shadows.sm,
+          v.shadow ? shadows.sm : undefined,
           style,
         ]}
       >
@@ -90,7 +97,7 @@ export function Button({
         <ActivityIndicator size="small" color={v.text} />
       ) : (
         <>
-          {leftIcon ?? null}
+          {renderLeftIcon()}
           <Text
             style={[
               styles.text,

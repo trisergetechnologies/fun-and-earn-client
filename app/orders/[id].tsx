@@ -1,16 +1,43 @@
-import { useLocalSearchParams } from 'expo-router';
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Platform } from 'react-native';
-import { useCallback, useEffect, useState } from 'react';
+import InvoicePreview from '@/components/InvoicePreview';
+import { Screen } from '@/components/Screen';
+import { useTheme } from '@/components/ThemeContext';
+import { Button, Card, EmptyState } from '@/components/ui';
+import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
 import { getToken } from '@/helpers/authStorage';
-import axios from 'axios';
+import {
+  formatOrderDisplayId,
+  getOrderStatusColors,
+  getOrderStatusLabel,
+  getPaymentStatusColors,
+} from '@/utils/orderLabels';
+import {
+  downloadInvoicePdf,
+  fetchInvoiceRemoteUrl,
+  shareLocalPdf,
+} from '@/utils/invoicePdf';
+import { formatDreamCash, formatTransactionDate } from '@/utils/walletFormat';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import * as FileSystem from "expo-file-system";
-import * as Sharing from "expo-sharing";
-import Constants from "expo-constants";
-import InvoicePreview from '@/components/InvoicePreview';
+import axios from 'axios';
+import * as Clipboard from 'expo-clipboard';
+import { useLocalSearchParams } from 'expo-router';
+import { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Linking,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import Toast from 'react-native-toast-message';
 
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
+const SUPPORT_EMAIL = 'ampdreammart@gmail.com';
 
 interface OrderItem {
   productId: string;
@@ -49,285 +76,679 @@ interface Order {
     gateway: string;
     paymentId: string;
   };
-  paymentStatus: "paid" | "unpaid" | string;
-  refundStatus: "not_applicable" | "pending" | "refunded" | string;
+  paymentStatus: 'paid' | 'unpaid' | string;
+  refundStatus: 'not_applicable' | 'pending' | 'refunded' | string;
   returnReason: string | null;
   returnRequested: boolean;
-  returnStatus: "none" | "requested" | "approved" | "rejected" | string;
-  status: "placed" | "shipped" | "delivered" | "cancelled" | string;
-  trackingUpdates: Array<any>;
+  returnStatus: 'none' | 'requested' | 'approved' | 'rejected' | string;
+  status: 'placed' | 'shipped' | 'delivered' | 'cancelled' | string;
+  trackingUpdates: Array<unknown>;
   __v: number;
 }
 
-const OrderDetails = () => {
-  const { id } = useLocalSearchParams();
-  const [order, setOrder] = useState<Order | null>(null);
-  const [isModalVisible, setModalVisible] = useState(false);
-  const [invoiceUrl, setInvoiceUrl] = useState('');
+function getOrderIdForCopy(order: Pick<Order, '_id' | 'publicOrderId'>) {
+  return order.publicOrderId ?? order._id;
+}
 
+function ReturnPolicySection({ orderIdLabel }: { orderIdLabel: string }) {
+  const { colors } = useTheme();
+  const [expanded, setExpanded] = useState(false);
 
-  const handleCloseModal = () => {
-    setModalVisible(false);
-  };
-
-  const handleViewInvoice = async () => {
-
-    const token = await getToken();
-    const response = await axios.get(
-      `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/get-invoice/${id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+  return (
+    <View
+      style={[
+        styles.policyContainer,
+        {
+          backgroundColor: colors.errorMuted,
+          borderColor: colors.borderLight,
         },
-      }
-    );
+      ]}
+    >
+      <Pressable
+        onPress={() => setExpanded((v) => !v)}
+        style={({ pressed }) => [styles.policyHeader, { opacity: pressed ? 0.75 : 1 }]}
+      >
+        <View style={styles.policyHeaderLeft}>
+          <View style={[styles.policyIcon, { backgroundColor: colors.card }]}>
+            <Ionicons name="return-down-back-outline" size={18} color={colors.error} />
+          </View>
+          <Text style={[styles.policyHeaderTitle, { color: colors.error }]}>Return & refund policy</Text>
+        </View>
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={18}
+          color={colors.textMuted}
+        />
+      </Pressable>
 
-    const data = response.data;
-    if (!data?.url) {
-      Alert.alert("Error", "Invoice URL not found");
-      return;
-    }
-    setInvoiceUrl(data?.url);
-    setModalVisible(true);
-    setTimeout(() => {
-      handleCloseModal();
-    }, 1000)
-  };
+      {expanded ? (
+        <Text style={[styles.policyBody, { color: colors.textSecondary, borderTopColor: colors.borderLight }]}>
+          You may request a return within{' '}
+          <Text style={{ fontWeight: typography.fontWeight.semibold, color: colors.error }}>2 days of delivery</Text>
+          . To initiate, email us at{' '}
+          <Text
+            style={{ fontWeight: typography.fontWeight.semibold, color: colors.primary }}
+            onPress={() => Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
+          >
+            {SUPPORT_EMAIL}
+          </Text>
+          . Use the subject line{' '}
+          <Text style={{ fontWeight: typography.fontWeight.semibold, color: colors.text }}>
+            Return Request – {orderIdLabel}
+          </Text>{' '}
+          and briefly describe the reason for return. Our support team will review your request and reply with next
+          steps.
+        </Text>
+      ) : null}
+    </View>
+  );
+}
 
+const OrderDetails = () => {
+  const { colors } = useTheme();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [invoiceLoading, setInvoiceLoading] = useState<'download' | 'share' | null>(null);
+  const [invoiceUrl, setInvoiceUrl] = useState('');
+  const [isInvoiceModalVisible, setInvoiceModalVisible] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     const token = await getToken();
     const getOrdersUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/getorders?id=${id}`;
     try {
       const response = await axios.get(getOrdersUrl, {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (response.data.success) {
         setOrder(response.data.data);
-      } else {
-        console.log(response.data);
       }
-    } catch (error: any) {
-      Alert.alert("Something went wrong ! Please try again.")
-      console.error('Failed to fetch order:', error.response?.data || error.message);
+    } catch (error: unknown) {
+      Alert.alert('Something went wrong ! Please try again.');
+      if (axios.isAxiosError(error)) {
+        console.error('Failed to fetch order:', error.response?.data || error.message);
+      }
     }
-  }
+  }, [id]);
 
-
-  const handleDownloadInvoice = async () => {
+  const loadOrder = useCallback(async () => {
+    setLoading(true);
     try {
-      const token = await getToken();
-
-      // 🔹 Step 1: Fetch invoice URL
-      const response = await axios.get(
-        `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/get-invoice/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = response.data;
-      if (!data?.url) {
-        Alert.alert("Error", "Invoice URL not found");
-        return;
-      }
-      setInvoiceUrl(data?.url);
-      const fileUri = FileSystem.documentDirectory + `invoice-${id}.pdf`;
-      const { uri } = await FileSystem.downloadAsync(data.url, fileUri);
-
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri);
-      } else {
-        Alert.alert("Download complete", "File saved at: " + uri);
-      }
-
-    } catch (error) {
-      console.error("Invoice download error:", error);
-      Alert.alert("Error", "Failed to download invoice");
+      await fetchOrder();
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [fetchOrder]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchOrder();
-    }, [])
+      loadOrder();
+    }, [loadOrder])
   );
 
-  if (!order) return <Text style={{ textAlign: 'center', marginTop: 50 }}>Loading...</Text>;
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchOrder();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleDownloadInvoice = async () => {
+    setInvoiceLoading('download');
+    try {
+      const token = await getToken();
+      const orderId = String(id);
+      const remoteUrl = await fetchInvoiceRemoteUrl(EXPO_PUBLIC_BASE_URL, orderId, token);
+
+      setInvoiceUrl(remoteUrl);
+      setInvoiceModalVisible(true);
+      await downloadInvoicePdf(remoteUrl, orderId);
+
+      setTimeout(() => {
+        setInvoiceModalVisible(false);
+      }, 1000);
+    } catch (error) {
+      console.error('Invoice download error:', error);
+      setInvoiceModalVisible(false);
+      const message = error instanceof Error ? error.message : '';
+      if (message === 'Invoice URL not found') {
+        Alert.alert('Error', 'Invoice URL not found');
+      } else {
+        Alert.alert('Error', 'Failed to download invoice');
+      }
+    } finally {
+      setInvoiceLoading(null);
+    }
+  };
+
+  const handleShareInvoice = async () => {
+    setInvoiceLoading('share');
+    try {
+      const token = await getToken();
+      const orderId = String(id);
+      const remoteUrl = await fetchInvoiceRemoteUrl(EXPO_PUBLIC_BASE_URL, orderId, token);
+      const localUri = await downloadInvoicePdf(remoteUrl, orderId);
+      await shareLocalPdf(localUri);
+    } catch (error) {
+      console.error('Invoice share error:', error);
+      const message = error instanceof Error ? error.message : '';
+      if (message === 'Invoice URL not found') {
+        Alert.alert('Error', 'Invoice URL not found');
+      } else {
+        Alert.alert('Error', 'Failed to share invoice');
+      }
+    } finally {
+      setInvoiceLoading(null);
+    }
+  };
+
+  const copyOrderId = async () => {
+    if (!order) return;
+    try {
+      await Clipboard.setStringAsync(getOrderIdForCopy(order));
+      setCopied(true);
+      Toast.show({ type: 'success', text1: 'Copied', text2: 'Order ID copied to clipboard' });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Copy failed:', error);
+    }
+  };
+
+  const renderStatusBadge = (status: Order['status']) => {
+    const { bg, text } = getOrderStatusColors(status, colors);
+    return (
+      <View style={[styles.statusBadge, { backgroundColor: bg }]}>
+        <Text style={[styles.statusBadgeText, { color: text }]}>{getOrderStatusLabel(status)}</Text>
+      </View>
+    );
+  };
+
+  const renderPaymentBadge = (paymentStatus: Order['paymentStatus']) => {
+    const payment = getPaymentStatusColors(paymentStatus, colors);
+    if (!payment) return null;
+    return (
+      <View style={[styles.statusBadge, { backgroundColor: payment.bg, marginLeft: spacing.xxs }]}>
+        <Text style={[styles.statusBadgeText, { color: payment.text }]}>{payment.label}</Text>
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <Screen>
+        <View style={styles.centerLoader}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.textMuted }]}>Loading order…</Text>
+        </View>
+      </Screen>
+    );
+  }
+
+  if (!order) {
+    return (
+      <Screen>
+        <EmptyState
+          icon="receipt-outline"
+          title="Order not found"
+          subtitle="We couldn't load this order. Please try again."
+          style={styles.emptyState}
+          action={<Button title="Retry" onPress={loadOrder} variant="primary" size="md" />}
+        />
+      </Screen>
+    );
+  }
+
+  const isPaid = order.paymentStatus?.toLowerCase() === 'paid';
+  const gstPercent =
+    order.totalAmount > 0 ? Math.round((order.totalGstAmount / order.totalAmount) * 100) : 0;
+  const displayId = formatOrderDisplayId(order);
 
   return (
-    <ScrollView style={styles.container}>
+    <Screen>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
+        <View style={styles.headerBlock}>
+          <Text style={[styles.pageTitle, { color: colors.text }]}>Order details</Text>
+          <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
+            {formatTransactionDate(order.createdAt)}
+          </Text>
+        </View>
 
-      {/* Header */}
-      <Text style={styles.header}></Text>
-      <Text style={styles.sectionTitle}>Order Id: {order._id}</Text>
-      {/* Products Section */}
-      <View style={styles.card}>
+        <Card padding={spacing.md} style={styles.heroCard}>
+          <View style={styles.orderIdRow}>
+            <View style={styles.orderIdTextWrap}>
+              <Text style={[styles.orderIdLabel, { color: colors.textMuted }]}>Order ID</Text>
+              <Text style={[styles.orderIdValue, { color: colors.text }]}>{displayId}</Text>
+            </View>
+            <Pressable
+              onPress={copyOrderId}
+              accessibilityLabel="Copy order ID"
+              style={({ pressed }) => [
+                styles.copyBtn,
+                {
+                  backgroundColor: colors.backgroundSecondary,
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}
+            >
+              <Ionicons
+                name={copied ? 'checkmark' : 'copy-outline'}
+                size={18}
+                color={copied ? colors.success : colors.textSecondary}
+              />
+            </Pressable>
+          </View>
 
-        <Text style={styles.sectionTitle}>Products</Text>
-        {order.items.map((item, index) => (
-          <View key={index} style={styles.productRow}>
-            <Image source={{ uri: item.productThumbnail }} style={styles.image} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.productName}>{item.productTitle}</Text>
-              <Text style={styles.seller}>Qty: {item.quantity}</Text>
-              <Text style={styles.price}>₹{item.finalPriceAtPurchase.toFixed(2)}</Text>
+          <View style={styles.badgeRow}>
+            {renderStatusBadge(order.status)}
+            {renderPaymentBadge(order.paymentStatus)}
+          </View>
+        </Card>
+
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>ITEMS</Text>
+        <Card padding={spacing.md} style={styles.sectionCard}>
+          {order.items.map((item, index) => (
+            <View key={`${item.productId}-${index}`}>
+              {index > 0 ? (
+                <View style={[styles.itemDivider, { backgroundColor: colors.borderLight }]} />
+              ) : null}
+              <View style={styles.productRow}>
+                <View style={[styles.thumbWrap, { backgroundColor: colors.backgroundSecondary }]}>
+                  {item.productThumbnail ? (
+                    <Image source={{ uri: item.productThumbnail }} style={styles.thumb} />
+                  ) : (
+                    <View style={styles.thumbPlaceholder}>
+                      <Ionicons name="cube-outline" size={28} color={colors.textMuted} />
+                    </View>
+                  )}
+                </View>
+                <View style={styles.productInfo}>
+                  <Text numberOfLines={2} style={[styles.productName, { color: colors.text }]}>
+                    {item.productTitle}
+                  </Text>
+                  <Text style={[styles.productMeta, { color: colors.textSecondary }]}>
+                    Qty {item.quantity}
+                  </Text>
+                  <Text style={[styles.productPrice, { color: colors.text }]}>
+                    {formatDreamCash(item.finalPriceAtPurchase)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ))}
+        </Card>
+
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>DELIVERY</Text>
+        <Card padding={spacing.md} style={styles.sectionCard}>
+          <View style={styles.infoRow}>
+            <View style={[styles.infoIcon, { backgroundColor: colors.backgroundSecondary }]}>
+              <Ionicons name="location-outline" size={18} color={colors.textMuted} />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={[styles.infoTitle, { color: colors.text }]}>{order.deliveryAddress.fullName}</Text>
+              <Text style={[styles.infoBody, { color: colors.textSecondary }]}>
+                {order.deliveryAddress.street}, {order.deliveryAddress.city} – {order.deliveryAddress.pincode}
+              </Text>
+              <Text style={[styles.infoBody, { color: colors.textSecondary }]}>{order.deliveryAddress.state}</Text>
             </View>
           </View>
-        ))}
-      </View>
-
-      {/* Order Status */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Order Status</Text>
-        <Text>📦 Status: <Text style={styles.highlight}>{order.status}</Text></Text>
-        <Text>💳 Payment: <Text style={styles.highlight}>{order.paymentStatus}</Text></Text>
-        <Text>🗓 Ordered On: {new Date(order.createdAt).toLocaleDateString()}</Text>
-      </View>
-
-      {/* Shipping */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Shipping Details</Text>
-        <Text style={styles.bold}>{order.deliveryAddress.fullName}</Text>
-        <Text>{order.deliveryAddress.street}, {order.deliveryAddress.city} - {order.deliveryAddress.pincode}</Text>
-        <Text>{order.deliveryAddress.state}</Text>
-        <Text>📞 {order.deliveryAddress.phone}</Text>
-      </View>
-
-      {/* Price Summary */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Price Summary</Text>
-
-        <View style={styles.rowBetween}>
-          <Text>Items Total</Text>
-          <Text>₹{order.totalAmount.toFixed(2)}</Text>
-        </View>
-
-        <View style={styles.rowBetween}>
-          <Text>GST ({order ? Math.round((order?.totalGstAmount / order?.totalAmount) * 100) : 0}%)</Text>
-          <Text>₹{order.totalGstAmount ? order.totalGstAmount.toFixed(2) : 0}</Text>
-        </View>
-
-        {order.usedWalletAmount > 0 && (
-          <View style={styles.rowBetween}>
-            <Text>Wallet Used</Text>
-            <Text>- ₹{order.usedWalletAmount.toFixed(2)}</Text>
+          <View style={[styles.infoDivider, { backgroundColor: colors.borderLight }]} />
+          <View style={styles.infoRow}>
+            <View style={[styles.infoIcon, { backgroundColor: colors.backgroundSecondary }]}>
+              <Ionicons name="call-outline" size={18} color={colors.textMuted} />
+            </View>
+            <Text style={[styles.infoBody, { color: colors.textSecondary }]}>{order.deliveryAddress.phone}</Text>
           </View>
-        )}
+        </Card>
 
-        {order.usedCouponCode && (
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>PAYMENT SUMMARY</Text>
+        <Card padding={spacing.md} style={styles.sectionCard}>
           <View style={styles.rowBetween}>
-            <Text>Coupon ({order.usedCouponCode})</Text>
-            <Text>- applied</Text>
+            <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>Items total</Text>
+            <Text style={[styles.rowValue, { color: colors.text }]}>{formatDreamCash(order.totalAmount)}</Text>
           </View>
-        )}
 
-        <View style={styles.divider} />
+          <View style={styles.rowBetween}>
+            <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>GST ({gstPercent}%)</Text>
+            <Text style={[styles.rowValue, { color: colors.text }]}>
+              {formatDreamCash(order.totalGstAmount || 0)}
+            </Text>
+          </View>
 
-        <View style={styles.rowBetween}>
-          <Text style={styles.totalLabel}>Total Paid</Text>
-          <Text style={styles.totalValue}>₹{order.finalAmountPaid.toFixed(2)}</Text>
+          {order.usedWalletAmount > 0 ? (
+            <View style={styles.rowBetween}>
+              <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>Wallet used</Text>
+              <Text style={[styles.rowValue, { color: colors.success }]}>
+                −{formatDreamCash(order.usedWalletAmount)}
+              </Text>
+            </View>
+          ) : null}
+
+          {order.usedCouponCode ? (
+            <View style={styles.rowBetween}>
+              <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>
+                Coupon ({order.usedCouponCode})
+              </Text>
+              <Text style={[styles.rowValue, { color: colors.success }]}>Applied</Text>
+            </View>
+          ) : null}
+
+          <View style={[styles.summaryDivider, { backgroundColor: colors.borderLight }]} />
+
+          <View style={styles.rowBetween}>
+            <Text style={[styles.totalLabel, { color: colors.text }]}>Total paid</Text>
+            <Text style={[styles.totalValue, { color: colors.success }]}>
+              {formatDreamCash(order.finalAmountPaid)}
+            </Text>
+          </View>
+        </Card>
+
+        <View style={styles.invoiceSection}>
+          {isPaid ? (
+            <View style={styles.invoiceButtons}>
+              <Button
+                title="Download invoice"
+                onPress={handleDownloadInvoice}
+                variant="primary"
+                size="md"
+                style={styles.invoiceButton}
+                loading={invoiceLoading === 'download'}
+                disabled={invoiceLoading !== null}
+                leftIcon={<Ionicons name="download-outline" size={18} />}
+              />
+              <Button
+                title="Share invoice"
+                onPress={handleShareInvoice}
+                variant="outline"
+                size="md"
+                style={styles.invoiceButton}
+                loading={invoiceLoading === 'share'}
+                disabled={invoiceLoading !== null}
+                leftIcon={<Ionicons name="share-outline" size={18} />}
+              />
+            </View>
+          ) : (
+            <View style={[styles.unpaidBanner, { backgroundColor: colors.warning + '18' }]}>
+              <Ionicons name="time-outline" size={18} color={colors.warning} />
+              <Text style={[styles.unpaidText, { color: colors.warning }]}>
+                Invoice available after payment is completed
+              </Text>
+            </View>
+          )}
         </View>
-      </View>
 
-      {/* Download Invoice Button */}
-<View style={styles.buttonRow}>
-  {["Download", "Share"].map((type) => (
-    <TouchableOpacity
-      key={type}
-      style={[styles.button, order.paymentStatus !== "paid" && { backgroundColor: "#9ca3af" }]}
-      onPress={order.paymentStatus === "paid" ? (type === "Download" ? handleViewInvoice : handleDownloadInvoice) : undefined}
-      disabled={order.paymentStatus !== "paid"}
-    >
-      <Ionicons
-        name={type === "Download" ? "download-outline" : "share-outline"}
-        size={18}
-        color="#fff"
-      />
-      <Text style={styles.buttonText}>
-        {order.paymentStatus === "paid" ? `${type} Invoice` : "Payment Pending"}
-      </Text>
-    </TouchableOpacity>
-  ))}
-</View>
+        <ReturnPolicySection orderIdLabel={displayId.replace('#', '')} />
+      </ScrollView>
 
-
-      {/* Return & Refund Policy */}
-
-      <View style={[styles.card, { marginTop: 20, borderLeftWidth: 4, borderLeftColor: "#f87171" }]}>
-        <Text style={[styles.sectionTitle, { color: "#dc2626" }]}>Return & Refund Policy</Text>
-        <Text style={{ fontSize: 13, color: "#374151", lineHeight: 20 }}>
-          You may request a return within{" "}
-          <Text style={{ fontWeight: "600", color: "#dc2626" }}>2 days of delivery</Text>.
-          To initiate, please email us at{" "}
-          <Text style={{ fontWeight: "600", color: "#2563eb" }}>ampdreammart@gmail.com</Text>.
-          Make sure your email has a{" "}
-          <Text style={{ fontWeight: "600" }}>clear subject line mentioning "Return Request – [Your Order ID]"</Text>.
-          In the message body, briefly describe the{" "}
-          <Text style={{ fontWeight: "600" }}>reason for return</Text>.
-          Our support team will review your request and get back to you with the next steps.
-        </Text>
-      </View>
-
-      
       <InvoicePreview
-        visible={isModalVisible}
-        onClose={handleCloseModal}
+        visible={isInvoiceModalVisible}
+        onClose={() => setInvoiceModalVisible(false)}
         uri={invoiceUrl}
       />
-    </ScrollView>
+    </Screen>
   );
 };
 
 export default OrderDetails;
 
 const styles = StyleSheet.create({
-  container: { padding: 16, backgroundColor: '#f9fafb', flex: 1 },
-  header: { fontSize: 18, fontWeight: 'bold', marginVertical: 12 },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+  container: {
+    flex: 1,
   },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 10 },
-  productRow: { flexDirection: 'row', marginBottom: 12 },
-  image: { width: 70, height: 70, borderRadius: 8, marginRight: 12 },
-  productName: { fontSize: 14, fontWeight: '600' },
-  price: { fontSize: 15, fontWeight: 'bold', color: '#3b82f6' },
-  seller: { fontSize: 12, color: '#6b7280', marginBottom: 2 },
-  bold: { fontWeight: '600' },
-  highlight: { fontWeight: '600', color: '#2563eb' },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 6 },
-  divider: { borderBottomColor: '#e5e7eb', borderBottomWidth: 1, marginVertical: 8 },
-  totalLabel: { fontWeight: 'bold', fontSize: 15 },
-  totalValue: { fontWeight: 'bold', fontSize: 15, color: '#16a34a' },
-  button: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#3b82f6",
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 6,
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxxl,
   },
-
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 10, // optional, for spacing if using React Native 0.71+
+  centerLoader: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
   },
-  buttonText: {
-    color: "#fff",
-    fontSize: 14,
-    marginLeft: 6,
+  loadingText: {
+    fontSize: typography.fontSize.sm,
+  },
+  emptyState: {
+    paddingVertical: spacing.xxl,
+  },
+  headerBlock: {
+    paddingTop: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  pageTitle: {
+    fontSize: typography.fontSize.xxxl,
+    fontWeight: typography.fontWeight.extrabold,
+    letterSpacing: -0.5,
+    marginBottom: spacing.xxs,
+  },
+  pageSubtitle: {
+    fontSize: typography.fontSize.base,
+  },
+  heroCard: {
+    marginBottom: spacing.lg,
+  },
+  orderIdRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  orderIdTextWrap: {
+    flex: 1,
+  },
+  orderIdLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+    marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  orderIdValue: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    letterSpacing: -0.3,
+  },
+  copyBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  statusBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+  },
+  statusBadgeText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  sectionLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 0.6,
+    marginBottom: spacing.xs,
+    marginLeft: spacing.xxs,
+  },
+  sectionCard: {
+    marginBottom: spacing.lg,
+  },
+  productRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  itemDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: spacing.sm,
+  },
+  thumbWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    marginRight: spacing.sm,
+  },
+  thumb: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  thumbPlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  productInfo: {
+    flex: 1,
+  },
+  productName: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    lineHeight: 20,
+  },
+  productMeta: {
+    fontSize: typography.fontSize.sm,
+    marginTop: 2,
+  },
+  productPrice: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
+    marginTop: spacing.xxs,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  infoIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoTitle: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+    marginBottom: 2,
+  },
+  infoBody: {
+    fontSize: typography.fontSize.sm,
+    lineHeight: 20,
+  },
+  infoDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: spacing.sm,
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: spacing.xxs + 2,
+  },
+  rowLabel: {
+    fontSize: typography.fontSize.sm,
+  },
+  rowValue: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+  },
+  summaryDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: spacing.sm,
+  },
+  totalLabel: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
+  },
+  totalValue: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+  },
+  invoiceSection: {
+    marginBottom: spacing.lg,
+  },
+  invoiceButtons: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  invoiceButton: {
+    flex: 1,
+  },
+  unpaidBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+  },
+  unpaidText: {
+    flex: 1,
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+  },
+  policyContainer: {
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  policyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+  },
+  policyHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+  },
+  policyIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  policyHeaderTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  policyBody: {
+    fontSize: typography.fontSize.sm,
+    lineHeight: 20,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: spacing.sm,
   },
 });

@@ -1,29 +1,47 @@
+import { useTheme } from '@/components/ThemeContext';
+import { Button, Input } from '@/components/ui';
+import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
+import { Address, AddressFormData } from '@/types/address';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-
-interface Address {
-  addressName: string;
-  slugName: string;
-  fullName: string;
-  street: string;
-  city: string;
-  state: string;
-  pincode: string;
-  phone: string;
-  isDefault: boolean;
-}
+import { useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 interface AddressFormProps {
   address?: Address | null;
-  onSubmit: (addressData: Address) => void;
+  onSubmit: (addressData: Address) => Promise<void>;
   onCancel: () => void;
 }
 
-const AddressForm: React.FC<AddressFormProps> = ({ address, onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState<Omit<Address, 'slugName'>>({
+type FormErrors = Partial<Record<keyof AddressFormData, string>>;
+
+function validateForm(data: AddressFormData): FormErrors {
+  const errors: FormErrors = {};
+
+  if (!data.addressName.trim()) errors.addressName = 'Required';
+  if (!data.fullName.trim()) errors.fullName = 'Required';
+  if (!data.street.trim()) errors.street = 'Required';
+  if (!data.city.trim()) errors.city = 'Required';
+  if (!data.state.trim()) errors.state = 'Required';
+  if (!/^\d{6}$/.test(data.pincode.trim())) errors.pincode = 'Enter a valid 6-digit pincode';
+  if (!/^\d{10}$/.test(data.phone.trim())) errors.phone = 'Enter a valid 10-digit phone';
+
+  return errors;
+}
+
+export default function AddressForm({ address, onSubmit, onCancel }: AddressFormProps) {
+  const { colors } = useTheme();
+  const isEditing = Boolean(address);
+
+  const [formData, setFormData] = useState<AddressFormData>({
     addressName: address?.addressName || '',
-    // slugName: address?.slugName || '',
     fullName: address?.fullName || '',
     street: address?.street || '',
     city: address?.city || '',
@@ -32,166 +50,279 @@ const AddressForm: React.FC<AddressFormProps> = ({ address, onSubmit, onCancel }
     phone: address?.phone || '',
     isDefault: address?.isDefault || false,
   });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleChange = <T extends keyof typeof formData>(name: T, value: typeof formData[T]) => {
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+  const handleChange = <K extends keyof AddressFormData>(name: K, value: AddressFormData[K]) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
-  const handleSubmit = () => {
-    const addressData: Address = {
-      ...formData,
-      slugName: address?.slugName || ''
-    };
-    onSubmit(addressData);
+  const handleSubmit = async () => {
+    const nextErrors = validateForm(formData);
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        ...formData,
+        addressName: formData.addressName.trim(),
+        fullName: formData.fullName.trim(),
+        street: formData.street.trim(),
+        city: formData.city.trim(),
+        state: formData.state.trim(),
+        pincode: formData.pincode.trim(),
+        phone: formData.phone.trim(),
+        slugName: address?.slugName || '',
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.formTitle}>
-        {address ? 'Edit Address' : 'Add New Address'}
-      </Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Address Name (e.g., Home, Work)"
-        value={formData.addressName}
-        onChangeText={(text) => handleChange('addressName', text)}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Full Name"
-        value={formData.fullName}
-        onChangeText={(text) => handleChange('fullName', text)}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Street Address"
-        value={formData.street}
-        onChangeText={(text) => handleChange('street', text)}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="City"
-        value={formData.city}
-        onChangeText={(text) => handleChange('city', text)}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="State"
-        value={formData.state}
-        onChangeText={(text) => handleChange('state', text)}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Pincode"
-        keyboardType="numeric"
-        value={formData.pincode}
-        onChangeText={(text) => handleChange('pincode', text)}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Phone Number"
-        keyboardType="phone-pad"
-        value={formData.phone}
-        onChangeText={(text) => handleChange('phone', text)}
-        maxLength={10}
-      />
-
-      <View style={styles.checkboxContainer}>
-        <TouchableOpacity
-          style={styles.checkbox}
-          onPress={() => handleChange('isDefault', !formData.isDefault)}
-        >
-          {formData.isDefault ? (
-            <Ionicons name="checkbox-outline" size={24} color="#10b981" />
-          ) : (
-            <Ionicons name="square-outline" size={24} color="#64748b" />
-          )}
-        </TouchableOpacity>
-        <Text style={styles.checkboxLabel}>Set as default address</Text>
-      </View>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>
-            {address ? 'Update' : 'Save'}
+    <KeyboardAvoidingView
+      style={styles.flex}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
+    >
+      <ScrollView
+        style={styles.flex}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.headerBlock}>
+          <Text style={[styles.formTitle, { color: colors.text }]}>
+            {isEditing ? 'Edit address' : 'Add address'}
           </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+          <Text style={[styles.formSubtitle, { color: colors.textMuted }]}>
+            Save where you want orders delivered
+          </Text>
+        </View>
+
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>CONTACT</Text>
+        <View style={styles.fieldGroup}>
+          <FieldLabel label="Full name" colors={colors} />
+          <Input
+            leftIcon="person-outline"
+            placeholder="Full name"
+            value={formData.fullName}
+            onChangeText={(text) => handleChange('fullName', text)}
+            error={Boolean(errors.fullName)}
+          />
+          {errors.fullName ? <FieldError message={errors.fullName} colors={colors} /> : null}
+
+          <FieldLabel label="Phone" colors={colors} />
+          <Input
+            leftIcon="call-outline"
+            placeholder="10-digit mobile number"
+            keyboardType="phone-pad"
+            maxLength={10}
+            value={formData.phone}
+            onChangeText={(text) => handleChange('phone', text.replace(/\D/g, ''))}
+            error={Boolean(errors.phone)}
+          />
+          {errors.phone ? <FieldError message={errors.phone} colors={colors} /> : null}
+        </View>
+
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>ADDRESS DETAILS</Text>
+        <View style={styles.fieldGroup}>
+          <FieldLabel label="Label" colors={colors} />
+          <Input
+            leftIcon="bookmark-outline"
+            placeholder="Home, Work, etc."
+            value={formData.addressName}
+            onChangeText={(text) => handleChange('addressName', text)}
+            error={Boolean(errors.addressName)}
+          />
+          {errors.addressName ? <FieldError message={errors.addressName} colors={colors} /> : null}
+
+          <FieldLabel label="Street address" colors={colors} />
+          <Input
+            leftIcon="location-outline"
+            placeholder="House no., street, area"
+            value={formData.street}
+            onChangeText={(text) => handleChange('street', text)}
+            error={Boolean(errors.street)}
+          />
+          {errors.street ? <FieldError message={errors.street} colors={colors} /> : null}
+
+          <View style={styles.row}>
+            <View style={styles.halfField}>
+              <FieldLabel label="City" colors={colors} />
+              <Input
+                leftIcon="business-outline"
+                placeholder="City"
+                value={formData.city}
+                onChangeText={(text) => handleChange('city', text)}
+                error={Boolean(errors.city)}
+              />
+              {errors.city ? <FieldError message={errors.city} colors={colors} /> : null}
+            </View>
+            <View style={styles.halfField}>
+              <FieldLabel label="State" colors={colors} />
+              <Input
+                placeholder="State"
+                value={formData.state}
+                onChangeText={(text) => handleChange('state', text)}
+                error={Boolean(errors.state)}
+              />
+              {errors.state ? <FieldError message={errors.state} colors={colors} /> : null}
+            </View>
+          </View>
+
+          <FieldLabel label="Pincode" colors={colors} />
+          <Input
+            leftIcon="keypad-outline"
+            placeholder="6-digit pincode"
+            keyboardType="number-pad"
+            maxLength={6}
+            value={formData.pincode}
+            onChangeText={(text) => handleChange('pincode', text.replace(/\D/g, ''))}
+            error={Boolean(errors.pincode)}
+          />
+          {errors.pincode ? <FieldError message={errors.pincode} colors={colors} /> : null}
+        </View>
+
+        <Pressable
+          onPress={() => handleChange('isDefault', !formData.isDefault)}
+          style={({ pressed }) => [
+            styles.defaultRow,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.borderLight,
+              opacity: pressed ? 0.85 : 1,
+            },
+          ]}
+        >
+          <Ionicons
+            name={formData.isDefault ? 'checkbox' : 'square-outline'}
+            size={22}
+            color={formData.isDefault ? colors.primary : colors.textMuted}
+          />
+          <Text style={[styles.defaultLabel, { color: colors.textSecondary }]}>
+            Set as default address
+          </Text>
+        </Pressable>
+
+        <View style={styles.buttonRow}>
+          <Button
+            title="Cancel"
+            onPress={onCancel}
+            variant="outline"
+            size="md"
+            style={styles.buttonHalf}
+            disabled={submitting}
+          />
+          <Button
+            title={isEditing ? 'Update' : 'Save address'}
+            onPress={handleSubmit}
+            variant="primary"
+            size="md"
+            style={styles.buttonHalf}
+            loading={submitting}
+            disabled={submitting}
+          />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
-};
-export default AddressForm;
+}
+
+function FieldLabel({
+  label,
+  colors,
+}: {
+  label: string;
+  colors: ReturnType<typeof useTheme>['colors'];
+}) {
+  return (
+    <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{label}</Text>
+  );
+}
+
+function FieldError({
+  message,
+  colors,
+}: {
+  message: string;
+  colors: ReturnType<typeof useTheme>['colors'];
+}) {
+  return <Text style={[styles.fieldError, { color: colors.error }]}>{message}</Text>;
+}
+
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+  flex: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: spacing.xxxl,
+  },
+  headerBlock: {
+    marginBottom: spacing.lg,
   },
   formTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-    color: '#1e293b',
+    fontSize: typography.fontSize.xxl,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: spacing.xxs,
   },
-  input: {
+  formSubtitle: {
+    fontSize: typography.fontSize.base,
+  },
+  sectionLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 0.6,
+    marginBottom: spacing.xs,
+    marginLeft: spacing.xxs,
+  },
+  fieldGroup: {
+    marginBottom: spacing.lg,
+    gap: spacing.xs,
+  },
+  fieldLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    marginTop: spacing.xxs,
+    marginBottom: 2,
+  },
+  fieldError: {
+    fontSize: typography.fontSize.xs,
+    marginTop: -2,
+    marginBottom: spacing.xxs,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  halfField: {
+    flex: 1,
+  },
+  defaultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    backgroundColor: '#f8fafc',
+    marginBottom: spacing.lg,
   },
-  checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  checkbox: {
-    marginRight: 8,
-  },
-  checkboxLabel: {
-    color: '#64748b',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  cancelButton: {
+  defaultLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
     flex: 1,
-    backgroundColor: '#f1f5f9',
-    padding: 14,
-    borderRadius: 8,
-    marginRight: 8,
-    alignItems: 'center',
   },
-  cancelButtonText: {
-    color: '#64748b',
-    fontWeight: '500',
+  buttonRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
-  submitButton: {
+  buttonHalf: {
     flex: 1,
-    backgroundColor: '#10b981',
-    padding: 14,
-    borderRadius: 8,
-    marginLeft: 8,
-    alignItems: 'center',
-  },
-  submitButtonText: {
-    color: 'white',
-    fontWeight: '500',
   },
 });
-

@@ -1,33 +1,88 @@
-import { Text, View, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from '@/components/ThemeContext';
+import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
 
 export default function DreamCashInfo() {
+  const { colors } = useTheme();
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>ℹ️ About Dream Cash</Text>
-      <Text style={styles.text}>
-        Dream Cash is a virtual balance you earn through your activity on the app.{"\n\n"}
-        It can be used for shopping or can be withdrawn, as per the options available.
-      </Text>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.borderLight,
+        },
+      ]}
+    >
+      <Pressable
+        onPress={() => setExpanded((v) => !v)}
+        style={({ pressed }) => [styles.header, { opacity: pressed ? 0.75 : 1 }]}
+      >
+        <View style={styles.headerLeft}>
+          <View style={[styles.infoIcon, { backgroundColor: colors.backgroundSecondary }]}>
+            <Ionicons name="information-circle-outline" size={18} color={colors.textMuted} />
+          </View>
+          <Text style={[styles.headerTitle, { color: colors.textSecondary }]}>
+            About Dream Cash
+          </Text>
+        </View>
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={18}
+          color={colors.textMuted}
+        />
+      </Pressable>
+
+      {expanded ? (
+        <Text style={[styles.body, { color: colors.textMuted, borderTopColor: colors.borderLight }]}>
+          Dream Cash is a virtual balance you earn through activity on the app. It can be used
+          for shopping or withdrawn to your bank account, subject to available options and policies.
+        </Text>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#f4f6f8',
-    padding: 12,
-    borderRadius: 8,
-    marginVertical: 10,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginTop: spacing.xs,
   },
-  title: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 6,
-    color: '#555',
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
   },
-  text: {
-    fontSize: 13,
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  infoIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+  },
+  body: {
+    fontSize: typography.fontSize.sm,
     lineHeight: 20,
-    color: '#666',
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
 });

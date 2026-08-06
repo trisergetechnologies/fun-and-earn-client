@@ -1,7 +1,7 @@
 import { getToken } from '@/helpers/authStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
@@ -40,15 +40,19 @@ type CartItem = {
   selectedVariation?: SelectedVariation[];
 };
 
+export type AddToCartResult =
+  | { success: true }
+  | { success: false; message: string };
+
 interface CartContextType {
   cart: CartItem[];
   totalGstAmount: number;
   deliveryCharge: number;
-  addToCart: (product: Product, selectedVariation?: SelectedVariation[]) => void;
-  removeFromCart: (id: string) => void;
-  updateQty: (id: string, qty: number) => void;
+  addToCart: (product: Product, selectedVariation?: SelectedVariation[]) => Promise<AddToCartResult>;
+  removeFromCart: (id: string) => Promise<void>;
+  updateQty: (id: string, qty: number) => Promise<void>;
   clearCart: () => void;
-  refreshCart: () => void;
+  refreshCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -62,7 +66,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const {isAuthenticated, isAuthLoading} = useAuth();
 
 
-    const fetchCart = async () => {
+    const fetchCart = useCallback(async () => {
     const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/getcart`
     const token = await getToken();
  
@@ -78,13 +82,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (err) {
       console.error('Failed to fetch cart:', err);
+      throw err;
     }
-  };
+  }, []);
 
   useEffect(() => {
     if(isAuthLoading && !isAuthenticated) return
     fetchCart();
-  }, []);
+  }, [fetchCart, isAuthLoading, isAuthenticated]);
 
   // Save cart to storage whenever it changes
   useEffect(() => {
@@ -93,38 +98,54 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     );
   }, [cart]);
 
-  const addToCart = async (product: Product, selectedVariation?: SelectedVariation[]) => {
-
-    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/getcart`
-    const addUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/addcart`
+  const addToCart = async (
+    product: Product,
+    selectedVariation?: SelectedVariation[]
+  ): Promise<AddToCartResult> => {
+    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/getcart`;
+    const addUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/cart/addcart`;
     const token = await getToken();
-    
-      try {
-    const cartRes = await axios.get(url, {headers: {Authorization: `Bearer ${token}`}});
-    const currentCart = cartRes.data.cart || [];
 
-    const existingItem = currentCart.find(
-      (item: any) => item.productId === product._id || item.product._id === product._id
-    );
+    try {
+      const cartRes = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
+      const currentCart = cartRes.data.data?.items ?? cartRes.data.cart ?? [];
 
-    const newQuantity = existingItem ? existingItem.quantity + 1 : 1;
+      const existingItem = currentCart.find(
+        (item: { productId?: string | { _id?: string }; product?: { _id?: string } }) =>
+          item.productId === product._id ||
+          (typeof item.productId === 'object' && item.productId?._id === product._id) ||
+          item.product?._id === product._id
+      );
 
-    const res = await axios.post(addUrl, {
-      productId: product._id,
-      quantity: newQuantity,
-      selectedVariation: selectedVariation || [],
-    },{
-      headers: {Authorization: `Bearer ${token}`}
-    });
+      const newQuantity = existingItem ? existingItem.quantity + 1 : 1;
 
-    if (res.data.success) {
-      fetchCart();
-    } else {
-      console.warn('Failed to add to cart:', res.data.message);
+      const res = await axios.post(
+        addUrl,
+        {
+          productId: product._id,
+          quantity: newQuantity,
+          selectedVariation: selectedVariation || [],
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.data.success) {
+        await fetchCart();
+        return { success: true };
+      }
+
+      const message = res.data.message || 'Could not add to cart';
+      console.warn('Failed to add to cart:', message);
+      return { success: false, message };
+    } catch (err) {
+      console.error('Error adding to cart:', err);
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message || 'Could not add to cart'
+        : 'Could not add to cart';
+      return { success: false, message };
     }
-  } catch (err) {
-    console.error('Error adding to cart:', err);
-  }
   };
 
   const removeFromCart = async (id: string) => {
@@ -151,6 +172,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.error('❌ Error removing the item:', err);
       fetchCart();
+      throw err;
     }
   };
 
@@ -173,9 +195,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } else {
       console.warn('⚠️ Failed to update cart:', res.data.message);
     }
-  } catch (err) {
-    console.error('❌ Error updating the cart:', err);
-  }
+    } catch (err) {
+      console.error('❌ Error updating the cart:', err);
+      throw err;
+    }
   };
 
   const clearCart = async () => {
@@ -187,9 +210,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const refreshCart=()=>{
-      fetchCart();
-  }
+  const refreshCart = useCallback(() => fetchCart(), [fetchCart]);
 
   return (
     <CartContext.Provider

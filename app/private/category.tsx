@@ -6,15 +6,14 @@ import {
   Easing,
   FlatList,
   Image,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useCart } from '@/components/CartContext';
 import ProductModal from '@/components/ProductModal';
+import { Screen } from '@/components/Screen';
 import { useTheme } from '@/components/ThemeContext';
 import { EmptyState } from '@/components/ui';
 import { getToken } from '@/helpers/authStorage';
@@ -24,6 +23,9 @@ import { Ionicons } from '@expo/vector-icons';
 const { width } = Dimensions.get('window');
 const CARD_GAP = 10;
 const CARD_WIDTH = (width - 16 * 2 - CARD_GAP) / 2;
+
+const EXPO_PUBLIC_BASE_URL =
+  process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 type Product = {
   __v: number;
@@ -46,22 +48,40 @@ type Product = {
 
 export default function CategoryScreen() {
   const { colors } = useTheme();
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug: slugParam, name: nameParam } = useLocalSearchParams<{
+    slug: string;
+    name?: string;
+  }>();
+  const slug = Array.isArray(slugParam) ? slugParam[0] : slugParam;
+  const categoryNameRaw = Array.isArray(nameParam) ? nameParam[0] : nameParam;
+  const categoryName =
+    categoryNameRaw && categoryNameRaw.trim().length > 0
+      ? categoryNameRaw.trim()
+      : slug
+        ? slug.replace(/-/g, ' ')
+        : 'Category';
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [products, setProducts] = useState<Product[] | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const [loading, setLoading] = useState<boolean>(false);
 
   const fetchProducts = async () => {
-    setLoading(true);
-    const url = `${process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1'}/ecart/user/product/products/slug/${slug}`;
+    if (!slug) {
+      setProducts([]);
+      return;
+    }
+
+    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/product/products/slug/${slug}`;
     const token = await getToken();
     try {
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setProducts(response.data.data);
+      if (response.data?.success && Array.isArray(response.data.data)) {
+        setProducts(response.data.data);
+      } else {
+        setProducts([]);
+      }
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 700,
@@ -70,19 +90,17 @@ export default function CategoryScreen() {
       }).start();
     } catch (error) {
       console.error('Error:', error);
-    } finally {
-      setLoading(false);
+      setProducts([]);
     }
   };
 
   useEffect(() => {
+    fadeAnim.setValue(0);
     fetchProducts();
   }, [slug]);
 
   const filteredProducts =
-    products?.filter((p) =>
-      p.title.toLowerCase().includes(search.toLowerCase())
-    ) ?? [];
+    products?.filter((p) => p.title.toLowerCase().includes(search.toLowerCase())) ?? [];
 
   const renderProduct = ({ item }: { item: Product }) => (
     <TouchableOpacity
@@ -118,17 +136,26 @@ export default function CategoryScreen() {
     <EmptyState
       icon="search-outline"
       title="No products found"
-      subtitle={`No products in ${slug} match your search.`}
+      subtitle={`No products in ${categoryName} match your search.`}
     />
   );
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <Screen>
+      <View style={styles.headerBlock}>
+        <Text style={[styles.categoryHeading, { color: colors.textMuted }]} numberOfLines={2}>
+          {categoryName}
+        </Text>
+        <Text style={[styles.categorySubheading, { color: colors.textSecondary }]}>
+          Products in this category
+        </Text>
+      </View>
+
       <View style={[styles.searchRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
-          placeholder={`Search in ${slug}`}
+          placeholder={`Search in ${categoryName}`}
           placeholderTextColor={colors.textMuted}
           value={search}
           onChangeText={setSearch}
@@ -146,27 +173,38 @@ export default function CategoryScreen() {
           ListEmptyComponent={ListEmpty}
           showsVerticalScrollIndicator={false}
         />
-
-        {selectedProduct && (
-          <ProductModal
-            visible={!!selectedProduct}
-            product={selectedProduct}
-            onClose={() => setSelectedProduct(null)}
-          />
-        )}
       </Animated.View>
-    </SafeAreaView>
+
+      <ProductModal
+        visible={selectedProduct !== null}
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+      />
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   flex1: { flex: 1 },
-  safeArea: { flex: 1 },
+  headerBlock: {
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  categoryHeading: {
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+    textTransform: 'capitalize',
+  },
+  categorySubheading: {
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: '400',
+  },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 16,
-    marginTop: 40,
     marginBottom: 16,
     paddingHorizontal: 14,
     height: 44,

@@ -4,6 +4,7 @@ import ReturnRefundPolicyModal from '@/components/ReturnRefundPolicyModal';
 import ShippingPolicyModal from '@/components/ShippingPolicyModal';
 import Spinner from '@/components/Spinner';
 import TermsAndConditionsModal from '@/components/TermsAndConditionsModal';
+import { Screen } from '@/components/Screen';
 import { Colors } from '@/constants/Colors';
 import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +18,6 @@ import {
   Easing,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -243,7 +243,7 @@ const SignUpScreen = () => {
     <>
       <Stack.Screen options={{ headerTitle: 'Sign Up' }} />
       {loading ? <Spinner /> :
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+        <Screen>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollWrapper} showsVerticalScrollIndicator={false}>
               <Text style={styles.title}>Create Account</Text>
@@ -294,7 +294,7 @@ const SignUpScreen = () => {
 
 
           </KeyboardAvoidingView>
-        </SafeAreaView>
+        </Screen>
 
       }
 
@@ -316,11 +316,9 @@ export default SignUpScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   scrollWrapper: {
     paddingHorizontal: 24,
-    paddingTop: 60,
     paddingBottom: 40,
   },
   title: {
@@ -329,7 +327,6 @@ const styles = StyleSheet.create({
     color: Colors.black,
     textAlign: 'center',
     marginBottom: 4,
-    marginTop: 29,
   },
   subtitle: {
     fontSize: 14,

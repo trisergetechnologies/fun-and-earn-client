@@ -1,8 +1,6 @@
-import { Colors } from '@/constants/Colors';
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  SafeAreaView,
   View,
   Text,
   TextInput,
@@ -16,9 +14,12 @@ import {
 import axios from 'axios';
 import { getToken } from '@/helpers/authStorage';
 import { useAuth } from '@/components/AuthContext';
+import { useTheme } from '@/components/ThemeContext';
+import { Screen } from '@/components/Screen';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 const ActivateScreen = () => {
+  const { colors } = useTheme();
   const [referralCode, setReferralCode] = useState('');
   const [already, setAlready] = useState<boolean>(false);
   const router = useRouter();
@@ -61,34 +62,36 @@ const ActivateScreen = () => {
   return (
     <>
       <Stack.Screen options={{ headerTitle: 'Account Activate' }} />
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+      <Screen>
         <KeyboardAvoidingView
           style={styles.container}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <ScrollView contentContainerStyle={styles.scrollWrapper} keyboardShouldPersistTaps="handled">
-            <Text style={styles.title}>Activate Your Short Video Account</Text>
+            <Text style={[styles.title, { color: colors.text }]}>Activate Your Short Video Account</Text>
 
             <View style={styles.inputWrapper}>
               <TextInput
                 readOnly={already}
-                placeholder={already ? "Already Activated": "Enter Referral Code"}
-                placeholderTextColor="#666"
-                style={styles.input}
+                placeholder={already ? 'Already Activated' : 'Enter Referral Code'}
+                placeholderTextColor={colors.textMuted}
+                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
                 value={referralCode}
                 onChangeText={setReferralCode}
               />
 
-              <TouchableOpacity disabled={already} style={styles.button} onPress={handleActivate}>
-                <Text style={styles.btnTxt}>{already? "Already Activated" :"Activate"}</Text>
+              <TouchableOpacity disabled={already} style={[styles.button, { backgroundColor: colors.primary }]} onPress={handleActivate}>
+                <Text style={[styles.btnTxt, { color: colors.primaryContrast }]}>{already ? 'Already Activated' : 'Activate'}</Text>
               </TouchableOpacity>
-              {already ?
-                <Text style={{color: 'red'}}>You are a ShorVideo user. You can log in to the application using the same email ID and password.</Text>
-              : ''}
+              {already ? (
+                <Text style={{ color: colors.error }}>
+                  You are a ShorVideo user. You can log in to the application using the same email ID and password.
+                </Text>
+              ) : null}
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
-      </SafeAreaView>
+      </Screen>
     </>
   );
 };
@@ -98,17 +101,14 @@ export default ActivateScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   scrollWrapper: {
     paddingHorizontal: 24,
-    paddingTop: 60,
     paddingBottom: 40,
   },
   title: {
     fontSize: 24,
     fontWeight: '800',
-    color: Colors.black,
     textAlign: 'left',
     marginBottom: 24,
     marginTop: 4,
@@ -118,24 +118,19 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   input: {
-    backgroundColor: '#fff',
     paddingVertical: 14,
     paddingHorizontal: 18,
     borderRadius: 14,
     fontSize: 15,
-    color: Colors.black,
-    borderColor: '#ddd',
     borderWidth: 1,
   },
   button: {
-    backgroundColor: Colors.primary,
     paddingVertical: 16,
     borderRadius: 30,
     alignItems: 'center',
     elevation: 2,
   },
   btnTxt: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '700',
   },

@@ -1,52 +1,312 @@
+import { Screen } from '@/components/Screen';
+import { useCart } from '@/components/CartContext';
+import { useTheme } from '@/components/ThemeContext';
+import { Button, Card, EmptyState } from '@/components/ui';
+import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
+import { CartItem } from '@/types/cart';
 import {
+  formatVariationLine,
+  getCartItemCount,
+  getCartSubtotal,
+  getEstimatedTotal,
+  getGstPercentLabel,
+  getLineTotal,
+  SAME_SELLER_CART_MESSAGE,
+} from '@/utils/cartLabels';
+import { formatDreamCash } from '@/utils/walletFormat';
+import { getProductSellerName } from '@/utils/productSeller';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { router } from 'expo-router';
+import { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
   FlatList,
   Image,
+  Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useEffect } from 'react';
-import { useCart } from '../../components/CartContext';
-import { useTheme } from '@/components/ThemeContext';
-import { EmptyState, Button } from '@/components/ui';
+import Toast from 'react-native-toast-message';
+
+function CartItemCard({
+  item,
+  busy,
+  onIncrease,
+  onDecrease,
+  onRemove,
+}: {
+  item: CartItem;
+  busy: boolean;
+  onIncrease: () => void;
+  onDecrease: () => void;
+  onRemove: () => void;
+}) {
+  const { colors } = useTheme();
+  const imageUri = item.productId.images?.[0];
+  const variationLine = formatVariationLine(item.selectedVariation);
+  const hasDiscount = (item.productId.discountPercent ?? 0) > 0;
+
+  return (
+    <Card padding={spacing.md} style={styles.cartCard}>
+      <View style={styles.cardRow}>
+        <View style={[styles.imageWrap, { backgroundColor: colors.backgroundSecondary }]}>
+          {imageUri ? (
+            <Image source={{ uri: imageUri }} style={styles.image} />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Ionicons name="image-outline" size={28} color={colors.textMuted} />
+            </View>
+          )}
+        </View>
+
+        <View style={styles.details}>
+          <View style={styles.titleRow}>
+            <Text numberOfLines={2} style={[styles.name, { color: colors.text }]}>
+              {item.productId.title}
+            </Text>
+            <Pressable
+              onPress={onRemove}
+              disabled={busy}
+              accessibilityLabel="Remove item"
+              style={({ pressed }) => [
+                styles.removeBtn,
+                { opacity: pressed || busy ? 0.5 : 1 },
+              ]}
+            >
+              <Ionicons name="trash-outline" size={18} color={colors.error} />
+            </Pressable>
+          </View>
+
+          {variationLine ? (
+            <Text numberOfLines={2} style={[styles.variationText, { color: colors.textMuted }]}>
+              {variationLine}
+            </Text>
+          ) : null}
+
+          <View style={styles.priceRow}>
+            <Text style={[styles.lineTotal, { color: colors.primary }]}>
+              {formatDreamCash(getLineTotal(item))}
+            </Text>
+            <Text style={[styles.unitPrice, { color: colors.textMuted }]}>
+              {formatDreamCash(item.productId.finalPrice)} × {item.quantity}
+            </Text>
+          </View>
+
+          {hasDiscount ? (
+            <Text style={[styles.originalPrice, { color: colors.textMuted }]}>
+              MRP {formatDreamCash(item.productId.price * item.quantity)}
+            </Text>
+          ) : null}
+
+          <View style={styles.actionsRow}>
+            <View
+              style={[
+                styles.qtyRow,
+                { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
+              ]}
+            >
+              <Pressable
+                onPress={onDecrease}
+                disabled={busy}
+                style={({ pressed }) => [
+                  styles.qtyBtn,
+                  { opacity: pressed || busy ? 0.5 : 1 },
+                ]}
+              >
+                <Ionicons name="remove" size={18} color={colors.text} />
+              </Pressable>
+              <Text style={[styles.qtyText, { color: colors.text }]}>{item.quantity}</Text>
+              <Pressable
+                onPress={onIncrease}
+                disabled={busy}
+                style={({ pressed }) => [
+                  styles.qtyBtn,
+                  { opacity: pressed || busy ? 0.5 : 1 },
+                ]}
+              >
+                <Ionicons name="add" size={18} color={colors.text} />
+              </Pressable>
+            </View>
+            {busy ? <ActivityIndicator size="small" color={colors.primary} /> : null}
+          </View>
+        </View>
+      </View>
+    </Card>
+  );
+}
+
+function CartSummaryFooter({
+  subtotal,
+  gstAmount,
+  deliveryCharge,
+  estimatedTotal,
+  onCheckout,
+}: {
+  subtotal: number;
+  gstAmount: number;
+  deliveryCharge: number;
+  estimatedTotal: number;
+  onCheckout: () => void;
+}) {
+  const { colors } = useTheme();
+
+  return (
+    <View style={[styles.footer, { borderTopColor: colors.borderLight, backgroundColor: colors.background }]}>
+      <Card padding={spacing.md} style={styles.summaryCard}>
+        <View style={styles.summaryRow}>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Subtotal</Text>
+          <Text style={[styles.summaryValue, { color: colors.text }]}>{formatDreamCash(subtotal)}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>
+            {getGstPercentLabel(subtotal, gstAmount)}
+          </Text>
+          <Text style={[styles.summaryValue, { color: colors.text }]}>
+            {formatDreamCash(gstAmount || 0)}
+          </Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Delivery</Text>
+          <Text style={[styles.summaryValue, { color: colors.text }]}>
+            {formatDreamCash(deliveryCharge || 0)}
+          </Text>
+        </View>
+        <View style={[styles.divider, { backgroundColor: colors.borderLight }]} />
+        <View style={styles.summaryRow}>
+          <Text style={[styles.totalLabel, { color: colors.text }]}>Estimated total</Text>
+          <Text style={[styles.totalValue, { color: colors.primary }]}>
+            {formatDreamCash(estimatedTotal)}
+          </Text>
+        </View>
+      </Card>
+      <Button
+        title="Proceed to Pay"
+        onPress={onCheckout}
+        variant="primary"
+        fullWidth
+        leftIcon={<Ionicons name="lock-closed" size={18} />}
+        style={styles.checkoutButton}
+      />
+    </View>
+  );
+}
 
 const CartScreen = () => {
   const { colors } = useTheme();
-  const { cart, removeFromCart, refreshCart, updateQty } = useCart();
+  const { cart, removeFromCart, refreshCart, updateQty, totalGstAmount, deliveryCharge } = useCart();
 
-  const increaseQty = (item: any) => updateQty(item.productId._id, item.quantity + 1);
-  const decreaseQty = (item: any) => {
-    if (item.quantity > 1) {
-      updateQty(item.productId._id, item.quantity - 1);
-    } else {
-      removeFromCart(item.productId._id);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [busyProductId, setBusyProductId] = useState<string | null>(null);
+
+  const loadCart = useCallback(async () => {
+    try {
+      await refreshCart();
+    } catch {
+      Toast.show({ type: 'error', text1: 'Could not load cart', text2: 'Please try again.' });
+    } finally {
+      setInitialLoading(false);
+    }
+  }, [refreshCart]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadCart();
+    }, [loadCart])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshCart();
+    } catch {
+      Toast.show({ type: 'error', text1: 'Could not refresh cart' });
+    } finally {
+      setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    refreshCart();
-  }, []);
+  const runCartAction = async (productId: string, action: () => Promise<void>) => {
+    if (busyProductId) return;
+    setBusyProductId(productId);
+    try {
+      await action();
+    } catch {
+      Toast.show({ type: 'error', text1: 'Could not update cart', text2: 'Please try again.' });
+    } finally {
+      setBusyProductId(null);
+    }
+  };
 
-  const total = cart.reduce(
-    (sum, item) => sum + item.productId.finalPrice * item.quantity,
-    0
+  const increaseQty = (item: CartItem) =>
+    runCartAction(item.productId._id, () => updateQty(item.productId._id, item.quantity + 1));
+
+  const decreaseQty = (item: CartItem) => {
+    if (item.quantity > 1) {
+      runCartAction(item.productId._id, () => updateQty(item.productId._id, item.quantity - 1));
+    } else {
+      runCartAction(item.productId._id, () => removeFromCart(item.productId._id));
+    }
+  };
+
+  const handleRemove = (productId: string) =>
+    runCartAction(productId, () => removeFromCart(productId));
+
+  const subtotal = getCartSubtotal(cart);
+  const itemCount = getCartItemCount(cart);
+  const estimatedTotal = getEstimatedTotal(subtotal, totalGstAmount, deliveryCharge);
+  const cartSellerName = cart[0] ? getProductSellerName(cart[0].productId.sellerId) : null;
+
+  const ListHeader = () => (
+    <View style={styles.headerBlock}>
+      <Text style={[styles.pageTitle, { color: colors.text }]}>Cart</Text>
+      <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
+        Review items before checkout
+      </Text>
+      {cart.length > 0 ? (
+        <View style={[styles.summaryStrip, { backgroundColor: colors.primaryTint }]}>
+          <Text style={[styles.summaryStripText, { color: colors.primary }]}>
+            {itemCount} item{itemCount !== 1 ? 's' : ''} · {formatDreamCash(subtotal)} subtotal
+          </Text>
+        </View>
+      ) : null}
+      {cart.length > 0 ? (
+        <View
+          style={[
+            styles.sellerHint,
+            { backgroundColor: colors.backgroundSecondary, borderColor: colors.borderLight },
+          ]}
+        >
+          <Ionicons name="storefront-outline" size={16} color={colors.textMuted} />
+          <Text style={[styles.sellerHintText, { color: colors.textSecondary }]}>
+            {cartSellerName
+              ? `Items in this cart are from ${cartSellerName} only.`
+              : SAME_SELLER_CART_MESSAGE}
+          </Text>
+        </View>
+      ) : null}
+      {cart.length > 0 ? (
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>YOUR ITEMS</Text>
+      ) : null}
+    </View>
   );
 
-  return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Your Cart</Text>
-        {cart.length > 0 && (
-          <Text style={[styles.itemCount, { color: colors.textMuted }]}>
-            {cart.length} item{cart.length !== 1 ? 's' : ''}
-          </Text>
-        )}
-      </View>
+  if (initialLoading) {
+    return (
+      <Screen>
+        <View style={styles.centerLoader}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </Screen>
+    );
+  }
 
-      {cart.length === 0 ? (
+  if (cart.length === 0) {
+    return (
+      <Screen>
         <EmptyState
           icon="cart-outline"
           title="Cart's feeling empty!"
@@ -55,202 +315,235 @@ const CartScreen = () => {
             <Button
               variant="primary"
               title="Browse products"
-              onPress={() => router.push('/(tabs)/explore')}
+              onPress={() => router.replace('/tabs/explore')}
             />
           }
         />
-      ) : (
-        <>
-          <FlatList
-            data={cart}
-            keyExtractor={(item) => `${item.productId._id}`}
-            renderItem={({ item }) => (
-              <View style={[styles.cartItem, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-                <View style={[styles.imageWrap, { backgroundColor: colors.backgroundSecondary }]}>
-                  <Image
-                    source={{ uri: item.productId.images[0] }}
-                    style={styles.image}
-                  />
-                </View>
-                <View style={styles.details}>
-                  <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
-                    {item.productId.title}
-                  </Text>
-                  {item.selectedVariation && item.selectedVariation.length > 0 && (
-                    <Text style={[styles.variationText, { color: colors.textMuted }]}>
-                      {item.selectedVariation
-                        .map((v: any) => `${v.name}: ${v.value}`)
-                        .join(' · ')}
-                    </Text>
-                  )}
-                  <Text style={[styles.price, { color: colors.primary }]}>
-                    ₹{(item.productId.finalPrice * item.quantity).toFixed(2)}
-                  </Text>
-                  <View style={styles.qtyRow}>
-                    <TouchableOpacity
-                      onPress={() => decreaseQty(item)}
-                      style={[styles.qtyBtn, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}
-                    >
-                      <Ionicons name="remove" size={18} color={colors.text} />
-                    </TouchableOpacity>
-                    <Text style={[styles.qtyText, { color: colors.text }]}>{item.quantity}</Text>
-                    <TouchableOpacity
-                      onPress={() => increaseQty(item)}
-                      style={[styles.qtyBtn, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}
-                    >
-                      <Ionicons name="add" size={18} color={colors.text} />
-                    </TouchableOpacity>
-                  </View>
-                  <TouchableOpacity onPress={() => removeFromCart(item.productId._id)}>
-                    <Text style={[styles.remove, { color: colors.error }]}>Remove</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-          />
+      </Screen>
+    );
+  }
 
-          <View style={[styles.totalBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.totalLabel, { color: colors.text }]}>Total</Text>
-            <Text style={[styles.totalValue, { color: colors.primary }]}>
-              ₹{total.toFixed(2)}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.checkoutButton, { backgroundColor: colors.success }]}
-            onPress={() => router.push('/private/checkout')}
-            activeOpacity={0.9}
-          >
-            <Ionicons name="lock-closed" size={20} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={styles.checkoutText}>Proceed to Pay</Text>
-          </TouchableOpacity>
-        </>
-      )}
-    </View>
+  return (
+    <Screen style={styles.screen}>
+      <FlatList
+        data={cart}
+        keyExtractor={(item) => `${item.productId._id}`}
+        renderItem={({ item }) => (
+          <CartItemCard
+            item={item}
+            busy={busyProductId === item.productId._id}
+            onIncrease={() => increaseQty(item)}
+            onDecrease={() => decreaseQty(item)}
+            onRemove={() => handleRemove(item.productId._id)}
+          />
+        )}
+        ListHeaderComponent={ListHeader}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      />
+
+      <CartSummaryFooter
+        subtotal={subtotal}
+        gstAmount={totalGstAmount}
+        deliveryCharge={deliveryCharge}
+        estimatedTotal={estimatedTotal}
+        onCheckout={() => router.push('/private/checkout')}
+      />
+    </Screen>
   );
 };
 
 export default CartScreen;
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 40,
   },
-  header: {
+  centerLoader: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  listContent: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    flexGrow: 1,
+  },
+  headerBlock: {
+    paddingTop: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  pageTitle: {
+    fontSize: typography.fontSize.xxxl,
+    fontWeight: typography.fontWeight.extrabold,
+    letterSpacing: -0.5,
+    marginBottom: spacing.xxs,
+  },
+  pageSubtitle: {
+    fontSize: typography.fontSize.base,
+    marginBottom: spacing.md,
+  },
+  summaryStrip: {
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  summaryStripText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  sellerHint: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  itemCount: {
-    fontSize: 14,
-  },
-  cartItem: {
-    flexDirection: 'row',
-    padding: 14,
-    borderRadius: 14,
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    gap: spacing.sm,
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  sellerHintText: {
+    flex: 1,
+    fontSize: typography.fontSize.sm,
+    lineHeight: 19,
+  },
+  sectionLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 0.6,
+    marginBottom: spacing.xs,
+    marginLeft: spacing.xxs,
+  },
+  cartCard: {
+    marginBottom: spacing.sm,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
   },
   imageWrap: {
     width: 88,
     height: 88,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     overflow: 'hidden',
-    marginRight: 14,
   },
   image: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
+  imagePlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   details: {
     flex: 1,
-    justifyContent: 'space-between',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
   },
   name: {
-    fontSize: 15,
-    fontWeight: '600',
+    flex: 1,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
     lineHeight: 20,
   },
+  removeBtn: {
+    padding: spacing.xxs,
+  },
   variationText: {
-    fontSize: 12,
+    fontSize: typography.fontSize.sm,
+    marginTop: spacing.xxs,
+    lineHeight: 18,
+  },
+  priceRow: {
+    marginTop: spacing.xs,
+    gap: 2,
+  },
+  lineTotal: {
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+  },
+  unitPrice: {
+    fontSize: typography.fontSize.sm,
+  },
+  originalPrice: {
+    fontSize: typography.fontSize.sm,
+    textDecorationLine: 'line-through',
     marginTop: 2,
   },
-  price: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginVertical: 4,
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
   },
   qtyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.xxs,
   },
   qtyBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderRadius: 10,
-  },
-  qtyText: {
-    marginHorizontal: 14,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  remove: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 6,
-  },
-  listContent: {
-    paddingBottom: 24,
-  },
-  totalBox: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-  },
-  totalLabel: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  totalValue: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  checkoutButton: {
-    flexDirection: 'row',
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 16,
-    marginBottom: 24,
-    paddingVertical: 14,
-    borderRadius: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
-  checkoutText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
+  qtyText: {
+    minWidth: 28,
+    textAlign: 'center',
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  footer: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xl,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  summaryCard: {
+    marginBottom: spacing.sm,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  summaryLabel: {
+    fontSize: typography.fontSize.sm,
+  },
+  summaryValue: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: spacing.sm,
+  },
+  totalLabel: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.bold,
+  },
+  totalValue: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+  },
+  checkoutButton: {
+    marginTop: spacing.xxs,
   },
 });

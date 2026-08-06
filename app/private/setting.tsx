@@ -1,9 +1,12 @@
-import { useAuth } from '@/components/AuthContext';
 import { getToken } from '@/helpers/authStorage';
+import { Screen } from '@/components/Screen';
+import { useTheme } from '@/components/ThemeContext';
+import { Button, Card, Input } from '@/components/ui';
+import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -11,156 +14,210 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 export default function ChangePasswordScreen() {
-
+  const { colors } = useTheme();
   const router = useRouter();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<{ current?: string; next?: string; confirm?: string }>({});
 
   const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert('All fields are required.');
+    const nextErrors: typeof errors = {};
+
+    if (!currentPassword) nextErrors.current = 'Enter your current password';
+    if (!newPassword || newPassword.length < 6) {
+      nextErrors.next = 'Password must be at least 6 characters';
+    }
+    if (!confirmPassword) nextErrors.confirm = 'Confirm your new password';
+    else if (newPassword !== confirmPassword) nextErrors.confirm = 'Passwords do not match';
+    if (currentPassword && newPassword && currentPassword === newPassword) {
+      nextErrors.next = 'New password must differ from current password';
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
       return;
     }
 
-    if (newPassword !== confirmPassword) {
-      Alert.alert('New password and confirm password must match.');
-      return;
-    }
-
-    if (currentPassword == confirmPassword) {
-      Alert.alert('New Password can not be same as the current password !');
-      return;
-    }
-    const updateurl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/general/changepassword`;
+    setSaving(true);
     const token = await getToken();
+    const updateUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/general/changepassword`;
 
     try {
-      const res = await axios.patch(updateurl, {
-        oldPassword: currentPassword,
-        newPassword
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const res = await axios.patch(
+        updateUrl,
+        { oldPassword: currentPassword, newPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
       if (res.data.success) {
-        Alert.alert(res.data.message);
+        Toast.show({
+          type: 'success',
+          text1: 'Password updated',
+          text2: res.data.message,
+        });
         router.replace('/tabs/profile');
+      } else {
+        Alert.alert('Update failed', res.data.message || 'Please try again.');
       }
-      Alert.alert(res.data.message);
-    } catch (error: any) {
-      Alert.alert("Something Went Wrong");
-      throw new Error(error.response?.data?.message || 'Failed to update address');
+    } catch (error: unknown) {
+      console.error('Change password error:', axios.isAxiosError(error) ? error.response?.data : error);
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.message
+        : 'Something went wrong';
+      Alert.alert('Could not change password', message || 'Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
-
-
-
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1 }}
-    >
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.header}>🔒 Change Password</Text>
+    <Screen>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.flex}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.headerBlock}>
+            <Text style={[styles.pageTitle, { color: colors.text }]}>Change password</Text>
+            <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
+              Keep your account secure with a strong password
+            </Text>
+          </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Current Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter current password"
-            secureTextEntry
-            value={currentPassword}
-            onChangeText={setCurrentPassword}
+          <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>SECURITY</Text>
+          <Card padding={spacing.md} style={styles.formCard}>
+            <FieldLabel label="Current password" colors={colors} />
+            <Input
+              leftIcon="lock-closed-outline"
+              placeholder="Enter current password"
+              secureTextEntry
+              value={currentPassword}
+              onChangeText={(text) => {
+                setCurrentPassword(text);
+                if (errors.current) setErrors((e) => ({ ...e, current: undefined }));
+              }}
+              error={Boolean(errors.current)}
+            />
+            {errors.current ? <FieldError message={errors.current} colors={colors} /> : null}
+
+            <FieldLabel label="New password" colors={colors} />
+            <Input
+              leftIcon="key-outline"
+              placeholder="Enter new password"
+              secureTextEntry
+              value={newPassword}
+              onChangeText={(text) => {
+                setNewPassword(text);
+                if (errors.next) setErrors((e) => ({ ...e, next: undefined }));
+              }}
+              error={Boolean(errors.next)}
+            />
+            {errors.next ? <FieldError message={errors.next} colors={colors} /> : null}
+
+            <FieldLabel label="Confirm new password" colors={colors} />
+            <Input
+              leftIcon="shield-checkmark-outline"
+              placeholder="Confirm new password"
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={(text) => {
+                setConfirmPassword(text);
+                if (errors.confirm) setErrors((e) => ({ ...e, confirm: undefined }));
+              }}
+              error={Boolean(errors.confirm)}
+            />
+            {errors.confirm ? <FieldError message={errors.confirm} colors={colors} /> : null}
+          </Card>
+
+          <Button
+            title="Update password"
+            onPress={handleChangePassword}
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={saving}
+            disabled={saving}
+            leftIcon={<Ionicons name="key-outline" size={18} />}
           />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>New Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter new password"
-            secureTextEntry
-            value={newPassword}
-            onChangeText={setNewPassword}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Confirm New Password</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm new password"
-            secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
-        </View>
-
-        <TouchableOpacity style={styles.button} onPress={handleChangePassword}>
-          <Ionicons name="key-outline" size={18} color="#fff" />
-          <Text style={styles.buttonText}>Change Password</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 }
 
+function FieldLabel({
+  label,
+  colors,
+}: {
+  label: string;
+  colors: ReturnType<typeof useTheme>['colors'];
+}) {
+  return <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{label}</Text>;
+}
+
+function FieldError({
+  message,
+  colors,
+}: {
+  message: string;
+  colors: ReturnType<typeof useTheme>['colors'];
+}) {
+  return <Text style={[styles.fieldError, { color: colors.error }]}>{message}</Text>;
+}
+
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: '#f9f9f9',
-    flexGrow: 1,
+  flex: { flex: 1 },
+  scrollContent: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxxl,
   },
-  header: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 30,
-    color: '#111',
-    marginTop: 28,
+  headerBlock: {
+    paddingTop: spacing.xs,
+    marginBottom: spacing.lg,
   },
-  inputGroup: {
-    marginBottom: 20,
+  pageTitle: {
+    fontSize: typography.fontSize.xxxl,
+    fontWeight: typography.fontWeight.extrabold,
+    letterSpacing: -0.5,
+    marginBottom: spacing.xxs,
   },
-  label: {
-    fontSize: 14,
-    color: '#444',
-    marginBottom: 6,
-    fontWeight: '600',
+  pageSubtitle: {
+    fontSize: typography.fontSize.base,
   },
-  input: {
-    backgroundColor: '#fff',
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
-    color: '#333',
+  sectionLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 0.6,
+    marginBottom: spacing.xs,
+    marginLeft: spacing.xxs,
   },
-  button: {
-    backgroundColor: '#3b82f6',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: 10,
-    marginTop: 10,
-    gap: 8,
+  formCard: {
+    marginBottom: spacing.lg,
+    gap: spacing.xs,
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
+  fieldLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    marginTop: spacing.xxs,
+    marginBottom: 2,
+  },
+  fieldError: {
+    fontSize: typography.fontSize.xs,
+    marginTop: -2,
+    marginBottom: spacing.xxs,
   },
 });

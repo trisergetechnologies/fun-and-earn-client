@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator,
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
+import { Screen } from '@/components/Screen';
 
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
@@ -72,7 +73,8 @@ const ResetPasswordScreen = () => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <Screen>
+      <ScrollView contentContainerStyle={styles.container}>
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="chevron-back" size={24} color="#333" />
@@ -149,7 +151,8 @@ const ResetPasswordScreen = () => {
           </>
         )}
       </View>
-    </ScrollView>
+      </ScrollView>
+    </Screen>
   );
 };
 
@@ -161,7 +164,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f4f8',
     justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingTop: 40,
     paddingBottom: 60,
   },
   card: {
@@ -175,7 +177,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 40,
+    top: 8,
     left: 20,
     zIndex: 10,
   },

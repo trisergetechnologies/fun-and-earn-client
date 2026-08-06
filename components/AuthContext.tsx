@@ -6,6 +6,14 @@ import {
   useEffect,
   useState,
 } from 'react';
+import {
+  clearAuthTokens,
+  getRefreshToken,
+  getToken,
+  saveAuthTokens,
+} from '@/helpers/authStorage';
+import { setSessionExpiredHandler } from '@/helpers/apiClient';
+import { authLog, authLogToken } from '@/helpers/authLogger';
 
 type User = {
   id: string;
@@ -17,11 +25,19 @@ type User = {
   referralCode: string;
 };
 
+type LoginOptions = {
+  /** Access token preferred; falls back to session `token` for older backends. */
+  token: string;
+  accessToken?: string;
+  refreshToken?: string | null;
+  user: User;
+};
+
 type AuthContextType = {
   isAuthenticated: boolean | null;
   isAuthLoading: boolean;
   user: User | null;
-  login: (token: string, userData: User) => Promise<void>;
+  login: (tokenOrOptions: string | LoginOptions, userData?: User) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (name: string, phone: string) => Promise<void>;
 };
@@ -33,22 +49,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
 
+  const logout = async () => {
+    try {
+      authLog('info', 'logout.start');
+      await clearAuthTokens();
+      await SecureStore.deleteItemAsync('userData');
+      setUser(null);
+      setIsAuthenticated(false);
+      authLog('success', 'logout.ok');
+    } catch (e) {
+      authLog('error', 'logout.failed', { error: String(e) });
+      console.error('Logout failed:', e);
+    }
+  };
+
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      authLog('warn', 'session.expired_handler_fired', {
+        hint: 'Refresh failed; forcing logout from AuthContext',
+      });
+      return logout();
+    });
+    return () => setSessionExpiredHandler(null);
+  }, []);
+
   useEffect(() => {
     const loadAuthData = async () => {
-      const token = await SecureStore.getItemAsync('authToken');
+      const token = await getToken();
+      const refreshToken = await getRefreshToken();
       const storedUser = await SecureStore.getItemAsync('userData');
+
+      authLog('info', 'boot.load_auth', {
+        hasAccessToken: Boolean(token),
+        hasRefreshToken: Boolean(refreshToken),
+        hasUserData: Boolean(storedUser),
+        ...authLogToken('accessToken', token),
+        ...authLogToken('refreshToken', refreshToken),
+      });
 
       if (token && storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
           setUser(parsedUser);
           setIsAuthenticated(true);
+          authLog('success', 'boot.restored_session', {
+            userId: parsedUser?.id,
+            email: parsedUser?.email,
+            canSilentRefresh: Boolean(refreshToken),
+          });
         } catch (e) {
+          authLog('error', 'boot.parse_user_failed', { error: String(e) });
           console.error('Failed to parse stored user data:', e);
           await logout();
         }
       } else {
         setIsAuthenticated(false);
+        authLog('info', 'boot.no_session');
       }
       setIsAuthLoading(false);
     };
@@ -56,26 +112,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     loadAuthData();
   }, []);
 
-  const login = async (token: string, userData: User) => {
+  const login = async (tokenOrOptions: string | LoginOptions, userData?: User) => {
     try {
-      await SecureStore.setItemAsync('authToken', token);
-      await SecureStore.setItemAsync('userData', JSON.stringify(userData));
-      setUser(userData);
-      setIsAuthenticated(true);
-    } catch (e) {
-      console.error('Failed to log in:', e);
-    }
-  };
+      let accessToken: string;
+      let refreshToken: string | null | undefined;
+      let nextUser: User;
+      let hadExplicitAccess = false;
 
-  const logout = async () => {
-    try {
-      await SecureStore.deleteItemAsync('authToken');
-      await SecureStore.deleteItemAsync('userData');
-      setUser(null);
-      setIsAuthenticated(false);
-     
+      if (typeof tokenOrOptions === 'string') {
+        accessToken = tokenOrOptions;
+        nextUser = userData as User;
+        refreshToken = undefined;
+      } else {
+        hadExplicitAccess = Boolean(tokenOrOptions.accessToken);
+        accessToken = tokenOrOptions.accessToken || tokenOrOptions.token;
+        refreshToken = tokenOrOptions.refreshToken;
+        nextUser = tokenOrOptions.user;
+      }
+
+      await saveAuthTokens({ accessToken, refreshToken });
+      await SecureStore.setItemAsync('userData', JSON.stringify(nextUser));
+      setUser(nextUser);
+      setIsAuthenticated(true);
+
+      authLog('success', 'login.tokens_saved', {
+        userId: nextUser?.id,
+        email: nextUser?.email,
+        usedAccessTokenField: hadExplicitAccess,
+        usedSessionTokenFallback: !hadExplicitAccess,
+        hasRefreshToken: Boolean(refreshToken),
+        ...authLogToken('accessToken', accessToken),
+        ...authLogToken('refreshToken', refreshToken),
+        hint: hadExplicitAccess
+          ? 'New auth flow (access + refresh). Wait ~2m then use the app to test refresh.'
+          : 'Fallback to session token only — silent refresh will not work until backend returns accessToken/refreshToken.',
+      });
     } catch (e) {
-      console.error('Logout failed:', e);
+      authLog('error', 'login.failed', { error: String(e) });
+      console.error('Failed to log in:', e);
     }
   };
 
@@ -109,4 +183,4 @@ export const useAuth = () => {
   return context;
 };
 
-export default AuthProvider; // ✅ required for expo-router layout import
+export default AuthProvider;

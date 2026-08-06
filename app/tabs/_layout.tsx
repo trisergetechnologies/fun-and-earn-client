@@ -4,8 +4,11 @@ import { StyleSheet, View } from 'react-native';
 import { useAuth } from '@/components/AuthContext';
 import CustomBottomNav from '@/components/CustomBottomNav';
 import Spinner from '@/components/Spinner';
+import { useTheme } from '@/components/ThemeContext';
+import { getThemedLayoutStyle } from '@/components/ThemeSystemSync';
 
 export default function TabLayout() {
+  const { colors } = useTheme();
   const { isAuthenticated, isAuthLoading } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -23,23 +26,27 @@ export default function TabLayout() {
   if (isAuthLoading || loading) return <Spinner />;
 
   return (
-        <View style={styles.container}>
-          <View style={styles.content}>
-          <Stack>
-            <Stack.Screen name="explore" options={{ headerShown: false }} />
-            <Stack.Screen name="BankScreen" options={{ headerShown: false }} />
-            <Stack.Screen name="cart" options={{ headerShown: false }} />
-            <Stack.Screen name="profile" options={{ headerShown: false }} />
-            <Stack.Screen name="rewards" options={{ headerShown: false }} />
-            <Stack.Screen name="wallet" options={{ headerShown: false }} />
-          </Stack>
-          </View>
-          <CustomBottomNav />
-        </View>
+    <View style={getThemedLayoutStyle(colors)}>
+      <View style={styles.content}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.background },
+          }}
+        >
+          <Stack.Screen name="explore" options={{ headerShown: false }} />
+          <Stack.Screen name="BankScreen" options={{ headerShown: false }} />
+          <Stack.Screen name="cart" options={{ headerShown: false }} />
+          <Stack.Screen name="profile" options={{ headerShown: false }} />
+          <Stack.Screen name="rewards" options={{ headerShown: false }} />
+          <Stack.Screen name="wallet" options={{ headerShown: false }} />
+        </Stack>
+      </View>
+      <CustomBottomNav />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   content: { flex: 1 },
 });

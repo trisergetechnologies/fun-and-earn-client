@@ -1,6 +1,7 @@
 import { useAuth } from '@/components/AuthContext';
 import Spinner from '@/components/Spinner';
 import { useTheme } from '@/components/ThemeContext';
+import { Screen } from '@/components/Screen';
 import axios from 'axios';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -8,7 +9,6 @@ import {
   Animated,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -80,7 +80,20 @@ const SignInScreen = () => {
         return;
       }
 
-      await login(data.token, data.user);
+      console.log('[DreamMart Auth] login.response', {
+        at: new Date().toISOString(),
+        hasToken: Boolean(data.token),
+        hasAccessToken: Boolean(data.accessToken),
+        hasRefreshToken: Boolean(data.refreshToken),
+        expiresIn: data.expiresIn,
+      });
+
+      await login({
+        token: data.token,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        user: data.user,
+      });
       router.push('/tabs/explore');
     } catch (error: any) {
       const msg = axios.isAxiosError(error)
@@ -104,7 +117,7 @@ const SignInScreen = () => {
       {loading ? (
         <Spinner />
       ) : (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <Screen>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.container}
@@ -165,7 +178,7 @@ const SignInScreen = () => {
             </Text>
           </ScrollView>
         </KeyboardAvoidingView>
-      </SafeAreaView>
+      </Screen>
       )}
       <Toast />
     </>
@@ -175,11 +188,9 @@ const SignInScreen = () => {
 export default SignInScreen;
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1 },
   container: { flex: 1 },
   scrollWrapper: {
     paddingHorizontal: 24,
-    paddingTop: 60,
     paddingBottom: 40,
     flexGrow: 1,
     justifyContent: 'center',

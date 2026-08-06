@@ -1,6 +1,13 @@
 import { useAuth } from '@/components/AuthContext';
+import { useProfile } from '@/components/ProfileContext';
+import SimpleSpinner from '@/components/SimpleSpinner';
+import { Screen } from '@/components/Screen';
+import { useTheme } from '@/components/ThemeContext';
+import { Button, Card, Input } from '@/components/ui';
+import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
 import { getToken } from '@/helpers/authStorage';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -11,173 +18,252 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
-  View
+  View,
 } from 'react-native';
-import { useProfile } from '@/components/ProfileContext';
-import SimpleSpinner from '@/components/SimpleSpinner';
-import { useFocusEffect } from '@react-navigation/native';
+import Toast from 'react-native-toast-message';
+
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
 const UpdateProfile = () => {
-
+  const { colors } = useTheme();
   const router = useRouter();
   const { updateUser } = useAuth();
-    const {userProfile, refreshUserProfile, profileLoading} = useProfile();
+  const { userProfile, refreshUserProfile, profileLoading } = useProfile();
 
-  const [name, setName] = useState<string | undefined>(userProfile?.name || '');
-  const [email, setEmail] = useState<string | undefined>(userProfile?.email || '');
-  const [phone, setPhone] = useState<string | undefined>(userProfile?.phone || '');
-  const [disabled, setDisabled] = useState<boolean>(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [nameError, setNameError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
 
-  const handleSave = async() => {
+  useFocusEffect(
+    useCallback(() => {
+      refreshUserProfile();
+    }, [refreshUserProfile])
+  );
 
-    if(!name || !email || !phone){
-      return Alert.alert("No fields can be left incomplete.");
+  useEffect(() => {
+    if (userProfile) {
+      setName(userProfile.name || '');
+      setEmail(userProfile.email || '');
+      setPhone(userProfile.phone || '');
     }
-    setDisabled(true);
+  }, [userProfile]);
+
+  const handleSave = async () => {
+    let hasError = false;
+
+    if (!name.trim() || name.trim().length < 2) {
+      setNameError('Enter your full name');
+      hasError = true;
+    } else {
+      setNameError('');
+    }
+
+    if (!/^\d{10}$/.test(phone.trim())) {
+      setPhoneError('Enter a valid 10-digit phone number');
+      hasError = true;
+    } else {
+      setPhoneError('');
+    }
+
+    if (hasError) return;
+
+    setSaving(true);
     const token = await getToken();
     const updateUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/general/updateprofile`;
+
     try {
-      const response = await axios.patch(updateUrl, {
-        name,
-        phone
-      } ,{
-        headers: {
-          Authorization: `Bearer ${token}`
+      const response = await axios.patch(
+        updateUrl,
+        { name: name.trim(), phone: phone.trim() },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
+      );
+
       if (response.data.success) {
-        await updateUser(name, phone);
-        Alert.alert(response.data.message);
+        await updateUser(name.trim(), phone.trim());
         await refreshUserProfile();
+        Toast.show({
+          type: 'success',
+          text1: 'Profile updated',
+          text2: response.data.message,
+        });
         router.replace('/tabs/explore');
+      } else {
+        Alert.alert('Update failed', response.data.message || 'Please try again.');
       }
-      setDisabled(false);
-      Alert.alert(response.data.message);
-    } catch (error: any) {
-      setDisabled(false);
-      Alert.alert("Something went wrong");
-      console.error('Failed to fetch Wallet:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || 'Failed to fetch Wallet');
+    } catch (error: unknown) {
+      console.error('Failed to update profile:', axios.isAxiosError(error) ? error.response?.data : error);
+      Alert.alert('Something went wrong', 'Could not update your profile. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
-useFocusEffect(
-  useCallback(() => {
-    refreshUserProfile();
-  }, [])
-);
-
-if (profileLoading) {
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text><SimpleSpinner/></Text>
-    </View>
-  );
-}
+  if (profileLoading && !userProfile) {
+    return (
+      <Screen>
+        <View style={styles.centerLoader}>
+          <SimpleSpinner />
+        </View>
+      </Screen>
+    );
+  }
 
   return (
+    <Screen>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.headerBlock}>
+            <Text style={[styles.pageTitle, { color: colors.text }]}>Edit profile</Text>
+            <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
+              Update your personal information
+            </Text>
+          </View>
 
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.header}>👤 Edit Profile</Text>
+          <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>PERSONAL INFO</Text>
+          <Card padding={spacing.md} style={styles.formCard}>
+            <FieldLabel label="Full name" colors={colors} />
+            <Input
+              leftIcon="person-outline"
+              placeholder="Enter your name"
+              value={name}
+              onChangeText={(text) => {
+                setName(text);
+                if (nameError) setNameError('');
+              }}
+              error={Boolean(nameError)}
+            />
+            {nameError ? <FieldError message={nameError} colors={colors} /> : null}
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Full Name</Text>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="Enter your name"
+            <FieldLabel label="Email address" colors={colors} />
+            <Input
+              leftIcon="mail-outline"
+              placeholder="Email"
+              value={email}
+              editable={false}
+            />
+            <Text style={[styles.helperText, { color: colors.textMuted }]}>
+              Email cannot be changed
+            </Text>
+
+            <FieldLabel label="Phone number" colors={colors} />
+            <Input
+              leftIcon="call-outline"
+              placeholder="10-digit mobile number"
+              keyboardType="phone-pad"
+              maxLength={10}
+              value={phone}
+              onChangeText={(text) => {
+                setPhone(text.replace(/\D/g, ''));
+                if (phoneError) setPhoneError('');
+              }}
+              error={Boolean(phoneError)}
+            />
+            {phoneError ? <FieldError message={phoneError} colors={colors} /> : null}
+          </Card>
+
+          <Button
+            title="Save changes"
+            onPress={handleSave}
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={saving}
+            disabled={saving}
+            leftIcon={<Ionicons name="save-outline" size={18} />}
           />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Email Address</Text>
-          <TextInput
-            readOnly={true}
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Enter your email"
-            keyboardType="email-address"
-          />
-          <Text style={{color: 'red'}}>Can not update email</Text>
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Phone Number</Text>
-          <TextInput
-            style={styles.input}
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="Enter phone number"
-            keyboardType="phone-pad"
-            maxLength={10}
-          />
-        </View>
-
-        <TouchableOpacity disabled={disabled} style={styles.saveButton} onPress={handleSave}>
-          <Ionicons name="save-outline" size={18} color="#fff" />
-          <Text style={styles.saveText}>Save Changes</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Screen>
   );
 };
+
+function FieldLabel({
+  label,
+  colors,
+}: {
+  label: string;
+  colors: ReturnType<typeof useTheme>['colors'];
+}) {
+  return <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{label}</Text>;
+}
+
+function FieldError({
+  message,
+  colors,
+}: {
+  message: string;
+  colors: ReturnType<typeof useTheme>['colors'];
+}) {
+  return <Text style={[styles.fieldError, { color: colors.error }]}>{message}</Text>;
+}
 
 export default UpdateProfile;
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: '#f9f9f9',
-    flexGrow: 1,
+  flex: {
+    flex: 1,
   },
-  header: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 30,
-    color: '#111',
-    marginTop: 28,
+  scrollContent: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxxl,
   },
-  inputGroup: {
-    marginBottom: 18,
-  },
-  label: {
-    fontSize: 14,
-    color: '#444',
-    marginBottom: 6,
-    fontWeight: '600',
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: '#333',
-  },
-  saveButton: {
-    backgroundColor: '#3b82f6',
-    flexDirection: 'row',
+  centerLoader: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: 10,
-    marginTop: 20,
-    gap: 8,
   },
-  saveText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
+  headerBlock: {
+    paddingTop: spacing.xs,
+    marginBottom: spacing.lg,
+  },
+  pageTitle: {
+    fontSize: typography.fontSize.xxxl,
+    fontWeight: typography.fontWeight.extrabold,
+    letterSpacing: -0.5,
+    marginBottom: spacing.xxs,
+  },
+  pageSubtitle: {
+    fontSize: typography.fontSize.base,
+  },
+  sectionLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 0.6,
+    marginBottom: spacing.xs,
+    marginLeft: spacing.xxs,
+  },
+  formCard: {
+    marginBottom: spacing.lg,
+    gap: spacing.xs,
+  },
+  fieldLabel: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.medium,
+    marginTop: spacing.xxs,
+    marginBottom: 2,
+  },
+  fieldError: {
+    fontSize: typography.fontSize.xs,
+    marginTop: -2,
+    marginBottom: spacing.xxs,
+  },
+  helperText: {
+    fontSize: typography.fontSize.xs,
+    marginTop: -2,
+    marginBottom: spacing.xxs,
   },
 });

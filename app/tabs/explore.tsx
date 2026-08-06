@@ -1,16 +1,21 @@
 import { useAuth } from '@/components/AuthContext';
+import { useCart } from '@/components/CartContext';
 import ProductModal from '@/components/ProductModal';
 import SimpleSpinner from '@/components/SimpleSpinner';
+import { Screen } from '@/components/Screen';
 import { useTheme } from '@/components/ThemeContext';
-import { ProductCard, ProductGridSkeleton } from '@/components/ui';
+import { EmptyState, Input, ProductCard, ProductGridSkeleton } from '@/components/ui';
+import { ActivationExclusiveSection } from '@/components/ui/ActivationExclusiveSection';
 import { getToken } from '@/helpers/authStorage';
 import { spacing, borderRadius, typography, shadows } from '@/constants/DesignSystem';
 import { useResponsive } from '@/hooks/useResponsive';
+import { ExploreCategory, Product } from '@/types/product';
+import { formatDreamCash } from '@/utils/walletFormat';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import { router } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -18,12 +23,11 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
+  Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
@@ -31,273 +35,390 @@ import Toast from 'react-native-toast-message';
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 const CARD_GAP = 12;
 const SUGGESTION_CARD_WIDTH = 156;
-
-type Product = {
-  __v: number;
-  _id: string;
-  categoryId: string;
-  createdAt: string;
-  createdByRole: string;
-  description: string;
-  discountPercent: number;
-  finalPrice: number;
-  images: string[];
-  isActive: boolean;
-  price: number;
-  sellerId: string;
-  stock: number;
-  title: string;
-  updatedAt: string;
-  variations?: { name: string; options: string[] }[];
-};
+const CATEGORY_ITEM_WIDTH = 84;
 
 const ExploreScreen = () => {
   const { colors } = useTheme();
   const { contentPadding, productColumns, width: screenWidth } = useResponsive();
-  const { user, isAuthenticated, isAuthLoading } = useAuth();
+  const { isAuthLoading } = useAuth();
+  const { cart } = useCart();
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
   const [search, setSearch] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [sampleProducts, setSampleProducts] = useState<Product[]>([]);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const [sampleCategories, setSampleCategories] = useState(null);
+  const hasLoadedRef = useRef(false);
+  const [sampleCategories, setSampleCategories] = useState<ExploreCategory[]>([]);
 
   const gridCardWidth =
     (screenWidth - 2 * contentPadding - (productColumns - 1) * CARD_GAP) / productColumns;
 
-  const matchedProducts = sampleProducts.filter((item) =>
-    item.title.toLowerCase().includes(search.toLowerCase())
+  const matchedProducts = useMemo(
+    () =>
+      sampleProducts.filter((item) =>
+        item.title.toLowerCase().includes(search.trim().toLowerCase())
+      ),
+    [sampleProducts, search]
   );
 
-  const fetchProducts = async () => {
-    setLoading(true);
-    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/product/products`;
-    const token = await getToken();
-    try {
-      const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setSampleProducts(response.data.data);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 700,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      }).start();
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
+  const activationExclusive = useMemo(() => {
+    const specials = sampleProducts.filter((item) => item.isSpecial === true);
+    const shuffled = [...specials];
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = shuffled[i];
+      shuffled[i] = shuffled[j];
+      shuffled[j] = temp;
     }
-  };
+    return shuffled;
+  }, [sampleProducts]);
 
-  const fetchCategories = async () => {
-    setLoading(true);
-    const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/categories`;
+  const todaysPicks = useMemo(
+    () => sampleProducts.filter((item) => item.isSpecial !== true).slice(0, 8),
+    [sampleProducts]
+  );
+
+  const loadExploreData = useCallback(async (isRefresh = false) => {
+    if (!isRefresh && !hasLoadedRef.current) {
+      setInitialLoading(true);
+    }
+
     const token = await getToken();
-    try {
-      const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const formattedCategories = response.data.data.map((item: any) => ({
-        id: item._id,
-        name: item.title,
-        slug: item.slug,
-        image: 'https://via.placeholder.com/150',
-        ownerId: item.ownerId || 'unknown',
-      }));
-      setSampleCategories(formattedCategories);
+    if (!token) {
+      setInitialLoading(false);
+      return;
+    }
+
+    const productsUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/product/products`;
+    const categoriesUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/categories`;
+
+    const [productsResponse, categoriesResponse] = await Promise.all([
+      axios.get(productsUrl, { headers: { Authorization: `Bearer ${token}` } }),
+      axios.get(categoriesUrl, { headers: { Authorization: `Bearer ${token}` } }),
+    ]);
+
+    if (productsResponse.data?.success && Array.isArray(productsResponse.data.data)) {
+      setSampleProducts(productsResponse.data.data);
+    } else {
+      setSampleProducts([]);
+    }
+
+    if (categoriesResponse.data?.success && Array.isArray(categoriesResponse.data.data)) {
+      setSampleCategories(
+        categoriesResponse.data.data.map(
+          (item: { _id: string; title: string; slug: string; ownerId?: string }) => ({
+            id: item._id,
+            name: item.title,
+            slug: item.slug,
+            ownerId: item.ownerId || 'unknown',
+          })
+        )
+      );
+    } else {
+      setSampleCategories([]);
+    }
+
+    if (!hasLoadedRef.current) {
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 700,
+        duration: 500,
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }).start();
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    } finally {
-      setLoading(false);
+      hasLoadedRef.current = true;
     }
-  };
+  }, [fadeAnim]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchCategories();
-      fetchProducts();
-    }, [])
+      loadExploreData(hasLoadedRef.current).catch(() => {
+        if (!hasLoadedRef.current) {
+          Toast.show({ type: 'error', text1: 'Could not load products', text2: 'Please try again.' });
+        }
+      }).finally(() => {
+        setInitialLoading(false);
+      });
+    }, [loadExploreData])
   );
 
-  if (isAuthLoading) return <SimpleSpinner />;
-
-  const renderCategory = ({ item }: { item: any }) => {
-    const iconUri = item.icon?.trim()
-      ? item.icon
-      : `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name.charAt(0))}&background=572fff&color=fff&size=128&font-size=0.5`;
-
-    return (
-      <TouchableOpacity
-        style={[styles.categoryItem, { backgroundColor: colors.card }]}
-        onPress={() => router.push(`/private/category?slug=${item.slug}`)}
-        activeOpacity={0.8}
-      >
-        <View style={[styles.categoryIconWrap, { backgroundColor: colors.backgroundSecondary }]}>
-          <Image source={{ uri: iconUri }} style={styles.categoryIcon} />
-        </View>
-        <Text style={[styles.categoryText, { color: colors.text }]} numberOfLines={1}>
-          {item.name}
-        </Text>
-      </TouchableOpacity>
-    );
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await loadExploreData(true);
+    } catch {
+      Toast.show({ type: 'error', text1: 'Could not refresh' });
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleWishlistPress = () => {
     Toast.show({ type: 'info', text1: 'Wishlist', text2: 'Coming soon!', position: 'bottom' });
   };
 
+  const handleProductPress = useCallback((item: Product) => {
+    setSelectedProduct(item);
+  }, []);
+
+  const handleModalClose = useCallback(() => {
+    setSelectedProduct(null);
+  }, []);
+
+  if (isAuthLoading) return <SimpleSpinner />;
+
   const renderProduct = ({ item }: { item: Product }) => (
-    <View style={[styles.productWrapper, { width: gridCardWidth }]}>
+    <View style={[styles.productWrapper, { width: gridCardWidth, maxWidth: gridCardWidth }]}>
       <ProductCard
         product={item}
-        onPress={() => setSelectedProduct(item)}
+        onPress={() => handleProductPress(item)}
         onWishlistPress={handleWishlistPress}
         width={gridCardWidth}
       />
     </View>
   );
 
-  const renderSuggestionCard = ({ item }: { item: Product }) => (
-    <View style={styles.suggestionCardWrapper}>
-      <ProductCard
-        product={item}
-        onPress={() => setSelectedProduct(item)}
-        onWishlistPress={handleWishlistPress}
-        compact
-        width={SUGGESTION_CARD_WIDTH}
-      />
-    </View>
-  );
-
   const ListHeader = () => (
     <>
-      <View style={styles.brandRow}>
-        <Text style={[styles.brandText, { color: colors.textMuted }]}>
-          AARUSH MP DREAMS (OPC) PRIVATE LIMITED
-        </Text>
-      </View>
-
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.categoryTitle, { color: colors.text }]}>Categories</Text>
-      </View>
-      <FlatList
+      <Text style={[styles.sectionLabel, { color: colors.textMuted, paddingHorizontal: contentPadding }]}>
+        CATEGORIES
+      </Text>
+      <ScrollView
         horizontal
-        data={sampleCategories}
-        renderItem={renderCategory}
-        keyExtractor={(item) => item.id.toString()}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoryList}
+        nestedScrollEnabled
+        contentContainerStyle={[styles.categoryList, { paddingHorizontal: contentPadding }]}
+      >
+        {sampleCategories.map((item, index) => (
+          <Pressable
+            key={item.id}
+            onPress={() =>
+              router.push(
+                `/private/category?slug=${encodeURIComponent(item.slug)}&name=${encodeURIComponent(item.name)}`
+              )
+            }
+            style={({ pressed }) => [
+              styles.categoryItem,
+              {
+                width: CATEGORY_ITEM_WIDTH,
+                opacity: pressed ? 0.75 : 1,
+                marginRight: index < sampleCategories.length - 1 ? spacing.sm : 0,
+              },
+            ]}
+          >
+            <View style={[styles.categoryIconWrap, { backgroundColor: colors.primaryTint }]}>
+              <Text style={[styles.categoryLetter, { color: colors.primary }]}>
+                {(item.name?.trim()?.charAt(0) || '?').toUpperCase()}
+              </Text>
+            </View>
+            <Text style={[styles.categoryText, { color: colors.text }]} numberOfLines={2}>
+              {item.name}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      <Text
+        style={[
+          styles.discoverLine,
+          { color: colors.textMuted, paddingHorizontal: contentPadding },
+        ]}
+      >
+        Discover products & deals
+      </Text>
+
+      <ActivationExclusiveSection
+        products={activationExclusive}
+        contentPadding={contentPadding}
+        onProductPress={handleProductPress}
       />
 
-      <View style={styles.suggestionHeader}>
-        <Text style={[styles.suggestionTitle, { color: colors.text }]}>Today's Picks</Text>
-      </View>
-      <FlatList
-        horizontal
-        data={sampleProducts}
-        renderItem={renderSuggestionCard}
-        keyExtractor={(item) => item._id}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.suggestionList}
-      />
-      <View style={styles.productHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Explore Products</Text>
-      </View>
+      {todaysPicks.length > 0 ? (
+        <>
+          <Text
+            style={[
+              styles.sectionLabel,
+              styles.sectionLabelSpaced,
+              { color: colors.textMuted, paddingHorizontal: contentPadding },
+            ]}
+          >
+            TODAY&apos;S PICKS
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            nestedScrollEnabled
+            contentContainerStyle={[styles.suggestionList, { paddingHorizontal: contentPadding }]}
+          >
+            {todaysPicks.map((item) => (
+              <View key={item._id} style={styles.suggestionCardWrapper}>
+                <ProductCard
+                  product={item}
+                  onPress={() => handleProductPress(item)}
+                  onWishlistPress={handleWishlistPress}
+                  compact
+                  width={SUGGESTION_CARD_WIDTH}
+                />
+              </View>
+            ))}
+          </ScrollView>
+        </>
+      ) : null}
+
+      <Text
+        style={[
+          styles.sectionLabel,
+          styles.sectionLabelSpaced,
+          { color: colors.textMuted, paddingHorizontal: contentPadding },
+        ]}
+      >
+        ALL PRODUCTS
+      </Text>
     </>
   );
 
-  const dynamicStyles = {
-    safeArea: { backgroundColor: colors.background },
-    searchRowBg: { backgroundColor: colors.background },
-    searchInput: {
-      backgroundColor: colors.card,
-      borderColor: colors.border,
-      color: colors.text,
-    },
-    suggestionBox: {
-      backgroundColor: colors.card,
-      borderColor: colors.borderLight,
-    },
-    searchSuggestionText: { color: colors.text },
-  };
-
   return (
-    <SafeAreaView style={[styles.safeArea, dynamicStyles.safeArea]}>
-      <KeyboardAvoidingView style={styles.flex1} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={[styles.container, styles.searchRow, dynamicStyles.searchRowBg, { paddingHorizontal: contentPadding }]}>
-              <View style={[styles.logoWrap, { backgroundColor: colors.primary, borderRadius: borderRadius.md }]}>
-                <Text style={styles.logo}>DM</Text>
+    <Screen>
+      <KeyboardAvoidingView
+        style={[styles.flex1, { backgroundColor: colors.background }]}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={[styles.topBar, { paddingHorizontal: contentPadding, backgroundColor: colors.background }]}>
+          <View style={[styles.logoWrap, { backgroundColor: colors.primary }]}>
+            <Text style={[styles.logo, { color: colors.primaryContrast }]}>DM</Text>
+          </View>
+          <View style={styles.searchWrap}>
+            <Input
+              leftIcon="search-outline"
+              placeholder="Search products..."
+              value={search}
+              onChangeText={setSearch}
+              returnKeyType="search"
+            />
+          </View>
+          <Pressable
+            onPress={() => router.push('/tabs/cart')}
+            style={({ pressed }) => [styles.cartIconWrap, { opacity: pressed ? 0.75 : 1 }]}
+          >
+            <Ionicons name="cart-outline" size={24} color={colors.text} />
+            {cartCount > 0 ? (
+              <View style={[styles.cartBadge, { backgroundColor: colors.error }]}>
+                <Text style={[styles.cartBadgeText, { color: colors.primaryContrast }]}>
+                  {cartCount > 99 ? '99+' : cartCount}
+                </Text>
               </View>
-              <TextInput
-                style={[styles.searchInput, dynamicStyles.searchInput]}
-                placeholder="Search products..."
-                placeholderTextColor={colors.textMuted}
-                value={search}
-                onChangeText={setSearch}
-              />
-              <TouchableOpacity onPress={() => router.push('/tabs/cart')} style={styles.cartIconWrap}>
-                <Ionicons name="cart-outline" size={24} color={colors.text} />
-              </TouchableOpacity>
-            </View>
+            ) : null}
+          </Pressable>
+        </View>
 
-        {loading ? (
-          <ProductGridSkeleton />
-        ) : (
-          <Animated.View style={[styles.flex1, { opacity: fadeAnim }]}>
-            {search.length > 0 && (
-              <ScrollView
-                style={[styles.suggestionBox, dynamicStyles.suggestionBox, { left: contentPadding, right: contentPadding }]}
-                keyboardShouldPersistTaps="handled"
-              >
-                {matchedProducts.map((item) => (
-                  <TouchableOpacity
-                    key={item._id}
-                    onPress={() => {
-                      setSelectedProduct(item);
-                      setSearch('');
-                    }}
-                    style={styles.searchSuggestionItem}
-                  >
-                    <Ionicons name="search-outline" size={18} color={colors.textMuted} />
-                    <Text style={[styles.searchSuggestionText, dynamicStyles.searchSuggestionText]}>
+        {search.length > 0 ? (
+          <View
+            style={[
+              styles.suggestionBox,
+              {
+                left: contentPadding,
+                right: contentPadding,
+                backgroundColor: colors.card,
+                borderColor: colors.borderLight,
+              },
+            ]}
+          >
+            {matchedProducts.length === 0 ? (
+              <Text style={[styles.searchEmpty, { color: colors.textMuted }]}>
+                No products found for &quot;{search.trim()}&quot;
+              </Text>
+            ) : (
+              matchedProducts.slice(0, 6).map((item) => (
+                <Pressable
+                  key={item._id}
+                  onPress={() => {
+                    handleProductPress(item);
+                    setSearch('');
+                  }}
+                  style={({ pressed }) => [
+                    styles.searchSuggestionItem,
+                    { opacity: pressed ? 0.75 : 1 },
+                  ]}
+                >
+                  <View style={[styles.searchThumb, { backgroundColor: colors.backgroundSecondary }]}>
+                    {item.images?.[0] ? (
+                      <Image source={{ uri: item.images[0] }} style={styles.searchThumbImage} />
+                    ) : (
+                      <Ionicons name="image-outline" size={16} color={colors.textMuted} />
+                    )}
+                  </View>
+                  <View style={styles.searchSuggestionTextWrap}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.searchSuggestionTitle, { color: colors.text }]}
+                    >
                       {item.title}
                     </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+                    <Text style={[styles.searchSuggestionPrice, { color: colors.primary }]}>
+                      {formatDreamCash(item.finalPrice)}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))
             )}
+          </View>
+        ) : null}
 
+        {initialLoading ? (
+          <View style={styles.flex1}>
+            <ActivationExclusiveSection
+              products={[]}
+              contentPadding={contentPadding}
+              onProductPress={handleProductPress}
+              loading
+            />
+            <ProductGridSkeleton />
+          </View>
+        ) : (
+          <Animated.View style={[styles.flex1, { opacity: fadeAnim }]}>
             <FlatList
               data={sampleProducts}
               renderItem={renderProduct}
               keyExtractor={(item) => item._id}
               numColumns={productColumns}
-              columnWrapperStyle={[styles.columnWrapper, { paddingHorizontal: contentPadding }]}
+              columnWrapperStyle={
+                productColumns > 1
+                  ? [styles.columnWrapper, { paddingHorizontal: contentPadding, gap: CARD_GAP }]
+                  : { paddingHorizontal: contentPadding }
+              }
               contentContainerStyle={[styles.productList, { paddingBottom: 100 }]}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               ListHeaderComponent={ListHeader}
+              ListEmptyComponent={
+                <EmptyState
+                  icon="cube-outline"
+                  title="No products yet"
+                  subtitle="Check back soon for new items."
+                  style={styles.emptyState}
+                />
+              }
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={colors.primary}
+                  colors={[colors.primary]}
+                />
+              }
             />
-
-            {selectedProduct && (
-              <ProductModal
-                visible={!!selectedProduct}
-                product={selectedProduct}
-                onClose={() => setSelectedProduct(null)}
-              />
-            )}
           </Animated.View>
         )}
+
+        <ProductModal
+          visible={selectedProduct !== null}
+          product={selectedProduct}
+          onClose={handleModalClose}
+        />
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </Screen>
   );
 };
 
@@ -305,135 +426,155 @@ export default ExploreScreen;
 
 const styles = StyleSheet.create({
   flex1: { flex: 1 },
-  safeArea: { flex: 1 },
-  container: {
-    paddingHorizontal: 16,
-  },
-  searchRow: {
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 40,
     zIndex: 100,
-    gap: 10,
+    gap: spacing.sm,
+    paddingBottom: spacing.sm,
   },
   logoWrap: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
   logo: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontSize: typography.fontSize.sm,
+    fontWeight: typography.fontWeight.extrabold,
     letterSpacing: 0.5,
   },
-  searchInput: {
+  searchWrap: {
     flex: 1,
-    borderWidth: 1,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm + 2,
-    height: 42,
-    fontSize: typography.fontSize.md,
   },
   cartIconWrap: {
     padding: spacing.xs,
+    position: 'relative',
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  cartBadgeText: {
+    fontSize: 10,
+    fontWeight: typography.fontWeight.bold,
   },
   suggestionBox: {
     position: 'absolute',
-    top: 94,
+    top: 58,
     zIndex: 99,
-    borderRadius: borderRadius.md,
-    maxHeight: 220,
+    borderRadius: borderRadius.lg,
+    maxHeight: 280,
+    borderWidth: 1,
     ...shadows.lg,
     paddingVertical: spacing.xs,
+    overflow: 'hidden',
+  },
+  searchEmpty: {
+    padding: spacing.md,
+    fontSize: typography.fontSize.sm,
+    textAlign: 'center',
   },
   searchSuggestionItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
     gap: spacing.sm,
   },
-  brandRow: {
-    marginVertical: spacing.sm,
+  searchThumb: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.sm,
+    overflow: 'hidden',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  brandText: {
+  searchThumbImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'contain',
+  },
+  searchSuggestionTextWrap: {
+    flex: 1,
+  },
+  searchSuggestionTitle: {
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.medium,
-    letterSpacing: 0.5,
   },
-  sectionHeader: {
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.xxs,
+  searchSuggestionPrice: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    marginTop: 2,
   },
-  suggestionHeader: {
-    marginTop: spacing.xl - 4,
-    paddingHorizontal: spacing.xxs,
-  },
-  productHeader: {
-    marginTop: spacing.xl - 4,
-    paddingHorizontal: spacing.xxs,
-  },
-  categoryTitle: {
-    fontWeight: typography.fontWeight.bold,
-    fontSize: typography.fontSize.xl,
+  sectionLabel: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    letterSpacing: 0.6,
     marginBottom: spacing.sm,
   },
-  suggestionTitle: {
-    fontWeight: typography.fontWeight.bold,
-    fontSize: typography.fontSize.xl,
-    marginBottom: spacing.sm + 2,
+  sectionLabelSpaced: {
+    marginTop: spacing.lg,
   },
-  sectionTitle: {
-    fontWeight: typography.fontWeight.bold,
-    fontSize: typography.fontSize.xxl,
-    marginBottom: spacing.sm + 2,
+  discoverLine: {
+    fontSize: typography.fontSize.sm,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
   },
   categoryList: {
     paddingBottom: spacing.sm,
-    paddingRight: spacing.md,
   },
   suggestionList: {
-    paddingHorizontal: spacing.xxs,
     paddingRight: spacing.md,
+    paddingBottom: spacing.xs,
   },
   categoryItem: {
     alignItems: 'center',
-    marginRight: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm + 2,
-    borderRadius: borderRadius.lg,
-    minWidth: 72,
-    ...shadows.sm,
+    paddingVertical: spacing.xxs,
   },
   categoryIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    marginBottom: 8,
-    overflow: 'hidden',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginBottom: spacing.xxs,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  categoryIcon: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+  categoryLetter: {
+    fontSize: 16,
+    fontWeight: typography.fontWeight.bold,
+    lineHeight: 20,
   },
   categoryText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
     textAlign: 'center',
+    lineHeight: 14,
   },
   productWrapper: {
     marginBottom: spacing.md,
+    overflow: 'hidden',
   },
   suggestionCardWrapper: {
     marginRight: spacing.md,
+    overflow: 'hidden',
   },
   columnWrapper: {
-    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
-  productList: {},
+  productList: {
+    flexGrow: 1,
+    paddingTop: spacing.xs,
+  },
+  emptyState: {
+    paddingVertical: spacing.xxl,
+  },
 });

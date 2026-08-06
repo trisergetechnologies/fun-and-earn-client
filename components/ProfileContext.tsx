@@ -4,8 +4,10 @@ const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-ap
 import {
     createContext,
     ReactNode,
+    useCallback,
     useContext,
     useEffect,
+    useMemo,
     useState,
 } from 'react';
 import { useAuth } from './AuthContext';
@@ -81,8 +83,7 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     const [profileLoading, setProfileLoading] = useState<boolean>(false);
     const router = useRouter();
 
-    const fetchUser = async () => {
-        console.log("hit");
+    const fetchUser = useCallback(async () => {
         setProfileLoading(true);
         const token = await getToken();
         const profileUrl = `${EXPO_PUBLIC_BASE_URL}/ecart/user/general/getprofile`;
@@ -94,31 +95,37 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
             });
             if (response.data.success) {
                 setUserProfile(response.data.data);
-                setProfileLoading(false);
             }
-            setProfileLoading(false);
         } catch (error: any) {
-            setProfileLoading(false);
             console.error('Failed to fetch User:', error.response?.data || error.message);
             throw new Error(error.response?.data?.message || 'Failed to fetch User');
+        } finally {
+            setProfileLoading(false);
         }
-    }
+    }, []);
 
     useEffect(() => {
-        if(isAuthLoading) return
+        if (isAuthLoading) return;
 
-        if(!isAuthenticated){
+        if (!isAuthenticated) {
             logout();
             router.replace('/(public)/signin');
+            return;
         }
         fetchUser();
-    }, []);
-    const refreshUserProfile= async()=>{
+    }, [isAuthLoading, isAuthenticated]);
+
+    const refreshUserProfile = useCallback(async () => {
         await fetchUser();
-    }
+    }, [fetchUser]);
+
+    const value = useMemo(
+        () => ({ userProfile, refreshUserProfile, profileLoading }),
+        [userProfile, refreshUserProfile, profileLoading]
+    );
 
     return (
-        <ProfileContext.Provider value={{ userProfile, refreshUserProfile, profileLoading }}>
+        <ProfileContext.Provider value={value}>
             {children}
         </ProfileContext.Provider>
     );

@@ -1,9 +1,10 @@
 // app/(private)/success.tsx
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
+import { Text, ActivityIndicator, TouchableOpacity, StyleSheet } from 'react-native';
 import axios from 'axios';
 import { getToken } from '@/helpers/authStorage';
+import { Screen } from '@/components/Screen';
 
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://api.yourdomain.com';
 
@@ -76,7 +77,7 @@ export default function SuccessScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <Screen style={styles.container}>
       {status === 'verifying' && (
         <>
           <ActivityIndicator size="large" color="#10b981" />
@@ -106,7 +107,7 @@ export default function SuccessScreen() {
           </TouchableOpacity>
         </>
       )}
-    </View>
+    </Screen>
   );
 }
 
@@ -116,7 +117,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#fff',
   },
   infoText: {
     marginTop: 16,

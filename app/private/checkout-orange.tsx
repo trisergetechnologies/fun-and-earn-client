@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 import uuid from 'react-native-uuid';
 import { useCart } from '../../components/CartContext';
+import { Screen } from '@/components/Screen';
 
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
 
@@ -515,6 +516,7 @@ const CheckoutOrangePG = () => {
   };
 
   return (
+    <Screen>
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.heading}>Checkout</Text>
 
@@ -616,6 +618,7 @@ const CheckoutOrangePG = () => {
         <Text style={styles.infoText}>Secured by Orange PG (ICICI Bank)</Text>
       </View>
     </ScrollView>
+    </Screen>
   );
 };
 
@@ -624,7 +627,7 @@ export default CheckoutOrangePG;
 // Styles (same as before)
 const styles = StyleSheet.create({
   container: { padding: 16, backgroundColor: '#fff', flexGrow: 1 },
-  heading: { fontSize: 20, fontWeight: 'bold', marginBottom: 16, marginTop: 30 },
+  heading: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
   section: { marginBottom: 20 },
   sectionLabel: { fontSize: 15, fontWeight: '600', marginBottom: 8 },
   input: {

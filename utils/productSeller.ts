@@ -6,3 +6,11 @@ export function getProductSellerName(
   const name = sellerId.name?.trim();
   return name || null;
 }
+
+export function getProductSellerId(
+  sellerId: string | { _id?: string; name?: string; email?: string } | null | undefined
+): string | null {
+  if (!sellerId) return null;
+  if (typeof sellerId === 'string') return sellerId;
+  return sellerId._id ?? null;
+}
