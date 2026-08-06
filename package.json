@@ -8,7 +8,9 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "postinstall": "patch-package",
+    "eas-build-post-install": "patch-package"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
@@ -23,6 +25,7 @@
     "expo-build-properties": "~0.14.8",
     "expo-clipboard": "^7.1.5",
     "expo-constants": "~17.1.6",
+    "expo-dev-client": "~5.2.4",
     "expo-file-system": "^18.1.11",
     "expo-font": "~13.3.1",
     "expo-haptics": "~14.1.4",
@@ -37,10 +40,12 @@
     "expo-symbols": "~0.4.5",
     "expo-system-ui": "~5.0.10",
     "expo-web-browser": "~14.2.0",
+    "patch-package": "^8.0.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.5",
     "react-native-gesture-handler": "~2.24.0",
+    "react-native-google-mobile-ads": "16.0.2",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-razorpay": "^2.3.0",
     "react-native-reanimated": "^3.17.4",
@@ -64,7 +69,6 @@
     "babel-plugin-module-resolver": "^5.0.2",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
-    "patch-package": "^8.0.0",
     "react-native-svg-transformer": "^1.5.1",
     "typescript": "~5.8.3"
   },

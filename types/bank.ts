@@ -2,7 +2,9 @@ export interface BankDetails {
   accountHolderName: string;
   accountNumber: string;
   ifscCode: string;
-  upiId: string;
+  /** Legacy — kept for older saved profiles; not shown in UI. */
+  upiId?: string;
+  panNumber?: string;
 }
 
 export function hasBankDetails(details?: BankDetails | null | Record<string, unknown>) {

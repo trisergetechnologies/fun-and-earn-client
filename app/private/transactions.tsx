@@ -1,13 +1,11 @@
 import { getToken } from '@/helpers/authStorage';
 import { WalletBalanceHero } from '@/components/WalletBalanceHero';
+import { DreamCashAmount } from '@/components/DreamCashAmount';
 import { Screen } from '@/components/Screen';
 import { useTheme } from '@/components/ThemeContext';
 import { EmptyState } from '@/components/ui';
 import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
-import {
-  formatSignedDreamCash,
-  formatTransactionDate,
-} from '@/utils/walletFormat';
+import { formatTransactionDate } from '@/utils/walletFormat';
 import {
   getStatusLabel,
   getTransactionIcon,
@@ -200,9 +198,14 @@ export default function TransactionScreen() {
             <Text style={[styles.rowTitle, { color: colors.text }]} numberOfLines={1}>
               {title}
             </Text>
-            <Text style={[styles.rowAmount, { color: amountColor }]}>
-              {formatSignedDreamCash(item.amount, isCredit)}
-            </Text>
+            <DreamCashAmount
+              amount={item.amount}
+              signed
+              isCredit={isCredit}
+              iconSize="sm"
+              color={amountColor}
+              textStyle={styles.rowAmount}
+            />
           </View>
 
           <View style={styles.rowMeta}>

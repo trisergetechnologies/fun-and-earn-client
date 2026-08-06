@@ -12,7 +12,8 @@ import {
   getCouponStatusColors,
   getCouponStatusLabel,
 } from '@/utils/couponLabels';
-import { formatDreamCash } from '@/utils/walletFormat';
+import { formatDreamCashFigure } from '@/utils/walletFormat';
+import { DreamCashAmount, DreamCashCoin } from '@/components/DreamCashAmount';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
@@ -144,10 +145,13 @@ function CouponCard({
 
       <View style={styles.metaRow}>
         <View style={styles.metaItem}>
-          <Ionicons name="pricetag-outline" size={14} color={colors.textMuted} />
-          <Text style={[styles.metaText, { color: colors.textSecondary }]}>
-            {formatDreamCash(coupon.value)} off
-          </Text>
+          <DreamCashAmount
+            amount={coupon.value}
+            iconSize="sm"
+            color={colors.textSecondary}
+            textStyle={styles.metaText}
+          />
+          <Text style={[styles.metaText, { color: colors.textSecondary }]}> off</Text>
         </View>
         {expiry ? (
           <Text style={[styles.metaText, { color: colors.textMuted }]}>Expires {expiry}</Text>
@@ -241,9 +245,16 @@ const RewardScreen = () => {
 
       {coupons.length > 0 ? (
         <View style={[styles.summaryStrip, { backgroundColor: colors.primaryTint }]}>
-          <Text style={[styles.summaryText, { color: colors.primary }]}>
-            {summary.count} available · {formatDreamCash(summary.totalValue)} total value
-          </Text>
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryText, { color: colors.primary }]}>
+              {summary.count} available ·{' '}
+            </Text>
+            <DreamCashCoin size="sm" />
+            <Text style={[styles.summaryText, { color: colors.primary }]}>
+              {' '}
+              {formatDreamCashFigure(summary.totalValue)} total value
+            </Text>
+          </View>
         </View>
       ) : null}
 
@@ -340,6 +351,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     marginBottom: spacing.md,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
   },
   summaryText: {
     fontSize: typography.fontSize.sm,

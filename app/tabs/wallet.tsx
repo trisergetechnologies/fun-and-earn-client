@@ -12,7 +12,9 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
+import { AdMobBannerSlot } from '@/components/AdMobBannerSlot';
 import DreamPointsInfo from '@/components/DreamPointMessage';
+import { DreamCashCoin } from '@/components/icons/DreamCashCoin';
 import { Screen } from '@/components/Screen';
 import { WalletBalanceHero } from '@/components/WalletBalanceHero';
 import { useTheme } from '@/components/ThemeContext';
@@ -151,122 +153,125 @@ const WalletScreen = () => {
 
   return (
     <Screen>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
-          />
-        }
-      >
-        <Text style={[styles.pageTitle, { color: colors.text }]}>Wallet</Text>
-        <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
-          Manage your Dream Cash balance
-        </Text>
-
-        <WalletBalanceHero
-          balance={walletBalance}
-          showHistoryLink
-          onHistoryPress={() => router.push('/private/transactions')}
-        />
-
-        {/* Withdraw */}
-        <Card padding="lg" style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIcon, { backgroundColor: colors.backgroundSecondary }]}>
-              <Ionicons name="arrow-up-circle-outline" size={20} color={colors.textSecondary} />
-            </View>
-            <View style={styles.sectionHeaderText}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Withdraw</Text>
-              <Text style={[styles.sectionDesc, { color: colors.textMuted }]}>
-                Transfer to your linked bank account
-              </Text>
-            </View>
-          </View>
-
-          <View style={[styles.amountRow, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}>
-            <Text style={[styles.currencyPrefix, { color: colors.textMuted }]}>₹</Text>
-            <TextInput
-              style={[styles.amountInput, { color: colors.text }]}
-              placeholder="0.00"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad"
-              value={withdrawAmount}
-              onChangeText={setWithdrawAmount}
-              editable={!withdrawing && !redeeming}
+      <View style={styles.column}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
             />
-            <Pressable
-              onPress={handleMaxWithdraw}
-              disabled={walletBalance <= 0 || withdrawing || redeeming}
-              style={({ pressed }) => [
-                styles.maxChip,
-                {
-                  backgroundColor: colors.primaryTint,
-                  opacity: walletBalance <= 0 || withdrawing || redeeming ? 0.4 : pressed ? 0.8 : 1,
-                },
-              ]}
-            >
-              <Text style={[styles.maxChipText, { color: colors.primary }]}>MAX</Text>
-            </Pressable>
-          </View>
+          }
+        >
+          <Text style={[styles.pageTitle, { color: colors.text }]}>Wallet</Text>
+          <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
+            Manage your Dream Cash balance
+          </Text>
 
-          <Button
-            title={withdrawing ? 'Processing…' : 'Request withdrawal'}
-            onPress={handleWithdraw}
-            loading={withdrawing}
-            disabled={redeeming}
-            fullWidth
-            size="lg"
-            leftIcon={<Ionicons name="send-outline" size={18} />}
+          <WalletBalanceHero
+            balance={walletBalance}
+            showHistoryLink
+            onHistoryPress={() => router.push('/private/transactions')}
           />
-        </Card>
 
-        {/* Redeem coupon */}
-        <Card padding="lg" style={styles.sectionCard}>
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIcon, { backgroundColor: colors.backgroundSecondary }]}>
-              <Ionicons name="pricetag-outline" size={20} color={colors.textSecondary} />
+          {/* Withdraw */}
+          <Card padding="lg" style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: colors.backgroundSecondary }]}>
+                <Ionicons name="arrow-up-circle-outline" size={20} color={colors.textSecondary} />
+              </View>
+              <View style={styles.sectionHeaderText}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Withdraw</Text>
+                <Text style={[styles.sectionDesc, { color: colors.textMuted }]}>
+                  Transfer to your linked bank account
+                </Text>
+              </View>
             </View>
-            <View style={styles.sectionHeaderText}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Redeem coupon</Text>
-              <Text style={[styles.sectionDesc, { color: colors.textMuted }]}>
-                Apply a reward code to add balance
-              </Text>
-            </View>
-          </View>
 
-          <View style={[styles.couponRow, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}>
-            <Ionicons name="ticket-outline" size={18} color={colors.textMuted} style={styles.couponIcon} />
-            <TextInput
-              style={[styles.couponInput, { color: colors.text }]}
-              placeholder="Enter coupon code"
-              placeholderTextColor={colors.textMuted}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              value={couponCode}
-              onChangeText={setCouponCode}
-              editable={!withdrawing && !redeeming}
+            <View style={[styles.amountRow, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}>
+              <DreamCashCoin size="md" style={styles.currencyPrefix} />
+              <TextInput
+                style={[styles.amountInput, { color: colors.text }]}
+                placeholder="0.00"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="decimal-pad"
+                value={withdrawAmount}
+                onChangeText={setWithdrawAmount}
+                editable={!withdrawing && !redeeming}
+              />
+              <Pressable
+                onPress={handleMaxWithdraw}
+                disabled={walletBalance <= 0 || withdrawing || redeeming}
+                style={({ pressed }) => [
+                  styles.maxChip,
+                  {
+                    backgroundColor: colors.primaryTint,
+                    opacity: walletBalance <= 0 || withdrawing || redeeming ? 0.4 : pressed ? 0.8 : 1,
+                  },
+                ]}
+              >
+                <Text style={[styles.maxChipText, { color: colors.primary }]}>MAX</Text>
+              </Pressable>
+            </View>
+
+            <Button
+              title={withdrawing ? 'Processing…' : 'Request withdrawal'}
+              onPress={handleWithdraw}
+              loading={withdrawing}
+              disabled={redeeming}
+              fullWidth
+              size="lg"
+              leftIcon={<Ionicons name="send-outline" size={18} />}
             />
-          </View>
+          </Card>
 
-          <Button
-            title={redeeming ? 'Redeeming…' : 'Redeem coupon'}
-            onPress={handleRedeem}
-            variant="outline"
-            loading={redeeming}
-            disabled={withdrawing}
-            fullWidth
-            size="lg"
-          />
-        </Card>
+          {/* Redeem coupon */}
+          <Card padding="lg" style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: colors.backgroundSecondary }]}>
+                <Ionicons name="pricetag-outline" size={20} color={colors.textSecondary} />
+              </View>
+              <View style={styles.sectionHeaderText}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Redeem coupon</Text>
+                <Text style={[styles.sectionDesc, { color: colors.textMuted }]}>
+                  Apply a reward code to add balance
+                </Text>
+              </View>
+            </View>
 
-        <DreamPointsInfo />
-      </ScrollView>
+            <View style={[styles.couponRow, { borderColor: colors.border, backgroundColor: colors.backgroundSecondary }]}>
+              <Ionicons name="ticket-outline" size={18} color={colors.textMuted} style={styles.couponIcon} />
+              <TextInput
+                style={[styles.couponInput, { color: colors.text }]}
+                placeholder="Enter coupon code"
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                value={couponCode}
+                onChangeText={setCouponCode}
+                editable={!withdrawing && !redeeming}
+              />
+            </View>
+
+            <Button
+              title={redeeming ? 'Redeeming…' : 'Redeem coupon'}
+              onPress={handleRedeem}
+              variant="outline"
+              loading={redeeming}
+              disabled={withdrawing}
+              fullWidth
+              size="lg"
+            />
+          </Card>
+
+          <DreamPointsInfo />
+        </ScrollView>
+        <AdMobBannerSlot />
+      </View>
     </Screen>
   );
 };
@@ -274,6 +279,9 @@ const WalletScreen = () => {
 export default WalletScreen;
 
 const styles = StyleSheet.create({
+  column: {
+    flex: 1,
+  },
   container: {
     flex: 1,
   },
@@ -329,8 +337,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   currencyPrefix: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.medium,
     marginRight: spacing.xxs,
   },
   amountInput: {

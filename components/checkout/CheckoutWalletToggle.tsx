@@ -1,4 +1,5 @@
 import { Card } from '@/components/ui';
+import { DreamCashAmount } from '@/components/DreamCashAmount';
 import { useTheme } from '@/components/ThemeContext';
 import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
 import { formatDreamCash } from '@/utils/walletFormat';
@@ -32,9 +33,15 @@ export function CheckoutWalletToggle({
         </View>
         <View style={styles.headerText}>
           <Text style={[styles.label, { color: colors.text }]}>Use Dream Cash</Text>
-          <Text style={[styles.balance, { color: colors.textSecondary }]}>
-            Available {formatDreamCash(balance)}
-          </Text>
+          <View style={styles.balanceRow}>
+            <Text style={[styles.balance, { color: colors.textSecondary }]}>Available </Text>
+            <DreamCashAmount
+              amount={balance}
+              iconSize="sm"
+              color={colors.textSecondary}
+              textStyle={styles.balance}
+            />
+          </View>
         </View>
         {toggling ? (
           <ActivityIndicator size="small" color={colors.primary} />
@@ -51,11 +58,24 @@ export function CheckoutWalletToggle({
 
       {useWallet ? (
         <View style={[styles.hintBox, { backgroundColor: colors.primaryTint }]}>
-          <Text style={[styles.hintText, { color: colors.primary }]}>
-            {walletApplied > 0
-              ? `${formatDreamCash(walletApplied)} will be applied from your wallet.`
-              : 'Wallet balance will be applied at checkout.'}
-          </Text>
+          {walletApplied > 0 ? (
+            <View style={styles.hintAppliedRow}>
+              <DreamCashAmount
+                amount={walletApplied}
+                iconSize="sm"
+                color={colors.primary}
+                textStyle={styles.hintText}
+              />
+              <Text style={[styles.hintText, { color: colors.primary }]}>
+                {' '}
+                will be applied from your wallet.
+              </Text>
+            </View>
+          ) : (
+            <Text style={[styles.hintText, { color: colors.primary }]}>
+              Wallet balance will be applied at checkout.
+            </Text>
+          )}
           <Text style={[styles.hintSubtext, { color: colors.textSecondary }]}>
             {payable <= 0
               ? 'Remaining payable: ₹0.00 — wallet only order'
@@ -87,15 +107,25 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.semibold,
   },
+  balanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginTop: 2,
+  },
   balance: {
     fontSize: typography.fontSize.sm,
-    marginTop: 2,
   },
   hintBox: {
     marginTop: spacing.sm,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+  },
+  hintAppliedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
   },
   hintText: {
     fontSize: typography.fontSize.sm,

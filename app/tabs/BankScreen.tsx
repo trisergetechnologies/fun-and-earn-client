@@ -73,7 +73,7 @@ const BankScreen = () => {
   const [accountHolderName, setAccountHolderName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [ifscCode, setIfscCode] = useState('');
-  const [upiId, setUpiId] = useState('');
+  const [panNumber, setPanNumber] = useState('');
   const [errors, setErrors] = useState<BankFormErrors>({});
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -84,14 +84,14 @@ const BankScreen = () => {
     setAccountHolderName(details.accountHolderName || '');
     setAccountNumber(details.accountNumber || '');
     setIfscCode(details.ifscCode || '');
-    setUpiId(details.upiId || '');
+    setPanNumber(details.panNumber || '');
   }, []);
 
   const clearForm = useCallback(() => {
     setAccountHolderName('');
     setAccountNumber('');
     setIfscCode('');
-    setUpiId('');
+    setPanNumber('');
     setErrors({});
   }, []);
 
@@ -119,7 +119,7 @@ const BankScreen = () => {
       accountHolderName: accountHolderName.trim(),
       accountNumber: accountNumber.replace(/\D/g, ''),
       ifscCode: ifscCode.trim().toUpperCase(),
-      upiId: upiId.trim(),
+      panNumber: panNumber.trim().toUpperCase(),
     };
 
     const nextErrors = validateBankForm(payload, !isLinked);
@@ -262,9 +262,9 @@ const BankScreen = () => {
               <Text style={[styles.summaryLine, { color: colors.textSecondary }]}>
                 IFSC: {savedDetails.ifscCode}
               </Text>
-              {savedDetails.upiId ? (
+              {savedDetails.panNumber ? (
                 <Text style={[styles.summaryLine, { color: colors.textMuted }]}>
-                  UPI: {savedDetails.upiId}
+                  PAN: {savedDetails.panNumber}
                 </Text>
               ) : null}
             </Card>
@@ -329,19 +329,21 @@ const BankScreen = () => {
                 />
                 {errors.ifscCode ? <FieldError message={errors.ifscCode} colors={colors} /> : null}
 
-                <FieldLabel label="UPI ID" colors={colors} />
+                <FieldLabel label="PAN number (optional)" colors={colors} />
                 <Input
-                  leftIcon="wallet-outline"
-                  placeholder="yourname@bank"
-                  autoCapitalize="none"
-                  value={upiId}
+                  leftIcon="id-card-outline"
+                  placeholder="e.g. ABCDE1234F"
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  maxLength={10}
+                  value={panNumber}
                   onChangeText={(text) => {
-                    setUpiId(text);
-                    clearFieldError('upiId');
+                    setPanNumber(text.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10));
+                    clearFieldError('panNumber');
                   }}
-                  error={Boolean(errors.upiId)}
+                  error={Boolean(errors.panNumber)}
                 />
-                {errors.upiId ? <FieldError message={errors.upiId} colors={colors} /> : null}
+                {errors.panNumber ? <FieldError message={errors.panNumber} colors={colors} /> : null}
               </Card>
 
               <View style={styles.actions}>

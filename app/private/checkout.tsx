@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as WebBrowser from 'expo-web-browser';
 import uuid from 'react-native-uuid';
+import { AdMobBannerSlot } from '@/components/AdMobBannerSlot';
 import { useProfile } from '@/components/ProfileContext';
 import { useTheme } from '@/components/ThemeContext';
 import { Screen } from '@/components/Screen';
@@ -793,6 +794,8 @@ const CheckoutScreen = () => {
           </View>
         ) : null}
       </ScrollView>
+
+      <AdMobBannerSlot />
 
       <View style={[styles.footer, { borderTopColor: colors.borderLight, backgroundColor: colors.background }]}>
         <View style={styles.footerTotalRow}>

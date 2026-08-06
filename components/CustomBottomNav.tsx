@@ -6,6 +6,7 @@ import { useCart } from './CartContext';
 import { useTheme } from './ThemeContext';
 import { useEffect } from 'react';
 import { getCartItemCount } from '@/utils/cartLabels';
+import { notifyAdMobTabSwitch } from '@/components/AdMobSessionController';
 
 const TAB_ROUTES = {
   explore: '/tabs/explore',
@@ -75,6 +76,7 @@ export default function CustomBottomNav() {
               onPress={() => {
                 if (isOnTab(pathname, route)) return;
                 router.replace(route);
+                notifyAdMobTabSwitch();
               }}
               style={styles.item}
               activeOpacity={0.7}

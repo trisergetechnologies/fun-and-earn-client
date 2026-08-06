@@ -16,6 +16,7 @@ import {
   shareLocalPdf,
 } from '@/utils/invoicePdf';
 import { formatDreamCash, formatTransactionDate } from '@/utils/walletFormat';
+import { DreamCashAmount } from '@/components/DreamCashAmount';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
@@ -434,10 +435,15 @@ const OrderDetails = () => {
 
           {order.usedWalletAmount > 0 ? (
             <View style={styles.rowBetween}>
-              <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>Wallet used</Text>
-              <Text style={[styles.rowValue, { color: colors.success }]}>
-                −{formatDreamCash(order.usedWalletAmount)}
-              </Text>
+              <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>Dream Cash used</Text>
+              <DreamCashAmount
+                amount={order.usedWalletAmount}
+                signed
+                isCredit={false}
+                iconSize="sm"
+                color={colors.success}
+                textStyle={styles.rowValue}
+              />
             </View>
           ) : null}
 

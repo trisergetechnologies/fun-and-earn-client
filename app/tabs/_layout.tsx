@@ -1,6 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { AdMobSessionController } from '@/components/AdMobSessionController';
 import { useAuth } from '@/components/AuthContext';
 import CustomBottomNav from '@/components/CustomBottomNav';
 import Spinner from '@/components/Spinner';
@@ -27,6 +28,7 @@ export default function TabLayout() {
 
   return (
     <View style={getThemedLayoutStyle(colors)}>
+      <AdMobSessionController />
       <View style={styles.content}>
         <Stack
           screenOptions={{

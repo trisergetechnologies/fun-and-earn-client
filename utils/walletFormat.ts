@@ -5,9 +5,22 @@ export function formatDreamCash(amount: number) {
   })}`;
 }
 
+/** Dream Cash number only — pair with DreamCashCoin / DreamCashAmount. */
+export function formatDreamCashFigure(amount: number) {
+  return amount.toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
 export function formatSignedDreamCash(amount: number, isCredit: boolean) {
   const prefix = isCredit ? '+' : '−';
   return `${prefix}${formatDreamCash(Math.abs(amount))}`;
+}
+
+export function formatSignedDreamCashFigure(amount: number, isCredit: boolean) {
+  const prefix = isCredit ? '+' : '−';
+  return `${prefix}${formatDreamCashFigure(Math.abs(amount))}`;
 }
 
 export function formatTransactionDate(iso: string) {

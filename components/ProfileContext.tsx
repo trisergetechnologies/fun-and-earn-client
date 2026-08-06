@@ -29,7 +29,8 @@ interface BankDetails {
   accountHolderName: string;
   accountNumber: string;
   ifscCode: string;
-  upiId: string;
+  upiId?: string;
+  panNumber?: string;
 }
 
 interface ShortVideoProfile {

@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { DreamCashAmount } from '@/components/DreamCashAmount';
 import { useTheme } from '@/components/ThemeContext';
 import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
-import { formatDreamCash } from '@/utils/walletFormat';
 
 interface WalletBalanceHeroProps {
   balance: number;
@@ -37,7 +37,12 @@ export function WalletBalanceHero({
         </View>
         <View style={styles.compactText}>
           <Text style={[styles.compactLabel, { color: colors.textSecondary }]}>Dream Cash</Text>
-          <Text style={[styles.compactAmount, { color: colors.text }]}>{formatDreamCash(balance)}</Text>
+          <DreamCashAmount
+            amount={balance}
+            iconSize="md"
+            color={colors.text}
+            textStyle={styles.compactAmount}
+          />
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
       </View>
@@ -72,7 +77,13 @@ export function WalletBalanceHero({
           <Text style={[styles.heroLabel, { color: colors.textSecondary }]}>AVAILABLE BALANCE</Text>
         </View>
 
-        <Text style={[styles.heroAmount, { color: colors.text }]}>{formatDreamCash(balance)}</Text>
+        <DreamCashAmount
+          amount={balance}
+          iconSize="lg"
+          color={colors.text}
+          textStyle={styles.heroAmount}
+          style={styles.heroAmountRow}
+        />
         <Text style={[styles.heroCaption, { color: colors.textMuted }]}>Dream Cash</Text>
 
         {showHistoryLink && onHistoryPress ? (
@@ -136,11 +147,13 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeight.semibold,
     letterSpacing: 1.2,
   },
+  heroAmountRow: {
+    marginBottom: spacing.xxs,
+  },
   heroAmount: {
     fontSize: typography.fontSize.display + 8,
     fontWeight: typography.fontWeight.extrabold,
     letterSpacing: -1,
-    marginBottom: spacing.xxs,
   },
   heroCaption: {
     fontSize: typography.fontSize.sm,
