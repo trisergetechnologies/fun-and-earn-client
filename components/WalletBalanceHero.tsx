@@ -36,7 +36,7 @@ export function WalletBalanceHero({
           <Ionicons name="wallet-outline" size={20} color={colors.textSecondary} />
         </View>
         <View style={styles.compactText}>
-          <Text style={[styles.compactLabel, { color: colors.textSecondary }]}>Dream Cash</Text>
+          <Text style={[styles.compactLabel, { color: colors.textSecondary }]}>DreamMart Coin</Text>
           <DreamCashAmount
             amount={balance}
             iconSize="md"
@@ -74,7 +74,7 @@ export function WalletBalanceHero({
           <View style={[styles.heroIconWrap, { backgroundColor: colors.primaryTint }]}>
             <Ionicons name="wallet-outline" size={22} color={colors.primary} />
           </View>
-          <Text style={[styles.heroLabel, { color: colors.textSecondary }]}>AVAILABLE BALANCE</Text>
+          <Text style={[styles.heroLabel, { color: colors.textSecondary }]}>AVAILABLE COINS</Text>
         </View>
 
         <DreamCashAmount
@@ -84,7 +84,7 @@ export function WalletBalanceHero({
           textStyle={styles.heroAmount}
           style={styles.heroAmountRow}
         />
-        <Text style={[styles.heroCaption, { color: colors.textMuted }]}>Dream Cash</Text>
+        <Text style={[styles.heroCaption, { color: colors.textMuted }]}>DreamMart Coin</Text>
 
         {showHistoryLink && onHistoryPress ? (
           <Pressable
@@ -95,7 +95,7 @@ export function WalletBalanceHero({
             ]}
           >
             <Text style={[styles.transactionsText, { color: colors.primary }]}>
-              View transaction history
+              View coin history
             </Text>
             <Ionicons name="chevron-forward" size={16} color={colors.primary} />
           </Pressable>

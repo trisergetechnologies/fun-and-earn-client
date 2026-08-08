@@ -435,7 +435,7 @@ const OrderDetails = () => {
 
           {order.usedWalletAmount > 0 ? (
             <View style={styles.rowBetween}>
-              <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>Dream Cash used</Text>
+              <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>DreamMart Coin used</Text>
               <DreamCashAmount
                 amount={order.usedWalletAmount}
                 signed

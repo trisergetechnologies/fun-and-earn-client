@@ -110,7 +110,7 @@ const WalletScreen = () => {
     }
 
     if (amount > walletBalance) {
-      showToast('error', 'Insufficient balance', 'Withdrawal amount exceeds available balance.');
+      showToast('error', 'Insufficient coins', 'Withdrawal amount exceeds available coins.');
       return;
     }
 
@@ -169,7 +169,7 @@ const WalletScreen = () => {
         >
           <Text style={[styles.pageTitle, { color: colors.text }]}>Wallet</Text>
           <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
-            Manage your Dream Cash balance
+            Manage your DreamMart Coin balance
           </Text>
 
           <WalletBalanceHero

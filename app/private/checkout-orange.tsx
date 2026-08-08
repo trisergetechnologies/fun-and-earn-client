@@ -548,7 +548,7 @@ const CheckoutOrangePG = () => {
           />
         </View>
         <Text style={useWalletStyles.description}>
-          Available Balance: <Ionicons name="ribbon" size={16} color="#10b981" /> ₹{currBal.toFixed(2)}
+          Available coins: <Ionicons name="ribbon" size={16} color="#10b981" /> ₹{currBal.toFixed(2)}
         </Text>
       </View>
 

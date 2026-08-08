@@ -166,9 +166,19 @@ export default function TransactionScreen() {
   };
 
   const renderItem = ({ item }: { item: WalletTransactionItem }) => {
-    const isCredit = isCreditTransaction(item.type);
-    const title = getTransactionTitle(item.type, item.source);
-    const icon = getTransactionIcon(item.type, item.source);
+    const isCredit = isCreditTransaction(item.type, item.toWallet, item.fromWallet);
+    const title = getTransactionTitle(
+      item.type,
+      item.source,
+      item.toWallet,
+      item.fromWallet
+    );
+    const icon = getTransactionIcon(
+      item.type,
+      item.source,
+      item.toWallet,
+      item.fromWallet
+    );
     const isExpanded = expandedId === item._id;
     const amountColor =
       item.status === 'failed'
@@ -235,7 +245,7 @@ export default function TransactionScreen() {
 
   const ListHeader = () => (
     <View style={styles.headerBlock}>
-      <Text style={[styles.pageTitle, { color: colors.text }]}>Transaction history</Text>
+      <Text style={[styles.pageTitle, { color: colors.text }]}>Coin history</Text>
       <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
         Track credits, payments, and withdrawals
       </Text>
@@ -276,7 +286,7 @@ export default function TransactionScreen() {
             <EmptyState
               icon="receipt-outline"
               title="No transactions yet"
-              subtitle="Your wallet activity will appear here once you earn or spend Dream Cash."
+              subtitle="Your activity will appear here once you earn or spend DreamMart Coin."
               style={styles.emptyState}
             />
           }

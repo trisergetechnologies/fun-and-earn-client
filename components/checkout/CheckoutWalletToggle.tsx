@@ -32,7 +32,7 @@ export function CheckoutWalletToggle({
           <Ionicons name="wallet-outline" size={20} color={colors.textSecondary} />
         </View>
         <View style={styles.headerText}>
-          <Text style={[styles.label, { color: colors.text }]}>Use Dream Cash</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Use DreamMart Coin</Text>
           <View style={styles.balanceRow}>
             <Text style={[styles.balance, { color: colors.textSecondary }]}>Available </Text>
             <DreamCashAmount

@@ -17,7 +17,7 @@ export type DreamCashCoinProps = {
   size?: DreamCashCoinSizeKey | number;
   /** Fill color. Defaults to theme primary. */
   color?: string;
-  /** "DC" letter color. Defaults to white / primaryContrast. */
+  /** Letter color. Defaults to white / primaryContrast. */
   textColor?: string;
   /** Outer rim color. Defaults to a lighter tint of fill. */
   rimColor?: string;
@@ -35,8 +35,8 @@ function resolveSize(size: DreamCashCoinSizeKey | number): number {
 }
 
 /**
- * Global Dream Cash coin mark — circle with "DC".
- * Use beside Dream Cash amounts (not for real INR / ₹).
+ * Global DreamMart Coin mark — circle with "DMC".
+ * Use beside coin amounts (not for real INR / ₹).
  */
 export function DreamCashCoin({
   size = 'md',
@@ -50,13 +50,13 @@ export function DreamCashCoin({
   const fill = color ?? colors.primary;
   const ink = textColor ?? colors.primaryContrast;
   const rim = rimColor ?? colors.primaryMuted;
-  const fontSize = Math.max(7, Math.round(diameter * 0.38));
+  const fontSize = Math.max(6, Math.round(diameter * 0.28));
   const rimWidth = Math.max(1, Math.round(diameter * 0.08));
 
   return (
     <View
       accessibilityRole="image"
-      accessibilityLabel="Dream Cash"
+      accessibilityLabel="DreamMart Coin"
       style={[
         styles.coin,
         {
@@ -77,11 +77,11 @@ export function DreamCashCoin({
             color: ink,
             fontSize,
             lineHeight: fontSize + 1,
-            letterSpacing: diameter < 18 ? 0 : -0.3,
+            letterSpacing: diameter < 18 ? -0.4 : -0.6,
           },
         ]}
       >
-        DC
+        DMC
       </Text>
     </View>
   );

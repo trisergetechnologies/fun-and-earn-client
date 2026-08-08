@@ -329,10 +329,10 @@ const BankScreen = () => {
                 />
                 {errors.ifscCode ? <FieldError message={errors.ifscCode} colors={colors} /> : null}
 
-                <FieldLabel label="PAN number (optional)" colors={colors} />
+                <FieldLabel label="PAN number" colors={colors} />
                 <Input
                   leftIcon="id-card-outline"
-                  placeholder="e.g. ABCDE1234F"
+                  placeholder="ABCDE1234F"
                   autoCapitalize="characters"
                   autoCorrect={false}
                   maxLength={10}

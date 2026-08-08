@@ -27,7 +27,7 @@ export default function DreamCashInfo() {
             <Ionicons name="information-circle-outline" size={18} color={colors.textMuted} />
           </View>
           <Text style={[styles.headerTitle, { color: colors.textSecondary }]}>
-            About Dream Cash
+            About DreamMart Coin
           </Text>
         </View>
         <Ionicons
@@ -39,7 +39,7 @@ export default function DreamCashInfo() {
 
       {expanded ? (
         <Text style={[styles.body, { color: colors.textMuted, borderTopColor: colors.borderLight }]}>
-          Dream Cash is a virtual balance you earn through activity on the app. It can be used
+          DreamMart Coin is a virtual balance you earn through activity on the app. It can be used
           for shopping or withdrawn to your bank account, subject to available options and policies.
         </Text>
       ) : null}
