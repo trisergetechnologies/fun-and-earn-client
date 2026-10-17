@@ -2,7 +2,7 @@
  * Flip to 'LIVE' before production / store builds.
  * TEST uses Google’s official sample ad unit IDs.
  */
-export const ADMOB_MODE: 'TEST' | 'LIVE' = 'TEST';
+export const ADMOB_MODE: 'TEST' | 'LIVE' = 'LIVE';
 
 /** Fallback defaults when server config is unavailable. */
 export const DEFAULT_DAILY_LIMIT = 1;

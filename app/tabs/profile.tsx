@@ -183,8 +183,10 @@ const ProfileScreen = () => {
       title: 'WALLET & PAYMENTS',
       items: [
         { icon: 'wallet-outline', label: 'Wallet', route: '/tabs/wallet' },
-        { icon: 'receipt-outline', label: 'Coin history', route: '/private/transactions' },
-        { icon: 'business-outline', label: 'Bank details', route: '/tabs/BankScreen' },
+        // Wallet history stays in the database. Not shown in the app.
+        // { icon: 'receipt-outline', label: 'Points history', route: '/private/transactions' },
+        // Bank details moved to Fun & Enjoy.
+        // { icon: 'business-outline', label: 'Bank details', route: '/tabs/BankScreen' },
       ],
     },
     {

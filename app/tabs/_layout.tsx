@@ -37,7 +37,8 @@ export default function TabLayout() {
           }}
         >
           <Stack.Screen name="explore" options={{ headerShown: false }} />
-          <Stack.Screen name="BankScreen" options={{ headerShown: false }} />
+          {/* Bank details moved to Fun & Enjoy. */}
+          {/* <Stack.Screen name="BankScreen" options={{ headerShown: false }} /> */}
           <Stack.Screen name="cart" options={{ headerShown: false }} />
           <Stack.Screen name="profile" options={{ headerShown: false }} />
           <Stack.Screen name="rewards" options={{ headerShown: false }} />

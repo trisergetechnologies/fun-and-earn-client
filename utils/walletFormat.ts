@@ -5,7 +5,7 @@ export function formatDreamCash(amount: number) {
   })}`;
 }
 
-/** DreamMart Coin number only — pair with DreamCashCoin / DreamCashAmount. */
+/** Dream Mart Points figure only — pair with DreamCashCoin / DreamCashAmount. */
 export function formatDreamCashFigure(amount: number) {
   return amount.toLocaleString('en-IN', {
     minimumFractionDigits: 2,

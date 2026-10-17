@@ -1,21 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { DREAM_MART_POINTS_LABEL } from '@/constants/walletLabels';
 import { DreamCashAmount } from '@/components/DreamCashAmount';
 import { useTheme } from '@/components/ThemeContext';
 import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
 
 interface WalletBalanceHeroProps {
   balance: number;
-  showHistoryLink?: boolean;
-  onHistoryPress?: () => void;
   compact?: boolean;
   onPress?: () => void;
 }
 
 export function WalletBalanceHero({
   balance,
-  showHistoryLink = false,
-  onHistoryPress,
   compact = false,
   onPress,
 }: WalletBalanceHeroProps) {
@@ -36,7 +33,9 @@ export function WalletBalanceHero({
           <Ionicons name="wallet-outline" size={20} color={colors.textSecondary} />
         </View>
         <View style={styles.compactText}>
-          <Text style={[styles.compactLabel, { color: colors.textSecondary }]}>DreamMart Coin</Text>
+          <Text style={[styles.compactLabel, { color: colors.textSecondary }]}>
+            {DREAM_MART_POINTS_LABEL}
+          </Text>
           <DreamCashAmount
             amount={balance}
             iconSize="md"
@@ -74,7 +73,7 @@ export function WalletBalanceHero({
           <View style={[styles.heroIconWrap, { backgroundColor: colors.primaryTint }]}>
             <Ionicons name="wallet-outline" size={22} color={colors.primary} />
           </View>
-          <Text style={[styles.heroLabel, { color: colors.textSecondary }]}>AVAILABLE COINS</Text>
+          <Text style={[styles.heroLabel, { color: colors.textSecondary }]}>AVAILABLE POINTS</Text>
         </View>
 
         <DreamCashAmount
@@ -84,22 +83,9 @@ export function WalletBalanceHero({
           textStyle={styles.heroAmount}
           style={styles.heroAmountRow}
         />
-        <Text style={[styles.heroCaption, { color: colors.textMuted }]}>DreamMart Coin</Text>
-
-        {showHistoryLink && onHistoryPress ? (
-          <Pressable
-            onPress={onHistoryPress}
-            style={({ pressed }) => [
-              styles.transactionsLink,
-              { borderTopColor: colors.borderLight, opacity: pressed ? 0.7 : 1 },
-            ]}
-          >
-            <Text style={[styles.transactionsText, { color: colors.primary }]}>
-              View coin history
-            </Text>
-            <Ionicons name="chevron-forward" size={16} color={colors.primary} />
-          </Pressable>
-        ) : null}
+        <Text style={[styles.heroCaption, { color: colors.textMuted }]}>
+          {DREAM_MART_POINTS_LABEL}
+        </Text>
       </View>
     </View>
   );
@@ -158,18 +144,6 @@ const styles = StyleSheet.create({
   heroCaption: {
     fontSize: typography.fontSize.sm,
     marginBottom: spacing.xxs,
-  },
-  transactionsLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: spacing.md,
-    marginTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  transactionsText: {
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold,
   },
   compactCard: {
     flexDirection: 'row',

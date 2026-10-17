@@ -1,5 +1,6 @@
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { useTheme } from '@/components/ThemeContext';
+import { DREAM_MART_POINTS_LABEL } from '@/constants/walletLabels';
 
 /** Preset diameters — pass a number for custom size. */
 export const DREAM_CASH_COIN_SIZE = {
@@ -35,8 +36,8 @@ function resolveSize(size: DreamCashCoinSizeKey | number): number {
 }
 
 /**
- * Global DreamMart Coin mark — circle with "DMC".
- * Use beside coin amounts (not for real INR / ₹).
+ * Global Dream Mart Points mark — circle with "DMP".
+ * Use beside point amounts (not for real INR / ₹).
  */
 export function DreamCashCoin({
   size = 'md',
@@ -56,7 +57,7 @@ export function DreamCashCoin({
   return (
     <View
       accessibilityRole="image"
-      accessibilityLabel="DreamMart Coin"
+      accessibilityLabel={DREAM_MART_POINTS_LABEL}
       style={[
         styles.coin,
         {
@@ -81,7 +82,7 @@ export function DreamCashCoin({
           },
         ]}
       >
-        DMC
+        DMP
       </Text>
     </View>
   );

@@ -21,6 +21,8 @@ import {
   View
 } from 'react-native';
 import uuid from 'react-native-uuid';
+import { DREAM_MART_POINTS_LABEL } from '@/constants/walletLabels';
+import { formatDreamCashFigure } from '@/utils/walletFormat';
 import { useCart } from '../../components/CartContext';
 import { Screen } from '@/components/Screen';
 
@@ -548,7 +550,8 @@ const CheckoutOrangePG = () => {
           />
         </View>
         <Text style={useWalletStyles.description}>
-          Available coins: <Ionicons name="ribbon" size={16} color="#10b981" /> ₹{currBal.toFixed(2)}
+          Available {DREAM_MART_POINTS_LABEL.toLowerCase()}:{' '}
+          <Ionicons name="ribbon" size={16} color="#10b981" /> {formatDreamCashFigure(currBal)}
         </Text>
       </View>
 

@@ -1,6 +1,10 @@
 import { getToken } from '@/helpers/authStorage';
-import { WalletBalanceHero } from '@/components/WalletBalanceHero';
 import { DreamCashAmount } from '@/components/DreamCashAmount';
+import { WalletBalanceHero } from '@/components/WalletBalanceHero';
+import {
+  DREAM_MART_POINTS_HISTORY_LABEL,
+  DREAM_MART_POINTS_LABEL,
+} from '@/constants/walletLabels';
 import { Screen } from '@/components/Screen';
 import { useTheme } from '@/components/ThemeContext';
 import { EmptyState } from '@/components/ui';
@@ -19,7 +23,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -51,7 +54,6 @@ export default function TransactionScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const legacyAllRef = useRef<WalletTransactionItem[] | null>(null);
   const loadingMoreRef = useRef(false);
@@ -179,7 +181,6 @@ export default function TransactionScreen() {
       item.toWallet,
       item.fromWallet
     );
-    const isExpanded = expandedId === item._id;
     const amountColor =
       item.status === 'failed'
         ? colors.textMuted
@@ -188,14 +189,12 @@ export default function TransactionScreen() {
           : colors.text;
 
     return (
-      <Pressable
-        onPress={() => setExpandedId(isExpanded ? null : item._id)}
-        style={({ pressed }) => [
+      <View
+        style={[
           styles.row,
           {
             backgroundColor: colors.card,
             borderColor: colors.borderLight,
-            opacity: pressed ? 0.92 : 1,
           },
         ]}
       >
@@ -224,28 +223,14 @@ export default function TransactionScreen() {
             </Text>
             {renderStatusBadge(item.status)}
           </View>
-
-          {isExpanded ? (
-            <View style={[styles.rowDetails, { borderTopColor: colors.borderLight }]}>
-              {item.fromWallet ? (
-                <Text style={[styles.detailLine, { color: colors.textMuted }]}>
-                  From {item.fromWallet}
-                  {item.toWallet ? ` → ${item.toWallet}` : ''}
-                </Text>
-              ) : null}
-              {item.notes ? (
-                <Text style={[styles.detailLine, { color: colors.textSecondary }]}>{item.notes}</Text>
-              ) : null}
-            </View>
-          ) : null}
         </View>
-      </Pressable>
+      </View>
     );
   };
 
   const ListHeader = () => (
     <View style={styles.headerBlock}>
-      <Text style={[styles.pageTitle, { color: colors.text }]}>Coin history</Text>
+      <Text style={[styles.pageTitle, { color: colors.text }]}>{DREAM_MART_POINTS_HISTORY_LABEL}</Text>
       <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
         Track credits, payments, and withdrawals
       </Text>
@@ -286,7 +271,7 @@ export default function TransactionScreen() {
             <EmptyState
               icon="receipt-outline"
               title="No transactions yet"
-              subtitle="Your activity will appear here once you earn or spend DreamMart Coin."
+              subtitle={`Your activity will appear here once you earn or spend ${DREAM_MART_POINTS_LABEL}.`}
               style={styles.emptyState}
             />
           }
@@ -386,16 +371,6 @@ const styles = StyleSheet.create({
   statusBadgeText: {
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.semibold,
-  },
-  rowDetails: {
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    gap: 4,
-  },
-  detailLine: {
-    fontSize: typography.fontSize.sm,
-    lineHeight: 18,
   },
   centerLoader: {
     flex: 1,

@@ -26,7 +26,7 @@ type DreamCashAmountProps = {
 };
 
 /**
- * DreamMart Coin figure with DMC coin — no ₹.
+ * Dream Mart Points figure with DMP icon — no ₹.
  */
 export function DreamCashAmount({
   amount,

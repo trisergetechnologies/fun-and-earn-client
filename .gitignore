@@ -40,3 +40,7 @@ app-example
 
 .env
 .vscode
+
+# Machine-local Android paths. Must stay out of EAS uploads.
+android/local.properties
+android/build/

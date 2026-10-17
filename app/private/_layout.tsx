@@ -41,7 +41,8 @@ export default function PrivateLayout() {
           <Stack.Screen name="CustomerSupport" options={{ headerShown: false }} />
           <Stack.Screen name="setting" options={{ headerShown: false }} />
           <Stack.Screen name="success" options={{ headerShown: false }} />
-          <Stack.Screen name="transactions" options={{ headerShown: false }} />
+          {/* Wallet history stays in the database. Not shown in the app. */}
+          {/* <Stack.Screen name="transactions" options={{ headerShown: false }} /> */}
           <Stack.Screen name="UpdateProfile" options={{ headerShown: false }} />
         </Stack>
       </View>

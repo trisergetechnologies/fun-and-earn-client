@@ -34,7 +34,7 @@ import { formatDreamCash } from '@/utils/walletFormat';
 import Toast from 'react-native-toast-message';
 
 const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-api.mpdreams.in/api/v1';
-const PAYMENT_GATEWAY = (process.env.EXPO_PUBLIC_PAYMENT_GATEWAY || 'razorpay').toLowerCase();
+const FALLBACK_PAYMENT_GATEWAY = (process.env.EXPO_PUBLIC_PAYMENT_GATEWAY || 'ccavenue').toLowerCase();
 
 function logCcavenue(step: string, payload?: Record<string, unknown>) {
   const msg = payload ? `${step} ${JSON.stringify(payload)}` : step;
@@ -85,6 +85,9 @@ const CheckoutScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [walletToggling, setWalletToggling] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('');
+  const [paymentGateway, setPaymentGateway] = useState(
+    FALLBACK_PAYMENT_GATEWAY === 'razorpay' ? 'razorpay' : 'ccavenue'
+  );
   const { userProfile } = useProfile();
 
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -125,9 +128,26 @@ const CheckoutScreen = () => {
     if (res.data.success) setUseWallet(res.data.data.useWallet);
   }, []);
 
+  const fetchPaymentGateway = useCallback(async () => {
+    const token = await getToken();
+    const res = await axios.get(`${EXPO_PUBLIC_BASE_URL}/ecart/user/general/paymentgateway`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const value = String(res.data?.data?.paymentGateway || FALLBACK_PAYMENT_GATEWAY).toLowerCase();
+    const gateway = value === 'razorpay' ? 'razorpay' : 'ccavenue';
+    setPaymentGateway(gateway);
+    return gateway;
+  }, []);
+
   const loadCheckoutData = useCallback(async () => {
-    await Promise.all([fetchAddresses(), getWallet(), fetchCartPrefs(), refreshCart()]);
-  }, [fetchAddresses, getWallet, fetchCartPrefs, refreshCart]);
+    await Promise.all([
+      fetchAddresses(),
+      getWallet(),
+      fetchCartPrefs(),
+      refreshCart(),
+      fetchPaymentGateway(),
+    ]);
+  }, [fetchAddresses, getWallet, fetchCartPrefs, refreshCart, fetchPaymentGateway]);
 
   useFocusEffect(
     useCallback(() => {
@@ -183,7 +203,6 @@ const CheckoutScreen = () => {
 
   const subtotal = getCartSubtotal(cart);
   const estimatedTotal = getEstimatedTotal(subtotal, totalGstAmount, deliveryCharge);
-  const total = subtotal;
 
   function stopPolling() {
     if (pollingIntervalRef.current) {
@@ -365,7 +384,7 @@ const CheckoutScreen = () => {
   async function createIntentAndPayCcavenue(deliverySlug: string) {
     logCcavenue('flow_start', {
       apiBase: EXPO_PUBLIC_BASE_URL,
-      gateway: PAYMENT_GATEWAY,
+      gateway: paymentGateway,
       deliverySlug,
     });
 
@@ -373,7 +392,7 @@ const CheckoutScreen = () => {
     const idempotencyKey = `${Date.now()}-${uuid.v4()}`;
     const res = await axios.post(
       `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/createorderintent`,
-      { deliverySlug, useWallet, idempotencyKey, paymentGateway: PAYMENT_GATEWAY },
+      { deliverySlug, useWallet, idempotencyKey },
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -441,7 +460,7 @@ const CheckoutScreen = () => {
     const token = await getToken();
     const idempotencyKey = `${Date.now()}-${uuid.v4()}`;
     const url = `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/createorderintent`;
-    const payload = { deliverySlug, useWallet, idempotencyKey, paymentGateway: PAYMENT_GATEWAY };
+    const payload = { deliverySlug, useWallet, idempotencyKey };
 
     const res = await axios.post(url, payload, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.data?.success) throw new Error(res.data?.message || 'Failed to create payment intent');
@@ -603,7 +622,7 @@ const CheckoutScreen = () => {
     setLoading(true);
     try {
       // 💰 Wallet-only path
-      if (currBal >= total && useWallet) {
+      if (currBal >= estimatedTotal && useWallet) {
         const token = await getToken();
         const res = await axios.post(
           `${EXPO_PUBLIC_BASE_URL}/ecart/user/order/placeorder/walletonly`,
@@ -619,8 +638,9 @@ const CheckoutScreen = () => {
         }
       }
 
-      // Gateway payment
-      if (PAYMENT_GATEWAY === 'ccavenue') {
+      // Gateway payment — use admin setting from the server, not the app build flag
+      const activeGateway = await fetchPaymentGateway();
+      if (activeGateway === 'ccavenue') {
         setPaymentStatus('Creating order...');
         await createIntentAndPayCcavenue(selectedSlug);
         return;
@@ -787,12 +807,17 @@ const CheckoutScreen = () => {
           </View>
         ) : null}
 
-        {PAYMENT_GATEWAY === 'ccavenue' ? (
+        {paymentGateway === 'ccavenue' ? (
           <View style={styles.infoContainer}>
             <Ionicons name="shield-checkmark" size={16} color={colors.primary} />
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>Secured by CCAvenue</Text>
           </View>
-        ) : null}
+        ) : (
+          <View style={styles.infoContainer}>
+            <Ionicons name="shield-checkmark" size={16} color={colors.primary} />
+            <Text style={[styles.infoText, { color: colors.textSecondary }]}>Secured by Razorpay</Text>
+          </View>
+        )}
       </ScrollView>
 
       <AdMobBannerSlot />

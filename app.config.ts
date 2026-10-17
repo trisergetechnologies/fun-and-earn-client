@@ -80,7 +80,7 @@ const config: ExpoConfig = {
     EXPO_PUBLIC_PAYMENT_GATEWAY: 'ccavenue',
     EXPO_PUBLIC_ADMOB_ANDROID_APP_ID: ADMOB_ANDROID_APP_ID,
     eas: {
-      projectId: 'a0c44343-3b41-4fff-8e6f-0ae355509844',
+      "projectId": "acaee408-4d4b-4f73-b817-097899954119"
       // projectId: 'e38c72b1-4f7f-49be-b01f-84687394837f',
       // projectId: '80d34574-db42-4327-9362-32592954cf16'
     },
@@ -88,3 +88,4 @@ const config: ExpoConfig = {
 };
 
 export default config;
+ 

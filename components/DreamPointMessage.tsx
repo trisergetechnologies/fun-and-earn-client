@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { DREAM_MART_POINTS_LABEL } from '@/constants/walletLabels';
 import { useTheme } from '@/components/ThemeContext';
 import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
 
@@ -27,7 +28,7 @@ export default function DreamCashInfo() {
             <Ionicons name="information-circle-outline" size={18} color={colors.textMuted} />
           </View>
           <Text style={[styles.headerTitle, { color: colors.textSecondary }]}>
-            About DreamMart Coin
+            About {DREAM_MART_POINTS_LABEL}
           </Text>
         </View>
         <Ionicons
@@ -39,7 +40,7 @@ export default function DreamCashInfo() {
 
       {expanded ? (
         <Text style={[styles.body, { color: colors.textMuted, borderTopColor: colors.borderLight }]}>
-          DreamMart Coin is a virtual balance you earn through activity on the app. It can be used
+          {DREAM_MART_POINTS_LABEL} is a virtual balance you earn through activity on the app. It can be used
           for shopping or withdrawn to your bank account, subject to available options and policies.
         </Text>
       ) : null}

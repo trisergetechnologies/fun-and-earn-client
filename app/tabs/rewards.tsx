@@ -35,7 +35,6 @@ const EXPO_PUBLIC_BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 'https://amp-ap
 
 function RewardsInfoFooter() {
   const { colors } = useTheme();
-  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -64,16 +63,8 @@ function RewardsInfoFooter() {
       {expanded ? (
         <View style={[styles.infoBodyWrap, { borderTopColor: colors.borderLight }]}>
           <Text style={[styles.infoBody, { color: colors.textMuted }]}>
-            Copy a coupon code here, then redeem it in your Wallet under Redeem coupon to add Dream
-            Cash to your balance.
+            Copy a coupon code here. Redeem it from the wallet screen where rewards are claimed.
           </Text>
-          <Button
-            title="Go to wallet"
-            onPress={() => router.push('/tabs/wallet')}
-            variant="outline"
-            size="sm"
-            style={styles.infoButton}
-          />
         </View>
       ) : null}
     </View>
@@ -240,7 +231,7 @@ const RewardScreen = () => {
     <View style={styles.headerBlock}>
       <Text style={[styles.pageTitle, { color: colors.text }]}>Rewards</Text>
       <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
-        Coupons you can redeem in your wallet
+        Your available reward coupons
       </Text>
 
       {coupons.length > 0 ? (
@@ -493,9 +484,5 @@ const styles = StyleSheet.create({
   infoBody: {
     fontSize: typography.fontSize.sm,
     lineHeight: 20,
-    marginBottom: spacing.sm,
-  },
-  infoButton: {
-    alignSelf: 'flex-start',
   },
 });

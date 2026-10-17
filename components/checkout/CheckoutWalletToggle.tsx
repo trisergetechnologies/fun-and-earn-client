@@ -1,4 +1,5 @@
 import { Card } from '@/components/ui';
+import { DREAM_MART_POINTS_LABEL } from '@/constants/walletLabels';
 import { DreamCashAmount } from '@/components/DreamCashAmount';
 import { useTheme } from '@/components/ThemeContext';
 import { borderRadius, spacing, typography } from '@/constants/DesignSystem';
@@ -32,7 +33,7 @@ export function CheckoutWalletToggle({
           <Ionicons name="wallet-outline" size={20} color={colors.textSecondary} />
         </View>
         <View style={styles.headerText}>
-          <Text style={[styles.label, { color: colors.text }]}>Use DreamMart Coin</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Use {DREAM_MART_POINTS_LABEL}</Text>
           <View style={styles.balanceRow}>
             <Text style={[styles.balance, { color: colors.textSecondary }]}>Available </Text>
             <DreamCashAmount

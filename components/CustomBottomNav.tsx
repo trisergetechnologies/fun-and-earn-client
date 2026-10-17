@@ -25,7 +25,7 @@ const tabs: {
 }[] = [
   { name: 'explore', label: 'Home', icon: 'home-outline' },
   { name: 'rewards', label: 'Rewards', icon: 'gift-outline' },
-  { name: 'wallet', label: 'Wallet', icon: 'wallet-outline' },
+  { name: 'wallet', label: 'DM Points', icon: 'wallet-outline' },
   { name: 'cart', label: 'Cart', icon: 'cart-outline' },
   { name: 'profile', label: 'Profile', icon: 'person-outline' },
 ];

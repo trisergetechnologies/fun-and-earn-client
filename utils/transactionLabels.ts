@@ -24,7 +24,7 @@ export interface WalletTransactionItem {
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
-/** Credits into Dream Mart coin wallet (eCart). */
+/** Credits into Dream Mart Points wallet (eCart). */
 export function isCreditTransaction(
   type: TransactionType,
   toWallet?: string | null,
@@ -44,14 +44,14 @@ export function getTransactionTitle(
   toWallet?: string | null,
   fromWallet?: string | null
 ) {
-  // Incoming coins to Mart (do not mention Fun & Enjoy / short video)
+  // Incoming points to Mart (do not mention Fun & Enjoy / short video)
   if (
     toWallet === 'eCartWallet' &&
     (type === 'withdraw' || type === 'transfer') &&
     fromWallet &&
     fromWallet !== 'eCartWallet'
   ) {
-    return 'Coins received';
+    return 'Points received';
   }
 
   if (type === 'earn') {
@@ -59,7 +59,7 @@ export function getTransactionTitle(
     if (source === 'watchTime') return 'Reward earned';
     if (source === 'admin') return 'Balance credited';
     if (source === 'manual') return 'Manual credit';
-    return 'Coins received';
+    return 'Points received';
   }
   if (type === 'spend') {
     if (source === 'purchase') return 'Order payment';

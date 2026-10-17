@@ -15,6 +15,7 @@ import {
   fetchInvoiceRemoteUrl,
   shareLocalPdf,
 } from '@/utils/invoicePdf';
+import { DREAM_MART_POINTS_LABEL } from '@/constants/walletLabels';
 import { formatDreamCash, formatTransactionDate } from '@/utils/walletFormat';
 import { DreamCashAmount } from '@/components/DreamCashAmount';
 import { Ionicons } from '@expo/vector-icons';
@@ -435,7 +436,9 @@ const OrderDetails = () => {
 
           {order.usedWalletAmount > 0 ? (
             <View style={styles.rowBetween}>
-              <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>DreamMart Coin used</Text>
+              <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>
+                {DREAM_MART_POINTS_LABEL} used
+              </Text>
               <DreamCashAmount
                 amount={order.usedWalletAmount}
                 signed
